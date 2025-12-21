@@ -1,0 +1,41 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck      # Проверка неиспользованных ошибок
+    - govet         # Стандартный vet
+    - staticcheck   # Дополнительные проверки
+    - gosimple      # Упрощения кода
+    - ineffassign   # Неиспользуемые присваивания
+    - unused        # Неиспользуемый код
+    - gofmt         # Форматирование
+    - misspell      # Опечатки в комментариях
+    - revive        # Замена golint
+
+linters-settings:
+  errcheck:
+    check-blank: true
+    check-type-assertions: true
+
+  govet:
+    enable-all: true
+
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+      - name: package-comments
+        severity: warning
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    # Исключить некоторые линтеры для тестов
+    - path: _test\.go
+      linters:
+        - errcheck

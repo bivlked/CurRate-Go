@@ -1,0 +1,77 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+coverage.txt
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+bin/
+dist/
+build/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Secrets and credentials
+*.env
+*.env.*
+!*.env.example
+.env.local
+.env.*.local
+credentials.json
+secrets.json
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+config.local.*
+*.secret
+
+# Wails specific
+frontend/dist/
+frontend/node_modules/
+wails.json.backup
+.wails/
+build/bin/
+
+# Personal notes
+CLAUDE.local.md
+.claude/
+notes.md
+TODO.md
+
+# Cache
+.cache/
+cache/
