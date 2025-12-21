@@ -104,6 +104,9 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		}
 
 		rate = exchangeRate.Rate
+		if exchangeRate.Nominal > 1 {
+			rate = rate / float64(exchangeRate.Nominal)
+		}
 
 		// Сохраняем в кэш
 		c.cache.Set(currency, normalizedDate, rate)
