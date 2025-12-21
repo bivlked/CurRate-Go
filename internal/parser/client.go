@@ -59,12 +59,6 @@ func fetchXML(url string) (io.ReadCloser, error) {
 	return nil, fmt.Errorf("%w after %d attempts: %v", ErrMaxRetries, MaxRetries, lastErr)
 }
 
-// fetchHTML - устаревшая функция, оставлена для обратной совместимости
-// Deprecated: использовать fetchXML
-func fetchHTML(url string) (io.ReadCloser, error) {
-	return fetchXML(url)
-}
-
 // doRequest выполняет одиночный HTTP запрос
 // client - HTTP клиент
 // url - URL для запроса

@@ -82,6 +82,14 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 		return nil, ErrNoXMLRates
 	}
 
+	// Определяем дату курсов из XML (ЦБ может вернуть прошлый рабочий день)
+	parsedDate := date
+	if valCurs.Date != "" {
+		if parsed, err := time.ParseInLocation("02.01.2006", valCurs.Date, date.Location()); err == nil {
+			parsedDate = parsed
+		}
+	}
+
 	// Конвертируем в нашу структуру данных
 	rates := make(map[models.Currency]models.ExchangeRate)
 
@@ -110,7 +118,7 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 			Currency: currency,
 			Rate:     rate,
 			Nominal:  valute.Nominal,
-			Date:     date,
+			Date:     parsedDate,
 		}
 	}
 
@@ -119,7 +127,7 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 	}
 
 	return &models.RateData{
-		Date:  date,
+		Date:  parsedDate,
 		Rates: rates,
 	}, nil
 }

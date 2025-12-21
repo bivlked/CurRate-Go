@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func TestFetchHTML(t *testing.T) {
+func TestFetchXML(t *testing.T) {
 	t.Run("Успешный HTTP запрос", func(t *testing.T) {
 		// Создаем мок сервер
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +25,7 @@ func TestFetchHTML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchHTML(server.URL)
+		body, err := fetchXML(server.URL)
 		if err != nil {
 			t.Fatalf("Неожиданная ошибка: %v", err)
 		}
@@ -48,7 +48,7 @@ func TestFetchHTML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchHTML(server.URL)
+		body, err := fetchXML(server.URL)
 		if err == nil {
 			body.Close()
 			t.Fatal("Ожидалась ошибка для статуса 404")
@@ -68,7 +68,7 @@ func TestFetchHTML(t *testing.T) {
 
 	t.Run("Сервер недоступен (retry logic)", func(t *testing.T) {
 		// Используем невалидный URL
-		body, err := fetchHTML("http://localhost:99999")
+		body, err := fetchXML("http://localhost:99999")
 		if err == nil {
 			body.Close()
 			t.Fatal("Ожидалась ошибка для недоступного сервера")
@@ -94,7 +94,7 @@ func TestFetchHTML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchHTML(server.URL)
+		body, err := fetchXML(server.URL)
 		if err != nil {
 			t.Fatalf("Неожиданная ошибка: %v", err)
 		}
