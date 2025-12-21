@@ -73,6 +73,8 @@ func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
 //	fmt.Println(result.FormattedStr)
 //	// Вывод: "80 722,00 руб. ($1 000,00 по курсу 80,7220)"
 func (c *Converter) Convert(amount float64, currency models.Currency, date time.Time) (*models.ConversionResult, error) {
+	normalizedDate := normalizeDate(date)
+
 	// Валидация входных данных
 	if err := ValidateAmount(amount); err != nil {
 		return nil, err
@@ -82,15 +84,15 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		return nil, err
 	}
 
-	if err := ValidateDate(date); err != nil {
+	if err := ValidateDate(normalizedDate); err != nil {
 		return nil, err
 	}
 
 	// Получение курса (сначала проверяем кэш)
-	rate, found := c.cache.Get(currency, date)
+	rate, found := c.cache.Get(currency, normalizedDate)
 	if !found {
 		// Курса нет в кэше - получаем через provider
-		rateData, err := c.provider.FetchRates(date)
+		rateData, err := c.provider.FetchRates(normalizedDate)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch rates: %w", err)
 		}
@@ -104,7 +106,7 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		rate = exchangeRate.Rate
 
 		// Сохраняем в кэш
-		c.cache.Set(currency, date, rate)
+		c.cache.Set(currency, normalizedDate, rate)
 	}
 
 	// Конвертация
@@ -119,7 +121,7 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		SourceAmount:   amount,
 		TargetAmount:   resultRUB,
 		Rate:           rate,
-		Date:           date,
+		Date:           normalizedDate,
 		FormattedStr:   formatted,
 	}, nil
 }

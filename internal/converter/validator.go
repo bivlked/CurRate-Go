@@ -36,8 +36,13 @@ func ValidateAmount(amount float64) error {
 //	    return err
 //	}
 func ValidateDate(date time.Time) error {
-	if date.After(time.Now()) {
+	normalized := normalizeDate(date)
+	if normalized.After(normalizeDate(time.Now())) {
 		return ErrDateInFuture
 	}
 	return nil
+}
+
+func normalizeDate(date time.Time) time.Time {
+	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 }
