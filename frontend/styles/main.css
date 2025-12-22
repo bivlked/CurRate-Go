@@ -98,7 +98,7 @@ body {
 /* Заголовок приложения */
 .app-header {
   text-align: center;
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .app-title {
@@ -113,7 +113,7 @@ body {
 }
 
 .app-icon {
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .app-copyright {
@@ -219,7 +219,7 @@ body {
 /* Группа выбора валюты */
 .currency-group {
   display: flex;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
 }
 
 .radio-label {
@@ -261,16 +261,16 @@ body {
 /* Кнопка конвертации */
 .convert-btn {
   width: 100%;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm);
   background: var(--primary-color);
   color: white;
   border: none;
   border-radius: var(--radius-md);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
 }
 
 .convert-btn:hover {
