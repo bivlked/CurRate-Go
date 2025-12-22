@@ -13,6 +13,7 @@
 coverage.html
 coverage.txt
 coverage_*
+coverage
 
 # Dependency directories
 vendor/
@@ -75,6 +76,10 @@ CLAUDE.local.md
 notes.md
 TODO.md
 
-# Cache
+# Memory Bank (local documentation, should not be on GitHub)
+memory-bank/
+
+# Cache (data cache, not code)
 .cache/
-cache/
+# Exclude cache/ at root, but allow internal/cache/ (code)
+/cache/
