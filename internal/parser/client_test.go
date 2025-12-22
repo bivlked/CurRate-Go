@@ -43,6 +43,12 @@ func TestFetchXML(t *testing.T) {
 	})
 
 	t.Run("Сервер возвращает 404", func(t *testing.T) {
+		originalSleep := sleepFunc
+		sleepFunc = func(time.Duration) {}
+		t.Cleanup(func() {
+			sleepFunc = originalSleep
+		})
+
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 		}))
@@ -67,6 +73,12 @@ func TestFetchXML(t *testing.T) {
 	})
 
 	t.Run("Сервер недоступен (retry logic)", func(t *testing.T) {
+		originalSleep := sleepFunc
+		sleepFunc = func(time.Duration) {}
+		t.Cleanup(func() {
+			sleepFunc = originalSleep
+		})
+
 		// Используем невалидный URL
 		body, err := fetchXML("http://localhost:99999")
 		if err == nil {
@@ -80,6 +92,12 @@ func TestFetchXML(t *testing.T) {
 	})
 
 	t.Run("Сервер восстанавливается после нескольких попыток", func(t *testing.T) {
+		originalSleep := sleepFunc
+		sleepFunc = func(time.Duration) {}
+		t.Cleanup(func() {
+			sleepFunc = originalSleep
+		})
+
 		attemptCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			attemptCount++
