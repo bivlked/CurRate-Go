@@ -10,13 +10,36 @@ let appInstance = null;
  */
 function initApp() {
     // Проверяем доступность Wails bindings
-    if (typeof window.go === 'undefined' || !window.go.main || !window.go.main.App) {
+    if (typeof window.go === 'undefined' || !window.go.app || !window.go.app.App) {
         console.error('Wails bindings not found. Make sure to run "wails dev" or build the application.');
         showError('Ошибка инициализации: Wails bindings не найдены');
         return;
     }
     
-    appInstance = window.go.main.App;
+    // Используем правильный путь к Wails bindings
+    // Wails автоматически создает window.go.app.App при запуске
+    // Проверяем доступность после небольшой задержки (Wails инициализируется асинхронно)
+    if (!window.go || !window.go.app || !window.go.app.App) {
+        // Ждем инициализации Wails
+        setTimeout(() => {
+            if (window.go && window.go.app && window.go.app.App) {
+                appInstance = window.go.app.App;
+                // Повторно инициализируем компоненты
+                initCalendar();
+                initDateInput();
+                initCurrencySelection();
+                initAmountInput();
+                initConvertButton();
+                initCopyButton();
+                showInfo('Готов к работе', 2000);
+            } else {
+                showError('Ошибка: Wails bindings не инициализированы');
+            }
+        }, 100);
+        return;
+    }
+    
+    appInstance = window.go.app.App;
     
     // Инициализация компонентов
     initCalendar();
