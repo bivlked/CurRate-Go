@@ -21,6 +21,15 @@
     "productVersion": "1.0.0",
     "copyright": "© 2025 BiV",
     "comments": "Конвертер валют на основе официальных курсов ЦБ РФ"
+  },
+  "nsisType": "multiple",
+  "obfuscated": false,
+  "garbleargs": "",
+  "garble": false,
+  "upx": false,
+  "upxflags": "",
+  "windows": {
+    "icon": "build/windows/icon.ico"
   }
 }
 
