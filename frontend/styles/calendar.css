@@ -138,3 +138,30 @@
   color: white;
 }
 
+/* Flexbox fallback для старых браузеров */
+@supports not (display: grid) {
+  .calendar-days {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: var(--spacing-xs);
+  }
+  
+  .calendar-day {
+    flex: 0 0 calc((100% - 6 * var(--spacing-xs)) / 7);
+    max-width: calc((100% - 6 * var(--spacing-xs)) / 7);
+    aspect-ratio: 1;
+  }
+  
+  .calendar-weekdays {
+    display: flex;
+    width: 100%;
+    gap: var(--spacing-xs);
+  }
+  
+  .calendar-weekday {
+    flex: 0 0 calc((100% - 6 * var(--spacing-xs)) / 7);
+    max-width: calc((100% - 6 * var(--spacing-xs)) / 7);
+  }
+}
+
