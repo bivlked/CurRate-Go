@@ -105,8 +105,11 @@ go mod download
 # Запустить тесты
 go test ./...
 
-# (В разработке) Запустить desktop приложение
+# Запустить desktop приложение (режим разработки)
 wails dev
+
+# Собрать desktop приложение для production
+wails build
 ```
 
 ### Пример использования API
@@ -273,8 +276,8 @@ go test -bench=. -benchmem ./...
 - **encoding/xml** - XML парсинг (стандартная библиотека)
 - **golang.org/x/text** - Поддержка кодировки windows-1251
 
-### GUI (в разработке)
-- **Wails v2.11.0** - Desktop UI фреймворк
+### GUI
+- **Wails v2.11.0** - Desktop UI фреймворк ✅ Реализовано
 - **WebView2** - Нативный рендеринг (Windows 11)
 - **Vanilla JS** - Frontend без фреймворков
 
