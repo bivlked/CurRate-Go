@@ -152,6 +152,21 @@ func TestValidateDate(t *testing.T) {
 	}
 }
 
+func TestValidateDateUTCInputWithNonUTCLocal(t *testing.T) {
+	originalLocal := time.Local
+	time.Local = time.FixedZone("UTC+10", 10*60*60)
+	t.Cleanup(func() {
+		time.Local = originalLocal
+	})
+
+	localNow := time.Now().In(time.Local)
+	date := time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, time.UTC)
+
+	if err := ValidateDate(date); err != nil {
+		t.Fatalf("ValidateDate() неожиданная ошибка для даты в UTC при локальной зоне, отличной от UTC: %v", err)
+	}
+}
+
 // Тесты для formatter.go
 
 func TestAddThousandsSeparator(t *testing.T) {
