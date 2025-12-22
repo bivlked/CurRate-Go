@@ -40,18 +40,18 @@ func ValidateAmount(amount float64) error {
 func ValidateDate(date time.Time) error {
 	// Нормализуем входную дату (только дата, без времени) в её исходной временной зоне
 	normalized := normalizeDate(date)
-	
+
 	// Конвертируем нормализованную дату в локальную временную зону и извлекаем календарную дату
 	normalizedInLocal := normalized.In(time.Local)
 	dateYear, dateMonth, dateDay := normalizedInLocal.Date()
-	
+
 	// Получаем текущее время в локальной временной зоне и извлекаем календарную дату
 	nowLocal := time.Now()
 	nowYear, nowMonth, nowDay := nowLocal.Date()
-	
+
 	// Сравниваем календарные даты (год, месяц, день) в локальной временной зоне
 	// Это гарантирует корректное сравнение независимо от временной зоны входной даты
-	if dateYear > nowYear || 
+	if dateYear > nowYear ||
 		(dateYear == nowYear && dateMonth > nowMonth) ||
 		(dateYear == nowYear && dateMonth == nowMonth && dateDay > nowDay) {
 		return ErrDateInFuture

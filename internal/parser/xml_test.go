@@ -472,7 +472,7 @@ func TestParseXMLValue_NonErrInvalidRateError(t *testing.T) {
 	// Этот тест проверяет ветку, когда parseRate возвращает ошибку, не являющуюся ErrInvalidRate
 	// В текущей реализации parseRate всегда возвращает ErrInvalidRate или nil,
 	// но тест нужен для покрытия ветки return 0, err (строка 147)
-	
+
 	// Используем валидное значение, чтобы проверить успешный путь
 	rate, err := parseXMLValue("80,7220")
 	if err != nil {
@@ -515,11 +515,11 @@ func TestParseXML_Windows1251DecodeError(t *testing.T) {
 	// может не вернуть ошибку для любых байтов
 	// Вместо этого, проверим случай, когда декларация windows-1251 есть, но декодирование проходит успешно
 	// (это уже покрыто в TestParseXML_Windows1251)
-	
+
 	// Для реальной ошибки декодирования нужно создать специальный случай
 	// Но в практике, decoder.Bytes редко возвращает ошибку для валидных байтов windows-1251
 	// Поэтому этот тест может быть пропущен или упрощен
-	
+
 	// Проверяем, что функция обрабатывает windows-1251 корректно (уже покрыто)
 	xmlData := `<?xml version="1.0" encoding="windows-1251"?>
 <ValCurs Date="20.12.2025" name="Foreign Currency Market">
