@@ -207,28 +207,23 @@ func TestBuildURL(t *testing.T) {
 
 // Тест redirect логики
 func TestHTTPClientRedirects(t *testing.T) {
-	t.Run("Следование редиректам (до 10)", func(t *testing.T) {
+	t.Run("Остановка на первом редиректе", func(t *testing.T) {
 		redirectCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			redirectCount++
-			if redirectCount < 5 {
-				http.Redirect(w, r, "/redirect", http.StatusFound)
-				return
-			}
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Final"))
+			http.Redirect(w, r, "/redirect", http.StatusFound)
 		}))
 		defer server.Close()
 
 		client := newHTTPClient()
 		resp, err := doRequest(client, server.URL)
-		if err != nil {
-			t.Fatalf("Неожиданная ошибка: %v", err)
+		if err == nil {
+			resp.Body.Close()
+			t.Fatal("Ожидалась ошибка для редиректа")
 		}
-		defer resp.Body.Close()
 
-		if redirectCount != 5 {
-			t.Errorf("Ожидалось 5 редиректов, получено %d", redirectCount)
+		if redirectCount != 1 {
+			t.Errorf("Ожидался один запрос без следования редиректу, получено %d", redirectCount)
 		}
 	})
 }
