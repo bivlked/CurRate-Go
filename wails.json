@@ -29,7 +29,7 @@
   "upx": false,
   "upxflags": "",
   "windows": {
-    "icon": "build/windows/icon.ico"
+    "icon": ""
   }
 }
 
