@@ -346,6 +346,34 @@ func TestNewConverter(t *testing.T) {
 	}
 }
 
+func TestNewConverter_NilCacheUsesNoop(t *testing.T) {
+	provider := &MockRateProvider{}
+
+	converter := NewConverter(provider, nil)
+
+	if converter == nil {
+		t.Fatal("Converter не должен быть nil")
+	}
+
+	if converter.cache == nil {
+		t.Fatal("Cache не должен быть nil, ожидался noopCache")
+	}
+}
+
+func TestConverter_Convert_NilProvider(t *testing.T) {
+	cache := NewMockCache()
+	converter := NewConverter(nil, cache)
+
+	_, err := converter.Convert(100, models.USD, time.Now())
+	if err == nil {
+		t.Fatal("Ожидалась ошибка при отсутствии источника курсов")
+	}
+
+	if !errors.Is(err, ErrNilRateProvider) {
+		t.Fatalf("Ожидалась ошибка ErrNilRateProvider, получено: %v", err)
+	}
+}
+
 func TestConverter_Convert_Success(t *testing.T) {
 	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 

@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,6 +29,11 @@ type CacheStorage interface {
 	Clear()
 }
 
+// Ошибки конвертера
+var (
+	ErrNilRateProvider = errors.New("источник курсов не задан")
+)
+
 // Converter - конвертер валют с кэшированием
 type Converter struct {
 	provider RateProvider
@@ -44,6 +50,10 @@ type Converter struct {
 //	provider := parser.NewCBRParser(httpClient)
 //	converter := converter.NewConverter(provider, cacheInstance)
 func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
+	if cache == nil {
+		cache = noopCache{}
+	}
+
 	return &Converter{
 		provider: provider,
 		cache:    cache,
@@ -73,6 +83,10 @@ func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
 //	fmt.Println(result.FormattedStr)
 //	// Вывод: "80 722,00 руб. ($1 000,00 по курсу 80,7220)"
 func (c *Converter) Convert(amount float64, currency models.Currency, date time.Time) (*models.ConversionResult, error) {
+	if c.provider == nil {
+		return nil, ErrNilRateProvider
+	}
+
 	normalizedDate := normalizeDate(date)
 
 	// Валидация входных данных
@@ -143,3 +157,13 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		FormattedStr:   formatted,
 	}, nil
 }
+
+type noopCache struct{}
+
+func (noopCache) Get(currency models.Currency, date time.Time) (float64, bool) {
+	return 0, false
+}
+
+func (noopCache) Set(currency models.Currency, date time.Time, rate float64) {}
+
+func (noopCache) Clear() {}
