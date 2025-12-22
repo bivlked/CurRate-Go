@@ -358,6 +358,30 @@ func TestNewConverter_NilCacheUsesNoop(t *testing.T) {
 	if converter.cache == nil {
 		t.Fatal("Cache не должен быть nil, ожидался noopCache")
 	}
+
+	// Проверяем, что noopCache работает корректно
+	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	
+	// Get должен возвращать false
+	rate, found := converter.cache.Get(models.USD, date)
+	if found {
+		t.Error("noopCache.Get() должен возвращать false")
+	}
+	if rate != 0 {
+		t.Errorf("noopCache.Get() должен возвращать rate=0, получено %v", rate)
+	}
+	
+	// Set не должен вызывать ошибок
+	converter.cache.Set(models.USD, date, 80.0)
+	
+	// После Set Get все равно должен возвращать false (noop cache)
+	rate, found = converter.cache.Get(models.USD, date)
+	if found {
+		t.Error("noopCache.Get() после Set должен все равно возвращать false")
+	}
+	
+	// Clear не должен вызывать ошибок
+	converter.cache.Clear()
 }
 
 func TestConverter_Convert_NilProvider(t *testing.T) {

@@ -29,6 +29,8 @@ func ValidateAmount(amount float64) error {
 
 // ValidateDate проверяет корректность даты для получения курса
 // Дата не может быть в будущем (больше текущего времени)
+// Сравнение выполняется по календарным датам (год, месяц, день) в локальной временной зоне
+// для корректной работы с разными временными зонами
 //
 // Пример использования:
 //
@@ -36,9 +38,22 @@ func ValidateAmount(amount float64) error {
 //	    return err
 //	}
 func ValidateDate(date time.Time) error {
+	// Нормализуем входную дату (только дата, без времени) в её исходной временной зоне
 	normalized := normalizeDate(date)
-	nowInDateLocation := time.Now().In(date.Location())
-	if normalized.After(normalizeDate(nowInDateLocation)) {
+	
+	// Конвертируем нормализованную дату в локальную временную зону и извлекаем календарную дату
+	normalizedInLocal := normalized.In(time.Local)
+	dateYear, dateMonth, dateDay := normalizedInLocal.Date()
+	
+	// Получаем текущее время в локальной временной зоне и извлекаем календарную дату
+	nowLocal := time.Now()
+	nowYear, nowMonth, nowDay := nowLocal.Date()
+	
+	// Сравниваем календарные даты (год, месяц, день) в локальной временной зоне
+	// Это гарантирует корректное сравнение независимо от временной зоны входной даты
+	if dateYear > nowYear || 
+		(dateYear == nowYear && dateMonth > nowMonth) ||
+		(dateYear == nowYear && dateMonth == nowMonth && dateDay > nowDay) {
 		return ErrDateInFuture
 	}
 	return nil

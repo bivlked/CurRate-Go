@@ -163,6 +163,55 @@ func TestParseAmount(t *testing.T) {
 			want:    0,
 			wantErr: true,
 		},
+		// Edge cases для улучшения покрытия
+		{
+			name:    "Несколько запятых (разделители тысяч)",
+			input:   "1,234,567",
+			want:    1234567.0,
+			wantErr: false,
+		},
+		{
+			name:    "Несколько точек (разделители тысяч)",
+			input:   "1.234.567",
+			want:    1234567.0,
+			wantErr: false,
+		},
+		{
+			name:    "Запятая с 3 цифрами после (разделитель тысяч)",
+			input:   "1,234",
+			want:    1234.0,
+			wantErr: false,
+		},
+		{
+			name:    "Точка с 3 цифрами после (разделитель тысяч)",
+			input:   "1.234",
+			want:    1234.0,
+			wantErr: false,
+		},
+		{
+			name:    "Запятая с 2 цифрами после (дробная часть)",
+			input:   "1,23",
+			want:    1.23,
+			wantErr: false,
+		},
+		{
+			name:    "Точка с 2 цифрами после (дробная часть)",
+			input:   "1.23",
+			want:    1.23,
+			wantErr: false,
+		},
+		{
+			name:    "Запятая с 4 цифрами после (нестандартный формат)",
+			input:   "1,2345",
+			want:    1.2345,
+			wantErr: false,
+		},
+		{
+			name:    "Точка с 4 цифрами после (нестандартный формат)",
+			input:   "1.2345",
+			want:    1.2345,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -227,6 +276,60 @@ func TestFormatAmount(t *testing.T) {
 			amount:   1000.556,
 			decimals: 2,
 			want:     "1 000.56",
+		},
+		{
+			name:     "Без дробной части (decimals=0)",
+			amount:   1000.0,
+			decimals: 0,
+			want:     "1 000",
+		},
+		{
+			name:     "С дробной частью (decimals=0, но есть дробь - округление)",
+			amount:   1000.5,
+			decimals: 0,
+			want:     "1 000", // fmt.Sprintf("%.0f", 1000.5) использует "round to even", результат "1000"
+		},
+		{
+			name:     "С дробной частью меньше 0.5 (decimals=0)",
+			amount:   1000.4,
+			decimals: 0,
+			want:     "1 000",
+		},
+		{
+			name:     "Малое число без разделителей тысяч",
+			amount:   99.99,
+			decimals: 2,
+			want:     "99.99",
+		},
+		{
+			name:     "Очень большое число",
+			amount:   1234567890.12,
+			decimals: 2,
+			want:     "1 234 567 890.12",
+		},
+		{
+			name:     "Одна цифра",
+			amount:   5.0,
+			decimals: 0,
+			want:     "5",
+		},
+		{
+			name:     "Две цифры",
+			amount:   50.0,
+			decimals: 0,
+			want:     "50",
+		},
+		{
+			name:     "Три цифры",
+			amount:   500.0,
+			decimals: 0,
+			want:     "500",
+		},
+		{
+			name:     "Четыре цифры",
+			amount:   5000.0,
+			decimals: 0,
+			want:     "5 000",
 		},
 	}
 

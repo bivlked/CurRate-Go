@@ -3,6 +3,7 @@ package parser
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -108,6 +109,54 @@ func TestFetchRates(t *testing.T) {
 			t.Error("Data должна быть nil при ошибке")
 		}
 	})
+
+	t.Run("Ошибка парсинга XML", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			// XML без валют
+			w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+</ValCurs>`))
+		}))
+		defer server.Close()
+
+		testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		data, err := fetchRatesFromURL(server.URL, testDate)
+		if err == nil {
+			t.Fatal("Ожидалась ошибка для XML без валют")
+		}
+
+		if data != nil {
+			t.Error("Data должна быть nil при ошибке")
+		}
+	})
+}
+
+// TestFetchRates_WithBuildURL проверяет обработку ошибки парсинга XML
+func TestFetchRates_ParseError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		// XML без валют (вызовет ErrNoXMLRates)
+		w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+</ValCurs>`))
+	}))
+	defer server.Close()
+
+	testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	data, err := fetchRatesFromURL(server.URL, testDate)
+	if err == nil {
+		t.Fatal("Ожидалась ошибка для XML без валют")
+	}
+
+	if data != nil {
+		t.Error("Data должна быть nil при ошибке")
+	}
+
+	// Проверяем, что ошибка содержит информацию о парсинге
+	if !strings.Contains(err.Error(), "parse") && !strings.Contains(err.Error(), "rates") {
+		t.Errorf("Ошибка должна содержать информацию о парсинге или rates, получена: %v", err)
+	}
 }
 
 func TestFetchLatestRates(t *testing.T) {

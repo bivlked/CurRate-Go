@@ -244,6 +244,43 @@ func TestHTTPClientRedirects(t *testing.T) {
 			t.Errorf("Ожидался один запрос без следования редиректу, получено %d", redirectCount)
 		}
 	})
+
+	t.Run("Too many redirects (10+)", func(t *testing.T) {
+		client := newHTTPClient()
+		
+		// Создаем запрос, который будет иметь 10+ редиректов
+		// Для этого используем мок, который симулирует 10 редиректов
+		req, _ := http.NewRequest("GET", "http://example.com", nil)
+		via := make([]*http.Request, 10)
+		for i := 0; i < 10; i++ {
+			via[i], _ = http.NewRequest("GET", "http://example.com", nil)
+		}
+		
+		err := client.CheckRedirect(req, via)
+		if err == nil {
+			t.Fatal("Ожидалась ошибка 'too many redirects' для 10+ редиректов")
+		}
+		
+		if err.Error() != "too many redirects" {
+			t.Errorf("Ожидалась ошибка 'too many redirects', получена: %v", err)
+		}
+	})
+
+	t.Run("Less than 10 redirects (returns ErrUseLastResponse)", func(t *testing.T) {
+		client := newHTTPClient()
+		
+		// Создаем запрос с менее чем 10 редиректами
+		req, _ := http.NewRequest("GET", "http://example.com", nil)
+		via := make([]*http.Request, 5)
+		for i := 0; i < 5; i++ {
+			via[i], _ = http.NewRequest("GET", "http://example.com", nil)
+		}
+		
+		err := client.CheckRedirect(req, via)
+		if err != http.ErrUseLastResponse {
+			t.Errorf("Ожидалась ошибка http.ErrUseLastResponse для <10 редиректов, получена: %v", err)
+		}
+	})
 }
 
 // Бенчмарк для doRequest
