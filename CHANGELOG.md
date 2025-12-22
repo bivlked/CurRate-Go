@@ -9,6 +9,60 @@
 ## [Unreleased]
 
 ### Добавлено (Added)
+- **[2025-12-22] Улучшения команды (версия v0.5.1)**
+  - `internal/converter/converter.go` - улучшена обработка ошибок
+    - Добавлена проверка на nil-провайдер (ErrNilRateProvider)
+    - Добавлен noopCache - заглушка для nil cache
+    - Оптимизация: RUB → RUB конвертация без вызова API
+    - Нормализация дат через normalizeDate()
+  - `internal/parser/xml_additional_test.go` - новый файл с расширенными тестами
+    - Тест обработки windows-1251 кодировки
+    - Тест фильтрации невалидных и неподдерживаемых валют
+    - Тест обработки пустого XML
+  - `internal/converter/converter_test.go` - расширено покрытие тестами
+    - Тесты для nil-провайдера и nil-cache
+    - Тесты для RUB → RUB конвертации
+    - Дополнительные edge cases
+  - `internal/parser/xml_test.go` - расширены тесты XML парсера
+    - Тесты для различных номиналов (1, 10, 100, 10000)
+    - Тесты обработки запятых в значениях
+    - Тесты пропуска неподдерживаемых валют
+  - `pkg/utils/number_test.go` - добавлены тесты для ParseAmount
+    - Тесты для строк с пробелами
+    - Тесты для edge cases
+
+### Изменено (Changed)
+- **[2025-12-22] Рефакторинг и улучшения**
+  - `internal/parser/parser.go` - удален устаревший HTML парсер
+    - Удалены функции: ParseHTML и связанные (78 строк)
+    - Оставлены только общие функции: parseRate, parseNominal, parseCurrency
+  - `internal/parser/xml.go` - улучшен XML парсер
+    - parseXMLValue теперь использует общую функцию parseRate()
+    - Добавлено использование parseNominal для валидации
+    - Улучшена обработка даты из XML атрибута
+  - `internal/parser/client.go` - улучшена обработка HTTP редиректов
+    - Добавлена корректная обработка HTTP статусов
+  - `internal/parser/client_test.go` - обновлены тесты HTTP клиента
+    - Исправлены моки для новой логики
+  - `internal/converter/validator.go` - улучшена валидация дат
+    - Учет временных зон (timezone-aware validation)
+  - `go.sum` - очищены неиспользуемые зависимости (-82 строки)
+
+### Безопасность (Security)
+- Улучшена обработка nil-значений для предотвращения panic
+- Добавлена валидация всех входных параметров
+
+### Покрытие тестами
+- **Общее покрытие: 96.0%** (превышает требование 90%)
+  - internal/cache: 100.0%
+  - internal/converter: 98.4%
+  - internal/models: 100.0%
+  - internal/parser: 92.3%
+  - pkg/utils: 96.1%
+
+---
+
+### Добавлено (Added)
 - **[2025-12-20] Этап 2: Базовые модели данных (завершен)**
   - `internal/models/currency.go` - тип Currency с константами USD, EUR, RUB
   - `internal/models/rate.go` - ExchangeRate, ConversionResult, RateData

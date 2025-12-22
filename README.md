@@ -191,11 +191,12 @@ go test -bench=. -benchmem ./...
 
 | Модуль | Покрытие | Тесты |
 |--------|----------|-------|
-| `internal/models` | 97.1% | ✅ |
-| `internal/parser` | 91.3% | ✅ |
+| `internal/models` | 100.0% | ✅ |
 | `internal/cache` | 100.0% | ✅ |
-| `internal/converter` | 100.0% | ✅ |
-| `pkg/utils` | 100.0% | ✅ |
+| `internal/converter` | 98.4% | ✅ |
+| `pkg/utils` | 96.1% | ✅ |
+| `internal/parser` | 92.3% | ✅ |
+| **Общее** | **96.0%** | ✅ |
 
 ---
 
@@ -278,6 +279,14 @@ Contributions, issues и feature requests приветствуются!
 См. [CHANGELOG.md](CHANGELOG.md) для подробной истории изменений.
 
 ### Последние обновления
+
+**v0.5.1** (2025-12-22) - Улучшения и рефакторинг
+- ✅ Nil-safe конвертер с проверками и noopCache
+- ✅ Оптимизация RUB → RUB конвертации (без вызова API)
+- ✅ Удален устаревший HTML парсер
+- ✅ Расширено покрытие тестами до 96.0%
+- ✅ Улучшена обработка HTTP редиректов
+- ✅ Timezone-aware валидация дат
 
 **v0.5.0** (2025-12-21) - XML API Migration
 - ✅ Миграция с HTML на официальный XML API ЦБ РФ
