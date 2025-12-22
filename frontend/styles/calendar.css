@@ -1,12 +1,12 @@
 /* Стили календаря */
 
 .calendar {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
   background: white;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   user-select: none;
   width: 100%;
   box-sizing: border-box;
@@ -16,13 +16,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
   border-bottom: 1px solid var(--border-color);
 }
 
 .calendar-month-year {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
 }
@@ -33,14 +33,18 @@
 }
 
 .calendar-nav-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-size-base);
   transition: all 0.2s ease;
-  min-width: 36px;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .calendar-nav-btn:hover {
@@ -55,8 +59,8 @@
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
+  gap: 2px;
+  margin-bottom: var(--spacing-xs);
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -64,10 +68,10 @@
 
 .calendar-weekday {
   text-align: center;
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
-  padding: var(--spacing-sm);
+  padding: 2px;
 }
 
 .calendar-weekday.weekend {
@@ -77,9 +81,9 @@
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: minmax(32px, auto);
+  grid-auto-rows: minmax(24px, auto);
   grid-auto-flow: row;
-  gap: var(--spacing-xs);
+  gap: 2px;
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -87,15 +91,15 @@
 
 .calendar-day {
   min-width: 0;
-  min-height: 32px;
+  min-height: 24px;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 3px;
   cursor: pointer;
-  font-size: var(--font-size-base);
+  font-size: 12px;
   transition: all 0.2s ease;
   background: var(--bg-primary);
   box-sizing: border-box;
