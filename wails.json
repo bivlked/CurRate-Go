@@ -1,0 +1,26 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "CurRate-Go",
+  "outputfilename": "CurRate",
+  "frontend:dir": "frontend",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "assetdir": "frontend/dist",
+  "wailsjsdir": "frontend/wailsjs",
+  "version": "2.11.0",
+  "author": {
+    "name": "Ivan Bondarev",
+    "email": "bivlked@example.com"
+  },
+  "info": {
+    "companyName": "BiV",
+    "productName": "CurRate-Go",
+    "productVersion": "1.0.0",
+    "copyright": "© 2025 BiV",
+    "comments": "Конвертер валют на основе официальных курсов ЦБ РФ"
+  }
+}
+

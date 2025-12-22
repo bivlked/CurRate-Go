@@ -1,0 +1,396 @@
+/* CurRate-Go - Основные стили */
+/* Основано на memory-bank/style-guide.md */
+
+:root {
+  /* Основные цвета */
+  --primary-color: #0078d4;
+  --primary-hover: #106ebe;
+  --primary-active: #005a9e;
+  --primary-light: #e3f2fd;
+
+  /* Success */
+  --success-color: #107c10;
+  --success-bg: #e8f5e9;
+
+  /* Error */
+  --error-color: #d32f2f;
+  --error-bg: #ffebee;
+
+  /* Weekend */
+  --weekend-color: #d32f2f;
+  --weekend-bg: #ffebee;
+
+  /* Фоны */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e8e8e8;
+
+  /* Текст */
+  --text-primary: #1f1f1f;
+  --text-secondary: #605e5c;
+  --text-disabled: #a19f9d;
+
+  /* Границы */
+  --border-color: #e1dfdd;
+  --border-focus: #0078d4;
+  --border-error: #d32f2f;
+
+  /* Тени */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.2);
+
+  /* Типографика */
+  --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Отступы */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+
+  /* Радиусы */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  padding-bottom: 48px; /* Место для status bar */
+}
+
+/* Заголовок приложения */
+.app-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.app-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.app-icon {
+  font-size: 28px;
+}
+
+.app-copyright {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Карточки */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Группа ввода даты */
+.date-input-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.date-input {
+  flex: 1;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.date-input:invalid {
+  border-color: var(--border-error);
+}
+
+.calendar-btn {
+  padding: var(--spacing-md);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  transition: background-color 0.2s ease;
+  min-width: 44px;
+  height: 44px;
+}
+
+.calendar-btn:hover {
+  background: var(--primary-hover);
+}
+
+.calendar-btn:active {
+  background: var(--primary-active);
+}
+
+/* Live Preview курса */
+.rate-preview {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.rate-preview-label {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.rate-value {
+  color: var(--primary-color);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Группа выбора валюты */
+.currency-group {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+}
+
+.radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.radio-text {
+  user-select: none;
+}
+
+/* Поле ввода суммы */
+.amount-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-lg);
+  font-family: var(--font-family);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.amount-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Кнопка конвертации */
+.convert-btn {
+  width: 100%;
+  padding: var(--spacing-lg);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-bottom: var(--spacing-lg);
+}
+
+.convert-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.convert-btn:active {
+  background: var(--primary-active);
+  transform: translateY(0);
+}
+
+.convert-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Карточка результата */
+.result-card {
+  background: var(--success-bg);
+  border-color: var(--success-color);
+}
+
+.result-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.result-text {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.copy-btn {
+  padding: var(--spacing-md);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-start;
+}
+
+.copy-btn:hover {
+  background: var(--primary-hover);
+}
+
+.copy-btn:active {
+  background: var(--primary-active);
+}
+
+/* Строка состояния */
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  z-index: 1000;
+}
+
+.status-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.status-message {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.status-message.success {
+  color: var(--success-color);
+}
+
+.status-message.error {
+  color: var(--error-color);
+}
+
+.status-message.warning {
+  color: #f57c00;
+}
+
+.status-message.info {
+  color: var(--primary-color);
+}
+
+/* Календарь (базовые стили, будет расширено в calendar.css) */
+.calendar {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .container {
+    padding: var(--spacing-lg);
+  }
+
+  .currency-group {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+}
+

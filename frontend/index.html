@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конвертер валют</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок приложения -->
+        <header class="app-header">
+            <h1 class="app-title">
+                <span class="app-icon">💱</span>
+                Конвертер валют
+            </h1>
+            <p class="app-copyright">(c) BiV 2025 г.</p>
+        </header>
+
+        <!-- Карточка выбора даты -->
+        <div class="card">
+            <label class="card-label" for="date-input">Дата курса</label>
+            <div class="date-input-group">
+                <input 
+                    type="text" 
+                    id="date-input" 
+                    class="date-input" 
+                    placeholder="ДД.ММ.ГГГГ"
+                    maxlength="10"
+                >
+                <button 
+                    type="button" 
+                    id="calendar-btn" 
+                    class="calendar-btn"
+                    aria-label="Открыть календарь"
+                >
+                    📅
+                </button>
+            </div>
+            <!-- Live Preview курса -->
+            <div id="rate-preview" class="rate-preview" style="display: none;">
+                <span class="rate-preview-label">Курс:</span>
+                <span id="rate-value" class="rate-value"></span>
+            </div>
+            <!-- Календарь (скрыт по умолчанию) -->
+            <div id="calendar" class="calendar" style="display: none;"></div>
+        </div>
+
+        <!-- Карточка выбора валюты -->
+        <div class="card">
+            <label class="card-label">Валюта</label>
+            <div class="currency-group">
+                <label class="radio-label">
+                    <input type="radio" name="currency" value="USD" id="currency-usd" checked>
+                    <span class="radio-text">USD ($)</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="currency" value="EUR" id="currency-eur">
+                    <span class="radio-text">EUR (€)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Карточка ввода суммы -->
+        <div class="card">
+            <label class="card-label" for="amount-input">Сумма</label>
+            <input 
+                type="text" 
+                id="amount-input" 
+                class="amount-input" 
+                placeholder="Введите сумму"
+                inputmode="decimal"
+            >
+        </div>
+
+        <!-- Кнопка конвертации -->
+        <button type="button" id="convert-btn" class="convert-btn">
+            Конвертировать
+        </button>
+
+        <!-- Карточка результата -->
+        <div class="card result-card" id="result-card" style="display: none;">
+            <label class="card-label">Результат</label>
+            <div class="result-content">
+                <div id="result-text" class="result-text"></div>
+                <button 
+                    type="button" 
+                    id="copy-btn" 
+                    class="copy-btn"
+                    aria-label="Копировать результат"
+                >
+                    📋 Копировать
+                </button>
+            </div>
+        </div>
+
+        <!-- Строка состояния -->
+        <div id="status-bar" class="status-bar" style="display: none;">
+            <span id="status-icon" class="status-icon"></span>
+            <span id="status-message" class="status-message"></span>
+        </div>
+    </div>
+
+    <script src="wailsjs/go/main/App.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/status-bar.js"></script>
+    <script src="scripts/calendar.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html>
+

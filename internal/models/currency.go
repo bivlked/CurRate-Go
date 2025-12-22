@@ -63,3 +63,13 @@ func (c Currency) Name() string {
 		return string(c)
 	}
 }
+
+// ParseCurrency парсит строку в Currency и валидирует её
+// Возвращает ошибку, если валюта не поддерживается
+func ParseCurrency(s string) (Currency, error) {
+	currency := Currency(s)
+	if err := currency.Validate(); err != nil {
+		return "", err
+	}
+	return currency, nil
+}
