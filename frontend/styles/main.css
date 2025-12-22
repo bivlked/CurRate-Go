@@ -155,7 +155,7 @@ body {
 
 .date-input {
   flex: 1;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
@@ -196,14 +196,14 @@ body {
 
 /* Live Preview курса */
 .rate-preview {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--primary-light);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .rate-preview-label {
@@ -244,10 +244,10 @@ body {
 /* Поле ввода суммы */
 .amount-input {
   width: 100%;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-family: var(--font-family);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
