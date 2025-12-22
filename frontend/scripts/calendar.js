@@ -65,11 +65,13 @@ function renderCalendar() {
     
     const firstDay = getFirstDayOfMonth(currentDate);
     const lastDay = getLastDayOfMonth(currentDate);
-    const firstDayWeek = firstDay.getDay(); // 0 = воскресенье, 1 = понедельник, ...
+    const firstDayWeekJS = firstDay.getDay(); // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+    // Конвертируем в европейский формат: понедельник = 0, воскресенье = 6
+    const firstDayWeek = firstDayWeekJS === 0 ? 6 : firstDayWeekJS - 1;
     const daysInMonth = lastDay.getDate();
     
-    // Названия дней недели
-    const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    // Названия дней недели (европейский формат: начинается с понедельника)
+    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     
     let html = `
         <div class="calendar-header">
@@ -80,9 +82,9 @@ function renderCalendar() {
         <div class="calendar-weekdays">
     `;
     
-    // Заголовки дней недели
+    // Заголовки дней недели (индексы: 0=Пн, 1=Вт, 2=Ср, 3=Чт, 4=Пт, 5=Сб, 6=Вс)
     weekdays.forEach((day, index) => {
-        const isWeekend = index === 0 || index === 6; // Воскресенье или суббота
+        const isWeekend = index === 5 || index === 6; // Суббота (5) или воскресенье (6)
         html += `<div class="calendar-weekday ${isWeekend ? 'weekend' : ''}">${day}</div>`;
     });
     
