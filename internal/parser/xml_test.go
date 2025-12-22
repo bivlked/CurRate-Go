@@ -1,12 +1,15 @@
 package parser
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
+	"golang.org/x/text/encoding/charmap"
 )
 
 // TestParseXML_Success тестирует успешный парсинг валидного XML
@@ -232,6 +235,114 @@ func TestParseXML_UnsupportedCurrency(t *testing.T) {
 	// Должна быть только 1 валюта (USD)
 	if len(result.Rates) != 1 {
 		t.Errorf("len(result.Rates) = %d, want 1", len(result.Rates))
+	}
+}
+
+// TestParseXML_Windows1251 проверяет обработку XML в кодировке windows-1251
+func TestParseXML_Windows1251(t *testing.T) {
+	xmlData := `<?xml version="1.0" encoding="windows-1251"?>
+<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+    <Valute ID="R01235">
+        <NumCode>840</NumCode>
+        <CharCode>USD</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Доллар США</Name>
+        <Value>80,7220</Value>
+    </Valute>
+</ValCurs>`
+
+	encoder := charmap.Windows1251.NewEncoder()
+	encoded, err := encoder.Bytes([]byte(xmlData))
+	if err != nil {
+		t.Fatalf("Не удалось закодировать XML в windows-1251: %v", err)
+	}
+
+	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	result, err := ParseXML(bytes.NewReader(encoded), date)
+	if err != nil {
+		t.Fatalf("ParseXML() error = %v, want nil", err)
+	}
+
+	if _, ok := result.Rates[models.USD]; !ok {
+		t.Fatal("USD rate not found after windows-1251 decoding")
+	}
+}
+
+// TestParseXML_UsesXMLDate проверяет, что дата берется из XML, если она указана
+func TestParseXML_UsesXMLDate(t *testing.T) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="19.12.2025" name="Foreign Currency Market">
+    <Valute ID="R01235">
+        <NumCode>840</NumCode>
+        <CharCode>USD</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Доллар США</Name>
+        <Value>80,7220</Value>
+    </Valute>
+</ValCurs>`
+
+	reader := strings.NewReader(xmlData)
+	fallbackDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+
+	result, err := ParseXML(reader, fallbackDate)
+	if err != nil {
+		t.Fatalf("ParseXML() error = %v, want nil", err)
+	}
+
+	expectedDate := time.Date(2025, 12, 19, 0, 0, 0, 0, time.UTC)
+	if !result.Date.Equal(expectedDate) {
+		t.Errorf("result.Date = %v, want %v", result.Date, expectedDate)
+	}
+}
+
+// TestParseXML_NoSupportedRates проверяет, что при отсутствии валидных курсов возвращается ошибка
+func TestParseXML_NoSupportedRates(t *testing.T) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+    <Valute ID="R01589">
+        <NumCode>960</NumCode>
+        <CharCode>XDR</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Special Drawing Rights</Name>
+        <Value>12,3456</Value>
+    </Valute>
+    <Valute ID="R01235">
+        <NumCode>840</NumCode>
+        <CharCode>USD</CharCode>
+        <Nominal>0</Nominal>
+        <Name>Доллар США</Name>
+        <Value>80,7220</Value>
+    </Valute>
+    <Valute ID="R01239">
+        <NumCode>978</NumCode>
+        <CharCode>EUR</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Евро</Name>
+        <Value>invalid</Value>
+    </Valute>
+</ValCurs>`
+
+	reader := strings.NewReader(xmlData)
+	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+
+	_, err := ParseXML(reader, date)
+	if err == nil {
+		t.Fatal("Ожидалась ошибка ErrNoXMLRates")
+	}
+
+	if !errors.Is(err, ErrNoXMLRates) {
+		t.Errorf("Ожидалась ошибка ErrNoXMLRates, получена %v", err)
+	}
+}
+
+func TestParseXMLValue_InvalidRate(t *testing.T) {
+	_, err := parseXMLValue("abc")
+	if err == nil {
+		t.Fatal("Ожидалась ошибка для некорректного курса")
+	}
+
+	if !errors.Is(err, ErrInvalidXMLRate) {
+		t.Errorf("Ожидалась ошибка ErrInvalidXMLRate, получена %v", err)
 	}
 }
 
