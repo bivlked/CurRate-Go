@@ -50,7 +50,7 @@ func main() {
 		MaxWidth:  600,
 		MinHeight: 700,
 		MaxHeight: 700,
-		Resizable: false,
+		DisableResize: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
