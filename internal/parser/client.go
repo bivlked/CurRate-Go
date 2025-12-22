@@ -94,7 +94,8 @@ func newHTTPClient() *http.Client {
 			if len(via) >= 10 {
 				return errors.New("too many redirects")
 			}
-			return nil
+			// Останавливаемся на первом редиректе и возвращаем ответ вызывающему коду.
+			return http.ErrUseLastResponse
 		},
 	}
 }
