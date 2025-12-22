@@ -12,6 +12,7 @@
 *.out
 coverage.html
 coverage.txt
+coverage_*
 
 # Dependency directories
 vendor/
@@ -22,6 +23,8 @@ go.work
 # IDE
 .idea/
 .vscode/
+.cursor/
+cursor-memory-bank/
 *.swp
 *.swo
 *~
