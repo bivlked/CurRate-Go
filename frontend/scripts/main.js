@@ -15,9 +15,9 @@ function initApp() {
         if (typeof window.go !== 'undefined' && window.go.app && window.go.app.App) {
             appInstance = window.go.app.App;
             
-            // Инициализация компонентов
-            initCalendar();
-            initDateInput();
+    // Инициализация компонентов
+    initDateInput();
+    initCalendar();
             initCurrencySelection();
             initAmountInput();
             initConvertButton();
@@ -61,7 +61,11 @@ function initDateInput() {
     // Устанавливаем сегодняшнюю дату по умолчанию
     const today = new Date();
     dateInput.value = formatDate(today);
-    selectedDate = today;
+    
+    // Устанавливаем дату в календаре (если он уже инициализирован)
+    if (typeof setCalendarDate === 'function') {
+        setCalendarDate(today);
+    }
     
     // Обработчик ввода даты
     dateInput.addEventListener('input', debounce(() => {
@@ -91,7 +95,10 @@ function initDateInput() {
             return;
         }
         
-        selectedDate = date;
+        // Обновляем календарь (если он инициализирован)
+        if (typeof setCalendarDate === 'function') {
+            setCalendarDate(date);
+        }
         setCalendarDate(date);
         updateRatePreview();
         clearStatus();

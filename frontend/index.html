@@ -28,22 +28,14 @@
                     placeholder="ДД.ММ.ГГГГ"
                     maxlength="10"
                 >
-                <button 
-                    type="button" 
-                    id="calendar-btn" 
-                    class="calendar-btn"
-                    aria-label="Открыть календарь"
-                >
-                    📅
-                </button>
             </div>
             <!-- Live Preview курса -->
             <div id="rate-preview" class="rate-preview" style="display: none;">
                 <span class="rate-preview-label">Курс:</span>
                 <span id="rate-value" class="rate-value"></span>
             </div>
-            <!-- Календарь (скрыт по умолчанию) -->
-            <div id="calendar" class="calendar" style="display: none;"></div>
+            <!-- Календарь (всегда видимый) -->
+            <div id="calendar" class="calendar"></div>
         </div>
 
         <!-- Карточка выбора валюты -->

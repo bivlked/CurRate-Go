@@ -92,15 +92,85 @@ function formatNumber(num, decimals = 2) {
 }
 
 /**
- * Парсит сумму из строки (поддерживает запятую и точку как разделитель)
+ * Парсит сумму из строки (поддерживает различные форматы как в Go версии)
+ * Поддерживает:
+ * - "1000" - целое число
+ * - "1 000" - с пробелами как разделитель тысяч
+ * - "1,000.50" - американский формат (запятая - тысячи, точка - дробная часть)
+ * - "1.000,50" - европейский формат (точка - тысячи, запятая - дробная часть)
+ * - "1000.50" - простой формат с точкой
+ * - "1000,50" - простой формат с запятой
  * @param {string} str - Строка с числом
  * @returns {number|null} Число или null при ошибке
  */
 function parseAmount(str) {
     if (!str || str.trim() === '') return null;
     
-    // Заменяем запятую на точку для парсинга
-    const normalized = str.trim().replace(',', '.');
+    // Убираем пробелы
+    let cleaned = str.trim().replace(/\s/g, '');
+    
+    if (cleaned === '') return null;
+    
+    // Проверяем, есть ли и точка, и запятая
+    const hasDot = cleaned.includes('.');
+    const hasComma = cleaned.includes(',');
+    
+    let normalized;
+    
+    if (hasDot && hasComma) {
+        // Оба разделителя присутствуют - определяем формат
+        const dotPos = cleaned.lastIndexOf('.');
+        const commaPos = cleaned.lastIndexOf(',');
+        
+        if (dotPos > commaPos) {
+            // Американский формат: 1,000.50
+            // Убираем запятые (разделители тысяч), оставляем точку
+            normalized = cleaned.replace(/,/g, '');
+        } else {
+            // Европейский формат: 1.000,50
+            // Убираем точки (разделители тысяч), заменяем запятую на точку
+            normalized = cleaned.replace(/\./g, '').replace(',', '.');
+        }
+    } else if (hasComma) {
+        // Только запятая - может быть европейский формат или дробная часть
+        const commaCount = (cleaned.match(/,/g) || []).length;
+        if (commaCount === 1) {
+            // Одна запятая - проверяем количество цифр после нее
+            const parts = cleaned.split(',');
+            if (parts.length === 2 && parts[1].length === 3) {
+                // Ровно 3 цифры после запятой - это разделитель тысяч
+                normalized = cleaned.replace(/,/g, '');
+            } else {
+                // Иначе это дробная часть
+                normalized = cleaned.replace(',', '.');
+            }
+        } else {
+            // Несколько запятых - это разделители тысяч
+            normalized = cleaned.replace(/,/g, '');
+        }
+    } else if (hasDot) {
+        // Только точка - американский формат или дробная часть
+        const dotCount = (cleaned.match(/\./g) || []).length;
+        if (dotCount === 1) {
+            // Одна точка - проверяем количество цифр после нее
+            const parts = cleaned.split('.');
+            if (parts.length === 2 && parts[1].length === 3) {
+                // Ровно 3 цифры после точки - это разделитель тысяч
+                normalized = cleaned.replace(/\./g, '');
+            } else {
+                // Иначе это дробная часть - оставляем как есть
+                normalized = cleaned;
+            }
+        } else {
+            // Несколько точек - это разделители тысяч
+            normalized = cleaned.replace(/\./g, '');
+        }
+    } else {
+        // Нет разделителей - целое число
+        normalized = cleaned;
+    }
+    
+    // Парсим результат
     const num = parseFloat(normalized);
     
     if (isNaN(num) || num < 0) {

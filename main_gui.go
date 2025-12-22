@@ -43,11 +43,14 @@ func main() {
 
 	// Запускаем Wails приложение
 	err := wails.Run(&options.App{
-		Title:  "[💱] Конвертер валют (c) BiV 2025 г.",
-		Width:  800,
-		Height: 650,
+		Title:  "💱 Конвертер валют (c) BiV 2025 г.",
+		Width:  600,
+		Height: 700,
 		MinWidth:  600,
-		MinHeight: 500,
+		MaxWidth:  600,
+		MinHeight: 700,
+		MaxHeight: 700,
+		Resizable: false,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -61,7 +64,7 @@ func main() {
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
-			DisableWindowIcon:    false,
+			DisableWindowIcon:    true,
 		},
 	})
 

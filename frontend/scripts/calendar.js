@@ -9,29 +9,18 @@ let selectedDate = null;
  * Инициализация календаря
  */
 function initCalendar() {
-    const calendarBtn = document.getElementById('calendar-btn');
     const calendar = document.getElementById('calendar');
     
-    if (!calendarBtn || !calendar) {
-        console.error('Calendar elements not found');
+    if (!calendar) {
+        console.error('Calendar element not found');
         return;
     }
     
-    // Обработчик открытия/закрытия календаря
-    calendarBtn.addEventListener('click', () => {
-        if (calendar.style.display === 'none' || !calendar.style.display) {
-            showCalendar();
-        } else {
-            hideCalendar();
-        }
-    });
-    
-    // Закрытие календаря при клике вне его
-    document.addEventListener('click', (e) => {
-        if (!calendar.contains(e.target) && e.target !== calendarBtn) {
-            hideCalendar();
-        }
-    });
+    // Устанавливаем текущую дату по умолчанию
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    selectedDate = today;
     
     // Инициализация отображения
     renderCalendar();
@@ -169,9 +158,6 @@ function selectDate(element) {
     
     // Обновляем календарь
     renderCalendar();
-    
-    // Скрываем календарь
-    hideCalendar();
     
     // Обновляем live preview
     updateRatePreview();
