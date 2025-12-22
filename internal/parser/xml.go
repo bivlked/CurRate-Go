@@ -109,7 +109,8 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 		}
 
 		// Валидируем номинал
-		if valute.Nominal <= 0 {
+		nominal, err := parseNominal(strconv.Itoa(valute.Nominal))
+		if err != nil {
 			continue
 		}
 
@@ -117,7 +118,7 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 		rates[currency] = models.ExchangeRate{
 			Currency: currency,
 			Rate:     rate,
-			Nominal:  valute.Nominal,
+			Nominal:  nominal,
 			Date:     parsedDate,
 		}
 	}
@@ -135,22 +136,13 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 // parseXMLValue парсит строку значения из XML в формате "80,7220" (с запятой)
 // и возвращает float64
 func parseXMLValue(s string) (float64, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return 0, ErrInvalidXMLRate
+	rate, err := parseRate(s)
+	if err == nil {
+		return rate, nil
+	}
+	if errors.Is(err, ErrInvalidRate) {
+		return 0, fmt.Errorf("%w: %s", ErrInvalidXMLRate, strings.TrimSpace(s))
 	}
 
-	// Заменяем запятую на точку (ЦБ РФ использует запятую как десятичный разделитель)
-	s = strings.ReplaceAll(s, ",", ".")
-
-	rate, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0, fmt.Errorf("%w: %s", ErrInvalidXMLRate, s)
-	}
-
-	if rate <= 0 {
-		return 0, fmt.Errorf("%w: rate must be positive", ErrInvalidXMLRate)
-	}
-
-	return rate, nil
+	return 0, err
 }
