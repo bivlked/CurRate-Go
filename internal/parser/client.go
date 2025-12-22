@@ -33,6 +33,8 @@ var (
 	ErrMaxRetries    = errors.New("max retries exceeded")
 )
 
+var sleepFunc = time.Sleep
+
 // fetchXML выполняет HTTP GET запрос с retry логикой и exponential backoff
 // url - URL для запроса
 // Возвращает io.ReadCloser с XML контентом (caller должен закрыть его)
@@ -52,7 +54,7 @@ func fetchXML(url string) (io.ReadCloser, error) {
 		// Attempt 1: 1s, Attempt 2: 2s, Attempt 3: 4s (как в Python версии)
 		if attempt < MaxRetries {
 			delay := BaseRetryDelay * time.Duration(1<<uint(attempt-1))
-			time.Sleep(delay)
+			sleepFunc(delay)
 		}
 	}
 

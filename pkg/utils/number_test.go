@@ -114,6 +114,18 @@ func TestParseAmount(t *testing.T) {
 			want:    0.0,
 			wantErr: false,
 		},
+		{
+			name:    "Плюс перед числом",
+			input:   "+2500",
+			want:    2500.0,
+			wantErr: false,
+		},
+		{
+			name:    "Лидирующие нули",
+			input:   "000123",
+			want:    123.0,
+			wantErr: false,
+		},
 		// Ошибочные случаи
 		{
 			name:    "Пустая строка",
@@ -142,6 +154,12 @@ func TestParseAmount(t *testing.T) {
 		{
 			name:    "Спецсимволы",
 			input:   "$1000",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "Табуляция в числе",
+			input:   "1\t000",
 			want:    0,
 			wantErr: true,
 		},

@@ -12,11 +12,13 @@ import (
 
 // MockRateProvider - мок для RateProvider
 type MockRateProvider struct {
-	rateData *models.RateData
-	err      error
+	rateData  *models.RateData
+	err       error
+	callCount int
 }
 
 func (m *MockRateProvider) FetchRates(date time.Time) (*models.RateData, error) {
+	m.callCount++
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -594,5 +596,83 @@ func TestConverter_Convert_MultipleConversions(t *testing.T) {
 	}
 	if result3.TargetAmount != 160000.0 {
 		t.Errorf("USD результат: ожидалось 160000, получено %v", result3.TargetAmount)
+	}
+}
+
+func TestConverter_Convert_NormalizesNominalRate(t *testing.T) {
+	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+
+	mockProvider := &MockRateProvider{
+		rateData: &models.RateData{
+			Date: date,
+			Rates: map[models.Currency]models.ExchangeRate{
+				models.USD: {
+					Currency: models.USD,
+					Rate:     100.0,
+					Nominal:  10,
+					Date:     date,
+				},
+			},
+		},
+	}
+
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+
+	result, err := converter.Convert(10, models.USD, date)
+	if err != nil {
+		t.Fatalf("Неожиданная ошибка: %v", err)
+	}
+
+	if result.Rate != 10.0 {
+		t.Errorf("Rate: ожидалось 10.0 (100/10), получено %v", result.Rate)
+	}
+
+	if result.TargetAmount != 100.0 {
+		t.Errorf("TargetAmount: ожидалось 100.0, получено %v", result.TargetAmount)
+	}
+
+	cachedRate, found := cache.Get(models.USD, date)
+	if !found {
+		t.Fatal("Ожидался сохраненный курс в кэше")
+	}
+	if cachedRate != 10.0 {
+		t.Errorf("Cached rate: ожидалось 10.0, получено %v", cachedRate)
+	}
+}
+
+func TestConverter_Convert_NormalizesDateForCache(t *testing.T) {
+	date := time.Date(2025, 12, 20, 15, 30, 0, 0, time.UTC)
+	sameDayLater := time.Date(2025, 12, 20, 22, 45, 0, 0, time.UTC)
+
+	mockProvider := &MockRateProvider{
+		rateData: &models.RateData{
+			Date: date,
+			Rates: map[models.Currency]models.ExchangeRate{
+				models.USD: {
+					Currency: models.USD,
+					Rate:     80.0,
+					Nominal:  1,
+					Date:     date,
+				},
+			},
+		},
+	}
+
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+
+	_, err := converter.Convert(100, models.USD, date)
+	if err != nil {
+		t.Fatalf("Неожиданная ошибка первой конвертации: %v", err)
+	}
+
+	_, err = converter.Convert(200, models.USD, sameDayLater)
+	if err != nil {
+		t.Fatalf("Неожиданная ошибка второй конвертации: %v", err)
+	}
+
+	if mockProvider.callCount != 1 {
+		t.Errorf("Ожидался один вызов провайдера благодаря нормализации даты, получено %d", mockProvider.callCount)
 	}
 }
