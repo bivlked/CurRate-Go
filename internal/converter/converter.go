@@ -88,6 +88,21 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		return nil, err
 	}
 
+	if currency == models.RUB {
+		resultRUB := amount
+		formatted := FormatResult(amount, 1, currency, resultRUB)
+
+		return &models.ConversionResult{
+			SourceCurrency: currency,
+			TargetCurrency: models.RUB,
+			SourceAmount:   amount,
+			TargetAmount:   resultRUB,
+			Rate:           1,
+			Date:           normalizedDate,
+			FormattedStr:   formatted,
+		}, nil
+	}
+
 	// Получение курса (сначала проверяем кэш)
 	rate, found := c.cache.Get(currency, normalizedDate)
 	if !found {
