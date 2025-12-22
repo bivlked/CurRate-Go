@@ -445,6 +445,35 @@ func TestConverter_Convert_CacheHit(t *testing.T) {
 	}
 }
 
+func TestConverter_Convert_RUB(t *testing.T) {
+	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+
+	mockProvider := &MockRateProvider{
+		err: errors.New("provider should not be called"),
+	}
+
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+
+	result, err := converter.Convert(1000, models.RUB, date)
+	if err != nil {
+		t.Fatalf("Неожиданная ошибка: %v", err)
+	}
+
+	if result.Rate != 1 {
+		t.Errorf("Rate: ожидалось 1, получено %v", result.Rate)
+	}
+
+	if result.TargetAmount != 1000 {
+		t.Errorf("TargetAmount: ожидалось 1000, получено %v", result.TargetAmount)
+	}
+
+	expectedFormatted := "1 000,00 руб. (₽1 000,00 по курсу 1,0000)"
+	if result.FormattedStr != expectedFormatted {
+		t.Errorf("FormattedStr: ожидалось %s, получено %s", expectedFormatted, result.FormattedStr)
+	}
+}
+
 func TestConverter_Convert_ValidationErrors(t *testing.T) {
 	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 	futureDate := time.Now().AddDate(0, 0, 1)
