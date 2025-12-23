@@ -182,6 +182,7 @@ body {
   align-items: center;
   gap: var(--spacing-xs);
   min-width: 0; /* Позволяет flex элементу сжиматься */
+  white-space: nowrap; /* Предотвращает перенос текста */
 }
 
 .rate-preview-label {
