@@ -75,7 +75,63 @@ function initDateInput() {
         }
     }, 200);
     
-    // Обработчик ввода даты
+    // Обработчик keydown для валидации ввода
+    dateInput.addEventListener('keydown', (e) => {
+        // Разрешаем специальные клавиши
+        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' || 
+            e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+            e.key === 'Home' || e.key === 'End' || e.ctrlKey || e.metaKey) {
+            return;
+        }
+        
+        // Разрешаем вставку (Ctrl+V, Cmd+V)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+            return;
+        }
+        
+        // Для остальных символов проверяем валидность
+        if (e.key.length === 1) {
+            const cursorPos = dateInput.selectionStart || 0;
+            if (!isValidDateChar(dateInput.value, e.key, cursorPos)) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+    
+    // Обработчик input для автоформатирования
+    dateInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        const cursorPos = e.target.selectionStart || 0;
+        
+        // Если ввод сплошняком (без точек), форматируем автоматически
+        if (!value.includes('.')) {
+            const formatted = autoFormatDate(value);
+            if (formatted !== value) {
+                e.target.value = formatted;
+                // Восстанавливаем позицию курсора
+                const newCursorPos = Math.min(cursorPos + (formatted.length - value.length), formatted.length);
+                setTimeout(() => {
+                    e.target.setSelectionRange(newCursorPos, newCursorPos);
+                }, 0);
+            }
+        } else {
+            // Если есть точки, проверяем формат и исправляем при необходимости
+            const digits = value.replace(/\D/g, '');
+            if (digits.length > 0 && digits.length <= 8) {
+                const formatted = autoFormatDate(digits);
+                if (formatted !== value) {
+                    e.target.value = formatted;
+                    setTimeout(() => {
+                        const newCursorPos = Math.min(cursorPos, formatted.length);
+                        e.target.setSelectionRange(newCursorPos, newCursorPos);
+                    }, 0);
+                }
+            }
+        }
+    });
+    
+    // Обработчик ввода даты (валидация и обновление)
     dateInput.addEventListener('input', debounce(() => {
         const dateStr = dateInput.value.trim();
         

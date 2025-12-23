@@ -200,6 +200,7 @@ body {
 .rate-value {
   color: var(--primary-color);
   font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base); /* Размер как USD/EUR и цифры дат (14px) */
 }
 
 /* Группа выбора валюты */
