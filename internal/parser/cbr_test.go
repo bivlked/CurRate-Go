@@ -269,9 +269,15 @@ func TestFetchLatestRates_UsesCurrentDateAndParsesXMLDate(t *testing.T) {
 		t.Fatal("FetchLatestRates() result is nil")
 	}
 
+	// Проверяем календарную дату (год, месяц, день) независимо от временной зоны
+	// ParseXML использует time.ParseInLocation с локальной зоной, поэтому сравниваем только календарные даты
 	expectedDate := time.Date(2025, 12, 19, 0, 0, 0, 0, time.UTC)
-	if !data.Date.Equal(expectedDate) {
-		t.Errorf("data.Date = %v, want %v", data.Date, expectedDate)
+	if data.Date.Year() != expectedDate.Year() || 
+		data.Date.Month() != expectedDate.Month() || 
+		data.Date.Day() != expectedDate.Day() {
+		t.Errorf("data.Date = %v (календарная дата %d.%d.%d), want календарная дата %d.%d.%d", 
+			data.Date, data.Date.Year(), data.Date.Month(), data.Date.Day(),
+			expectedDate.Year(), expectedDate.Month(), expectedDate.Day())
 	}
 
 	if _, ok := data.Rates[models.EUR]; !ok {

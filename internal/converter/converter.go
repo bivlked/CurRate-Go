@@ -102,6 +102,12 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		return nil, err
 	}
 
+	// Получаем курс через внутренний метод (использует кэш и provider)
+	rate, err := c.getRateInternal(currency, normalizedDate)
+	if err != nil {
+		return nil, err
+	}
+
 	if currency == models.RUB {
 		resultRUB := amount
 		formatted := FormatResult(amount, 1, currency, resultRUB)
@@ -115,30 +121,6 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 			Date:           normalizedDate,
 			FormattedStr:   formatted,
 		}, nil
-	}
-
-	// Получение курса (сначала проверяем кэш)
-	rate, found := c.cache.Get(currency, normalizedDate)
-	if !found {
-		// Курса нет в кэше - получаем через provider
-		rateData, err := c.provider.FetchRates(normalizedDate)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch rates: %w", err)
-		}
-
-		// Извлекаем курс для нужной валюты
-		exchangeRate, exists := rateData.Rates[currency]
-		if !exists {
-			return nil, fmt.Errorf("currency %s not found in rates", currency)
-		}
-
-		rate = exchangeRate.Rate
-		if exchangeRate.Nominal > 1 {
-			rate = rate / float64(exchangeRate.Nominal)
-		}
-
-		// Сохраняем в кэш
-		c.cache.Set(currency, normalizedDate, rate)
 	}
 
 	// Конвертация
@@ -156,6 +138,69 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		Date:           normalizedDate,
 		FormattedStr:   formatted,
 	}, nil
+}
+
+// getRateInternal получает курс валюты на указанную дату без форматирования
+// Это внутренний метод, который используется как в Convert, так и в GetRate
+// для избежания дублирования кода
+func (c *Converter) getRateInternal(currency models.Currency, normalizedDate time.Time) (float64, error) {
+	if c.provider == nil {
+		return 0, ErrNilRateProvider
+	}
+
+	// Для RUB всегда возвращаем 1.0
+	if currency == models.RUB {
+		return 1.0, nil
+	}
+
+	// Получение курса (сначала проверяем кэш)
+	rate, found := c.cache.Get(currency, normalizedDate)
+	if !found {
+		// Курса нет в кэше - получаем через provider
+		rateData, err := c.provider.FetchRates(normalizedDate)
+		if err != nil {
+			return 0, fmt.Errorf("failed to fetch rates: %w", err)
+		}
+
+		// Извлекаем курс для нужной валюты
+		exchangeRate, exists := rateData.Rates[currency]
+		if !exists {
+			return 0, fmt.Errorf("currency %s not found in rates", currency)
+		}
+
+		rate = exchangeRate.Rate
+		if exchangeRate.Nominal > 1 {
+			rate = rate / float64(exchangeRate.Nominal)
+		}
+
+		// Сохраняем в кэш
+		c.cache.Set(currency, normalizedDate, rate)
+	}
+
+	return rate, nil
+}
+
+// GetRate получает курс валюты на указанную дату без форматирования
+// Используется для live preview в GUI, где не нужна полная конвертация
+// Возвращает только числовой курс без создания ConversionResult
+func (c *Converter) GetRate(currency models.Currency, date time.Time) (float64, error) {
+	if c.provider == nil {
+		return 0, ErrNilRateProvider
+	}
+
+	normalizedDate := normalizeDate(date)
+
+	// Валидация входных данных
+	if err := currency.Validate(); err != nil {
+		return 0, err
+	}
+
+	if err := ValidateDate(normalizedDate); err != nil {
+		return 0, err
+	}
+
+	// Используем внутренний метод для получения курса
+	return c.getRateInternal(currency, normalizedDate)
 }
 
 type noopCache struct{}

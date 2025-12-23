@@ -4,6 +4,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Ошибки валидации валют
@@ -65,9 +66,17 @@ func (c Currency) Name() string {
 }
 
 // ParseCurrency парсит строку в Currency и валидирует её
+// Нормализует ввод: убирает пробелы и приводит к верхнему регистру
 // Возвращает ошибку, если валюта не поддерживается
+//
+// Примеры:
+//   - "usd" -> USD
+//   - " eur " -> EUR
+//   - "Usd" -> USD
 func ParseCurrency(s string) (Currency, error) {
-	currency := Currency(s)
+	// Нормализуем ввод: убираем пробелы и приводим к верхнему регистру
+	normalized := strings.ToUpper(strings.TrimSpace(s))
+	currency := Currency(normalized)
 	if err := currency.Validate(); err != nil {
 		return "", err
 	}

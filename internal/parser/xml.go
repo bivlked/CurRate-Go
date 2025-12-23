@@ -60,15 +60,20 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 		return nil, fmt.Errorf("failed to read XML: %w", err)
 	}
 
-	// Если XML содержит декларацию windows-1251, конвертируем в UTF-8
-	if bytes.Contains(xmlData, []byte("windows-1251")) {
+	// Если XML содержит декларацию windows-1251 (case-insensitive), конвертируем в UTF-8
+	// Используем case-insensitive проверку для надежности (Windows-1251, WINDOWS-1251 и т.д.)
+	xmlDataLower := bytes.ToLower(xmlData)
+	if bytes.Contains(xmlDataLower, []byte("windows-1251")) {
 		decoder := charmap.Windows1251.NewDecoder()
 		xmlData, err = decoder.Bytes(xmlData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode windows-1251: %w", err)
 		}
-		// Заменяем декларацию кодировки на UTF-8
-		xmlData = bytes.Replace(xmlData, []byte("windows-1251"), []byte("UTF-8"), 1)
+		// Заменяем декларацию кодировки на UTF-8 (case-insensitive)
+		// Используем bytes.ReplaceAll для всех возможных вариантов регистра
+		xmlData = bytes.ReplaceAll(xmlData, []byte("windows-1251"), []byte("UTF-8"))
+		xmlData = bytes.ReplaceAll(xmlData, []byte("Windows-1251"), []byte("UTF-8"))
+		xmlData = bytes.ReplaceAll(xmlData, []byte("WINDOWS-1251"), []byte("UTF-8"))
 	}
 
 	// Декодируем XML в структуру

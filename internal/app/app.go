@@ -115,18 +115,15 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 		}
 	}
 
-	// Используем конвертер для получения курса (конвертируем 1 единицу валюты)
-	// Это использует кэш и все механизмы конвертера
-	result, err := a.converter.Convert(1.0, currency, date)
+	// Используем оптимизированный метод GetRate для получения курса без форматирования
+	// Это избегает лишних вычислений и аллокаций для live preview
+	rate, err := a.converter.GetRate(currency, date)
 	if err != nil {
 		return RateResponse{
 			Success: false,
 			Error:   translateError(err),
 		}
 	}
-
-	// Извлекаем курс из результата конвертации
-	rate := result.Rate
 
 	return RateResponse{
 		Success: true,
@@ -135,9 +132,12 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 }
 
 // parseDate парсит дату из формата "DD.MM.YYYY"
+// Использует time.ParseInLocation для сохранения локальной календарной даты
+// Это предотвращает сдвиг дня для пользователей в отрицательных временных зонах
 func parseDate(dateStr string) (time.Time, error) {
 	layout := "02.01.2006"
-	date, err := time.Parse(layout, dateStr)
+	// Парсим дату в локальной временной зоне для сохранения календарной даты
+	date, err := time.ParseInLocation(layout, dateStr, time.Local)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("неверный формат даты: %w", err)
 	}

@@ -171,6 +171,24 @@ func TestParseCurrency(t *testing.T) {
 			wantError: false,
 		},
 		{
+			name:      "Валюта в нижнем регистре",
+			input:     "usd",
+			want:      USD,
+			wantError: false,
+		},
+		{
+			name:      "Валюта с пробелами",
+			input:     " eur ",
+			want:      EUR,
+			wantError: false,
+		},
+		{
+			name:      "Валюта смешанного регистра",
+			input:     "Usd",
+			want:      USD,
+			wantError: false,
+		},
+		{
 			name:      "Неподдерживаемая валюта",
 			input:     "GBP",
 			want:      "",
