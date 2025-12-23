@@ -116,7 +116,11 @@ function isValidDateChar(currentValue, newChar, cursorPos) {
     
     // Убираем все нецифровые символы для анализа
     const digits = currentValue.replace(/\D/g, '');
-    const newDigits = digits + newChar;
+    
+    // Если уже 8 цифр, не разрешаем ввод
+    if (digits.length >= 8) {
+        return false;
+    }
     
     // Определяем позицию в формате ДДММГГГГ
     let posInDigits = 0;
