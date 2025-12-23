@@ -20,11 +20,11 @@
                     placeholder="ДД.ММ.ГГГГ"
                     maxlength="10"
                 >
-            </div>
-            <!-- Live Preview курса -->
-            <div id="rate-preview" class="rate-preview" style="display: none;">
-                <span class="rate-preview-label">Курс:</span>
-                <span id="rate-value" class="rate-value"></span>
+                <!-- Live Preview курса (справа от поля ввода) -->
+                <div id="rate-preview" class="rate-preview">
+                    <span class="rate-preview-label">Курс:</span>
+                    <span id="rate-value" class="rate-value">—</span>
+                </div>
             </div>
             <!-- Календарь (всегда видимый) -->
             <div id="calendar" class="calendar"></div>
@@ -48,13 +48,13 @@
         <!-- Карточка ввода суммы -->
         <div class="card">
             <label class="card-label" for="amount-input">Сумма</label>
-            <input 
-                type="text" 
-                id="amount-input" 
-                class="amount-input" 
-                placeholder="Введите сумму"
-                inputmode="decimal"
-            >
+                <input 
+                    type="text" 
+                    id="amount-input" 
+                    class="amount-input" 
+                    placeholder="Введите сумму для конвертации"
+                    inputmode="decimal"
+                >
         </div>
 
         <!-- Кнопка конвертации -->

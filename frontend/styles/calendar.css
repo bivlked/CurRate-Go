@@ -2,14 +2,14 @@
 
 .calendar {
   margin-top: var(--spacing-xs);
-  padding: var(--spacing-xs);
+  padding: 2px; /* Уменьшен padding для компактности */
   background: white;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
   user-select: none;
   width: 100%;
-  max-width: 280px; /* Ограничиваем ширину для квадратных ячеек (7 * 16px * 1.5 + gaps) */
+  max-width: 240px; /* Уменьшена ширина для более квадратного вида */
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
@@ -84,7 +84,7 @@
   font-size: 12px;
   font-weight: var(--font-weight-bold);
   color: var(--text-secondary);
-  padding: 1px;
+  padding: 0;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -124,6 +124,7 @@
   transition: all 0.2s ease;
   background: var(--bg-primary);
   box-sizing: border-box;
+  padding: 0; /* Убран padding для компактности */
 }
 
 .calendar-day:hover:not(.disabled):not(.other-month) {

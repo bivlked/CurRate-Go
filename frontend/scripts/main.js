@@ -67,6 +67,12 @@ function initDateInput() {
         setCalendarDate(today);
     }
     
+    // Показываем курс на сегодня при запуске
+    // Используем setTimeout для гарантии, что appInstance готов
+    setTimeout(() => {
+        updateRatePreview();
+    }, 100);
+    
     // Обработчик ввода даты
     dateInput.addEventListener('input', debounce(() => {
         const dateStr = dateInput.value.trim();

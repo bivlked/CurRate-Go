@@ -131,7 +131,7 @@ body {
 }
 
 .date-input {
-  flex: 1;
+  flex: 0 0 33%; /* Примерно треть ширины */
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -173,7 +173,7 @@ body {
 
 /* Live Preview курса */
 .rate-preview {
-  margin-top: var(--spacing-xs);
+  flex: 1;
   padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--primary-light);
   border-radius: var(--radius-sm);
@@ -181,6 +181,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+  min-width: 0; /* Позволяет flex элементу сжиматься */
 }
 
 .rate-preview-label {
