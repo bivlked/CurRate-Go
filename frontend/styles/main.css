@@ -129,7 +129,7 @@ body {
   gap: var(--spacing-xs); /* Уменьшен gap для компактности */
   align-items: center;
   width: 100%;
-  max-width: 320px; /* Ограничиваем ширину группы */
+  max-width: 340px; /* Ограничиваем ширину группы */
   margin-left: auto;
   margin-right: auto;
 }
@@ -298,30 +298,33 @@ body {
 }
 
 .result-text {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-base); /* Размер как USD/EUR и цифры дат (14px) */
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
-  line-height: var(--line-height-tight);
+  line-height: var(--line-height-normal);
 }
 
 .copy-btn {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm); /* Как у кнопки Конвертировать */
   background: var(--primary-color);
   color: white;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md); /* Как у кнопки Конвертировать */
   font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold); /* Как у кнопки Конвертировать */
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease; /* Как у кнопки Конвертировать */
   align-self: flex-start;
 }
 
 .copy-btn:hover {
   background: var(--primary-hover);
+  transform: translateY(-1px); /* Как у кнопки Конвертировать */
 }
 
 .copy-btn:active {
   background: var(--primary-active);
+  transform: translateY(0); /* Как у кнопки Конвертировать */
 }
 
 /* Строка состояния */
