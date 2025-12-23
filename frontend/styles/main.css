@@ -131,7 +131,7 @@ body {
 }
 
 .date-input {
-  flex: 0 0 33%; /* Примерно треть ширины */
+  flex: 0 0 22%; /* Уменьшена ширина для компактности */
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -175,7 +175,7 @@ body {
 .rate-preview {
   flex: 1;
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--primary-light);
+  background: transparent; /* Убран голубой фон */
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   display: flex;

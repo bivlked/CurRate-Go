@@ -26,7 +26,7 @@
 }
 
 .calendar-month-year {
-  font-size: 12px;
+  font-size: var(--font-size-base); /* 14px - увеличен размер */
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
 }
@@ -81,7 +81,7 @@
 
 .calendar-weekday {
   text-align: center;
-  font-size: 12px;
+  font-size: var(--font-size-base); /* 14px - как USD/EUR */
   font-weight: var(--font-weight-bold);
   color: var(--text-secondary);
   padding: 0;
@@ -89,8 +89,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 16px;
-  max-height: 16px;
+  min-height: 24px; /* Увеличена высота для большего размера */
+  max-height: 24px;
 }
 
 .calendar-weekday.weekend {
@@ -101,7 +101,7 @@
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: minmax(16px, auto);
+  grid-auto-rows: minmax(24px, auto); /* Увеличена высота для большего размера */
   grid-auto-flow: row;
   gap: 0;
   width: 100%;
@@ -111,8 +111,8 @@
 
 .calendar-day {
   min-width: 0;
-  min-height: 16px;
-  max-height: 16px;
+  min-height: 24px; /* Увеличена высота для большего размера */
+  max-height: 24px;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -120,11 +120,11 @@
   border: 1px solid transparent;
   border-radius: 2px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-base); /* 14px - как USD/EUR */
   transition: all 0.2s ease;
   background: var(--bg-primary);
   box-sizing: border-box;
-  padding: 0; /* Убран padding для компактности */
+  padding: 0;
 }
 
 .calendar-day:hover:not(.disabled):not(.other-month) {
