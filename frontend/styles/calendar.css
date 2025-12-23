@@ -73,7 +73,9 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0;
-  margin-bottom: 0;
+  margin-bottom: var(--spacing-xs); /* Добавлен отступ снизу */
+  padding-bottom: var(--spacing-xs); /* Добавлен padding снизу */
+  border-bottom: 1px solid var(--border-color); /* Тонкая черта разделителя */
   width: 100%;
   min-width: 0;
   box-sizing: border-box;

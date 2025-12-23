@@ -131,13 +131,14 @@ body {
 }
 
 .date-input {
-  flex: 0 0 22%; /* Уменьшена ширина для компактности */
-  padding: var(--spacing-sm);
+  flex: 0 0 15%; /* Еще больше уменьшена ширина для компактности */
+  padding: var(--spacing-xs) var(--spacing-sm); /* Уменьшен вертикальный padding */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
   font-family: var(--font-family);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0; /* Позволяет сжиматься */
 }
 
 .date-input:focus {
@@ -174,7 +175,7 @@ body {
 /* Live Preview курса */
 .rate-preview {
   flex: 1;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs);
   background: transparent; /* Убран голубой фон */
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
@@ -183,6 +184,8 @@ body {
   gap: var(--spacing-xs);
   min-width: 0; /* Позволяет flex элементу сжиматься */
   white-space: nowrap; /* Предотвращает перенос текста */
+  overflow: hidden; /* Предотвращает выход за пределы */
+  text-overflow: ellipsis; /* Обрезает текст если не помещается */
 }
 
 .rate-preview-label {
