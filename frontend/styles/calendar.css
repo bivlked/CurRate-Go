@@ -17,11 +17,12 @@
 
 .calendar-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 2px;
   padding-bottom: 2px;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
 }
 
 .calendar-month-year {
@@ -48,6 +49,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+}
+
+.calendar-nav-btn#calendar-prev {
+  left: 0;
+}
+
+.calendar-nav-btn#calendar-next {
+  right: 0;
 }
 
 .calendar-nav-btn:hover {
