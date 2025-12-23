@@ -34,12 +34,13 @@ var (
 )
 
 var sleepFunc = time.Sleep
+var httpClientFactory = newHTTPClient
 
 // fetchXML выполняет HTTP GET запрос с retry логикой и exponential backoff
 // url - URL для запроса
 // Возвращает io.ReadCloser с XML контентом (caller должен закрыть его)
 func fetchXML(url string) (io.ReadCloser, error) {
-	client := newHTTPClient()
+	client := httpClientFactory()
 
 	var lastErr error
 	for attempt := 1; attempt <= MaxRetries; attempt++ {
