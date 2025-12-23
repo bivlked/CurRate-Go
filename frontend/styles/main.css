@@ -131,6 +131,9 @@ body {
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease;
   width: 100%;
+  max-width: 280px; /* Соответствует ширине календаря */
+  margin-left: auto;
+  margin-right: auto;
   box-sizing: border-box;
 }
 
