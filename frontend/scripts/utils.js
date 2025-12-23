@@ -78,6 +78,96 @@ function isValidDateFormat(dateStr) {
 }
 
 /**
+ * Автоматически форматирует ввод даты (23042025 -> 23.04.2025)
+ * @param {string} value - Введенное значение
+ * @returns {string} Отформатированная дата
+ */
+function autoFormatDate(value) {
+    // Убираем все нецифровые символы
+    const digits = value.replace(/\D/g, '');
+    
+    if (digits.length === 0) return '';
+    
+    // Ограничиваем до 8 цифр (ДДММГГГГ)
+    const limited = digits.slice(0, 8);
+    
+    // Форматируем: ДД.ММ.ГГГГ
+    if (limited.length <= 2) {
+        return limited;
+    } else if (limited.length <= 4) {
+        return `${limited.slice(0, 2)}.${limited.slice(2)}`;
+    } else {
+        return `${limited.slice(0, 2)}.${limited.slice(2, 4)}.${limited.slice(4)}`;
+    }
+}
+
+/**
+ * Валидирует ввод цифры на определенной позиции в дате
+ * @param {string} currentValue - Текущее значение поля
+ * @param {string} newChar - Новая вводимая цифра
+ * @param {number} cursorPos - Позиция курсора
+ * @returns {boolean} true если ввод допустим
+ */
+function isValidDateChar(currentValue, newChar, cursorPos) {
+    // Разрешаем только цифры
+    if (!/^\d$/.test(newChar)) {
+        return false;
+    }
+    
+    // Убираем все нецифровые символы для анализа
+    const digits = currentValue.replace(/\D/g, '');
+    const newDigits = digits + newChar;
+    
+    // Определяем позицию в формате ДДММГГГГ
+    let posInDigits = 0;
+    let tempPos = 0;
+    for (let i = 0; i < currentValue.length && tempPos < cursorPos; i++) {
+        if (/\d/.test(currentValue[i])) {
+            posInDigits++;
+        }
+        tempPos++;
+    }
+    
+    // Валидация по позиции
+    if (posInDigits === 0) {
+        // Первая цифра дня: 0-3
+        return newChar >= '0' && newChar <= '3';
+    } else if (posInDigits === 1) {
+        // Вторая цифра дня: зависит от первой
+        const firstDay = digits[0] || '0';
+        if (firstDay === '3') {
+            return newChar >= '0' && newChar <= '1'; // 30-31
+        }
+        return true; // 01-29
+    } else if (posInDigits === 2) {
+        // Первая цифра месяца: 0-1
+        return newChar >= '0' && newChar <= '1';
+    } else if (posInDigits === 3) {
+        // Вторая цифра месяца: зависит от первой
+        const firstMonth = digits[2] || '0';
+        if (firstMonth === '1') {
+            return newChar >= '0' && newChar <= '2'; // 10-12
+        }
+        return true; // 01-09
+    } else if (posInDigits === 4) {
+        // Первая цифра года: 1-2 (для 19xx и 20xx)
+        return newChar >= '1' && newChar <= '2';
+    } else if (posInDigits === 5) {
+        // Вторая цифра года: зависит от первой
+        const firstYear = digits[4] || '1';
+        if (firstYear === '1') {
+            return newChar >= '9' && newChar <= '9'; // 19xx
+        } else if (firstYear === '2') {
+            return newChar >= '0' && newChar <= '0'; // 20xx
+        }
+        return true;
+    }
+    
+    // Остальные цифры года: любые
+    return true;
+}
+
+/**
  * Форматирует число с разделителями тысяч
  * @param {number} num - Число для форматирования
  * @param {number} decimals - Количество знаков после запятой

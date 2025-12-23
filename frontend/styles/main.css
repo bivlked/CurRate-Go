@@ -136,7 +136,7 @@ body {
 
 .date-input {
   flex: 0 0 auto; /* Автоматическая ширина по содержимому */
-  width: 100px; /* Фиксированная ширина для формата ДД.ММ.ГГГГ (10 символов) */
+  width: 85px; /* Уменьшена ширина на 2 символа для формата ДД.ММ.ГГГГ */
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
