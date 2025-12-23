@@ -126,8 +126,12 @@ body {
 /* Группа ввода даты */
 .date-input-group {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs); /* Уменьшен gap для компактности */
   align-items: center;
+  width: 100%;
+  max-width: 320px; /* Ограничиваем ширину группы */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .date-input {
