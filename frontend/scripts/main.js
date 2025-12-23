@@ -141,15 +141,20 @@ function initDateInput() {
         }
         
         if (!isValidDateFormat(dateStr)) {
-            showError('Неверный формат даты. Используйте формат ДД.ММ.ГГГГ');
-            hideRatePreview();
+            // Не показываем ошибку сразу, ждем завершения ввода
+            if (dateStr.length === 10) {
+                showError('Неверный формат даты. Используйте формат ДД.ММ.ГГГГ');
+                hideRatePreview();
+            }
             return;
         }
         
         const date = parseDate(dateStr);
         if (!date) {
-            showError('Неверная дата');
-            hideRatePreview();
+            if (dateStr.length === 10) {
+                showError('Неверная дата');
+                hideRatePreview();
+            }
             return;
         }
         
