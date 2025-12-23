@@ -92,7 +92,7 @@ body {
   max-width: 340px; /* Соответствует ширине окна */
   margin: 0 auto;
   padding: var(--spacing-md);
-  padding-bottom: 32px; /* Место для status bar */
+  padding-bottom: 24px; /* Место для status bar (уменьшено) */
 }
 
 /* Карточки */
@@ -333,15 +333,16 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 32px;
+  height: 24px; /* Уменьшена высота */
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--spacing-sm); /* Уменьшен padding */
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  font-size: var(--font-size-sm);
+  gap: var(--spacing-xs); /* Уменьшен gap */
+  font-size: var(--font-size-xs); /* Уменьшен размер шрифта */
   z-index: 1000;
+  line-height: 1.2; /* Уменьшен line-height для компактности */
 }
 
 .status-icon {
