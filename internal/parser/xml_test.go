@@ -469,17 +469,22 @@ func TestParseXML_InvalidDateInXML(t *testing.T) {
 
 // TestParseXMLValue_NonErrInvalidRateError проверяет обработку ошибки, не являющейся ErrInvalidRate
 func TestParseXMLValue_NonErrInvalidRateError(t *testing.T) {
-	// Этот тест проверяет ветку, когда parseRate возвращает ошибку, не являющуюся ErrInvalidRate
-	// В текущей реализации parseRate всегда возвращает ErrInvalidRate или nil,
-	// но тест нужен для покрытия ветки return 0, err (строка 147)
+	originalParseRate := parseRateFunc
+	t.Cleanup(func() {
+		parseRateFunc = originalParseRate
+	})
 
-	// Используем валидное значение, чтобы проверить успешный путь
-	rate, err := parseXMLValue("80,7220")
-	if err != nil {
-		t.Fatalf("parseXMLValue() error = %v, want nil", err)
+	sentinelErr := errors.New("sentinel parse rate error")
+	parseRateFunc = func(string) (float64, error) {
+		return 0, sentinelErr
 	}
-	if rate != 80.7220 {
-		t.Errorf("parseXMLValue() = %v, want 80.7220", rate)
+
+	_, err := parseXMLValue("80,7220")
+	if err == nil {
+		t.Fatal("parseXMLValue() error = nil, want sentinel error")
+	}
+	if err != sentinelErr {
+		t.Fatalf("parseXMLValue() error = %v, want %v", err, sentinelErr)
 	}
 }
 

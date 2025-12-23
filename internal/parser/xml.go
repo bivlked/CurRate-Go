@@ -135,8 +135,10 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 
 // parseXMLValue парсит строку значения из XML в формате "80,7220" (с запятой)
 // и возвращает float64
+var parseRateFunc = parseRate
+
 func parseXMLValue(s string) (float64, error) {
-	rate, err := parseRate(s)
+	rate, err := parseRateFunc(s)
 	if err == nil {
 		return rate, nil
 	}
