@@ -116,11 +116,6 @@ body {
   font-size: 20px;
 }
 
-.app-copyright {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
 /* Карточки */
 .card {
   background: var(--bg-secondary);
