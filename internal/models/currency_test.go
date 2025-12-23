@@ -150,3 +150,49 @@ func TestCurrencyName(t *testing.T) {
 		})
 	}
 }
+
+func TestParseCurrency(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		want      Currency
+		wantError bool
+	}{
+		{
+			name:      "Поддерживаемая валюта USD",
+			input:     "USD",
+			want:      USD,
+			wantError: false,
+		},
+		{
+			name:      "Поддерживаемая валюта EUR",
+			input:     "EUR",
+			want:      EUR,
+			wantError: false,
+		},
+		{
+			name:      "Неподдерживаемая валюта",
+			input:     "GBP",
+			want:      "",
+			wantError: true,
+		},
+		{
+			name:      "Пустая строка",
+			input:     "",
+			want:      "",
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseCurrency(tt.input)
+			if (err != nil) != tt.wantError {
+				t.Fatalf("ParseCurrency() error = %v, wantError %v", err, tt.wantError)
+			}
+			if !tt.wantError && got != tt.want {
+				t.Errorf("ParseCurrency() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -1,8 +1,10 @@
 package parser
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -168,6 +170,113 @@ func TestFetchLatestRates(t *testing.T) {
 		// Такой тест помечается как интеграционный и запускается отдельно
 		t.Skip("Интеграционный тест, требует доступа к реальному API ЦБ РФ")
 	})
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
+	mockXML := `<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+    <Valute ID="R01235">
+        <NumCode>840</NumCode>
+        <CharCode>USD</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Доллар США</Name>
+        <Value>80,7220</Value>
+    </Valute>
+</ValCurs>`
+
+	oldTransport := http.DefaultTransport
+	t.Cleanup(func() { http.DefaultTransport = oldTransport })
+
+	var capturedQuery url.Values
+	http.DefaultTransport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method != http.MethodGet {
+			t.Fatalf("ожидался GET, получен %s", req.Method)
+		}
+		if req.URL.Host != "www.cbr.ru" {
+			t.Fatalf("ожидался запрос к www.cbr.ru, получен %s", req.URL.Host)
+		}
+		capturedQuery = req.URL.Query()
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader(mockXML)),
+			Header:     make(http.Header),
+		}, nil
+	})
+
+	requestDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	data, err := FetchRates(requestDate)
+	if err != nil {
+		t.Fatalf("FetchRates() error = %v", err)
+	}
+
+	if capturedQuery.Get("date_req") != requestDate.Format("02/01/2006") {
+		t.Fatalf("date_req = %s, want %s", capturedQuery.Get("date_req"), requestDate.Format("02/01/2006"))
+	}
+
+	if data == nil {
+		t.Fatal("FetchRates() result is nil")
+	}
+
+	usd, ok := data.Rates[models.USD]
+	if !ok {
+		t.Fatal("USD курс не найден")
+	}
+	if usd.Rate != 80.7220 {
+		t.Errorf("USD курс = %v, want 80.7220", usd.Rate)
+	}
+}
+
+func TestFetchLatestRates_UsesCurrentDateAndParsesXMLDate(t *testing.T) {
+	mockXML := `<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="19.12.2025" name="Foreign Currency Market">
+    <Valute ID="R01239">
+        <NumCode>978</NumCode>
+        <CharCode>EUR</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Евро</Name>
+        <Value>94,5120</Value>
+    </Valute>
+</ValCurs>`
+
+	oldTransport := http.DefaultTransport
+	t.Cleanup(func() { http.DefaultTransport = oldTransport })
+
+	http.DefaultTransport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Query().Get("date_req") == "" {
+			t.Fatal("date_req не должен быть пустым")
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader(mockXML)),
+			Header:     make(http.Header),
+		}, nil
+	})
+
+	data, err := FetchLatestRates()
+	if err != nil {
+		t.Fatalf("FetchLatestRates() error = %v", err)
+	}
+
+	if data == nil {
+		t.Fatal("FetchLatestRates() result is nil")
+	}
+
+	expectedDate := time.Date(2025, 12, 19, 0, 0, 0, 0, time.UTC)
+	if !data.Date.Equal(expectedDate) {
+		t.Errorf("data.Date = %v, want %v", data.Date, expectedDate)
+	}
+
+	if _, ok := data.Rates[models.EUR]; !ok {
+		t.Fatal("EUR курс не найден")
+	}
 }
 
 // Интеграционные тесты (требуют доступа к реальному сайту ЦБ РФ)
