@@ -8,6 +8,41 @@ import (
 	"github.com/bivlked/currate-go/internal/models"
 )
 
+type fakeClock struct {
+	now time.Time
+}
+
+func newFakeClock(start time.Time) *fakeClock {
+	return &fakeClock{now: start}
+}
+
+func (f *fakeClock) Now() time.Time {
+	return f.now
+}
+
+func (f *fakeClock) Since(t time.Time) time.Duration {
+	return f.now.Sub(t)
+}
+
+func (f *fakeClock) Advance(d time.Duration) {
+	f.now = f.now.Add(d)
+}
+
+func withFakeClock(t *testing.T, start time.Time) *fakeClock {
+	t.Helper()
+
+	clock := newFakeClock(start)
+	originalNow := nowFunc
+	originalSince := sinceFunc
+	nowFunc = clock.Now
+	sinceFunc = clock.Since
+	t.Cleanup(func() {
+		nowFunc = originalNow
+		sinceFunc = originalSince
+	})
+	return clock
+}
+
 // Тесты базовой функциональности
 
 func TestNewLRUCache(t *testing.T) {
@@ -213,8 +248,10 @@ func TestLRUCache_Eviction(t *testing.T) {
 func TestLRUCache_TTL(t *testing.T) {
 	t.Run("Запись с истекшим TTL удаляется", func(t *testing.T) {
 		// Короткий TTL для теста
+		start := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		clock := withFakeClock(t, start)
 		cache := NewLRUCache(100, 100*time.Millisecond)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := start
 
 		cache.Set(models.USD, date, 80.5)
 
@@ -227,8 +264,8 @@ func TestLRUCache_TTL(t *testing.T) {
 			t.Errorf("Курс: ожидалось 80.5, получено %v", rate)
 		}
 
-		// Ждем пока TTL истечет
-		time.Sleep(150 * time.Millisecond)
+		// Двигаем время за пределы TTL
+		clock.Advance(150 * time.Millisecond)
 
 		// Запись должна быть удалена
 		_, found = cache.Get(models.USD, date)
@@ -243,13 +280,15 @@ func TestLRUCache_TTL(t *testing.T) {
 	})
 
 	t.Run("Запись с актуальным TTL остается", func(t *testing.T) {
+		start := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		clock := withFakeClock(t, start)
 		cache := NewLRUCache(100, 1*time.Second)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := start
 
 		cache.Set(models.USD, date, 80.5)
 
-		// Небольшая задержка (меньше TTL)
-		time.Sleep(100 * time.Millisecond)
+		// Небольшой шаг времени (меньше TTL)
+		clock.Advance(100 * time.Millisecond)
 
 		// Запись должна быть доступна
 		rate, found := cache.Get(models.USD, date)
@@ -262,19 +301,21 @@ func TestLRUCache_TTL(t *testing.T) {
 	})
 
 	t.Run("Update обновляет timestamp", func(t *testing.T) {
+		start := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		clock := withFakeClock(t, start)
 		cache := NewLRUCache(100, 200*time.Millisecond)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := start
 
 		cache.Set(models.USD, date, 80.5)
 
-		// Ждем половину TTL
-		time.Sleep(120 * time.Millisecond)
+		// Двигаем время вперед
+		clock.Advance(120 * time.Millisecond)
 
 		// Обновляем запись
 		cache.Set(models.USD, date, 81.0)
 
-		// Ждем еще половину TTL
-		time.Sleep(120 * time.Millisecond)
+		// Двигаем время вперед
+		clock.Advance(120 * time.Millisecond)
 
 		// Запись должна быть доступна (timestamp был обновлен)
 		rate, found := cache.Get(models.USD, date)
