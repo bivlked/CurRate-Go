@@ -217,7 +217,10 @@ body {
 /* Группа выбора валюты */
 .currency-group {
   display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   gap: var(--spacing-lg);
+  width: 100%;
 }
 
 .radio-label {
