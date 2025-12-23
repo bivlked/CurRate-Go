@@ -2,14 +2,14 @@
 
 .calendar {
   margin-top: var(--spacing-xs);
-  padding: 2px; /* Уменьшен padding для компактности */
+  padding: var(--spacing-xs); /* Увеличен padding для большего размера */
   background: white;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
   user-select: none;
   width: 100%;
-  max-width: 240px; /* Уменьшена ширина для более квадратного вида */
+  max-width: 320px; /* Увеличена ширина для большего размера (7 * 24px * 1.5 + padding) */
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
@@ -42,10 +42,10 @@
   border: 1px solid var(--border-color);
   border-radius: 3px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-lg); /* 16px - увеличен размер */
   transition: all 0.2s ease;
-  min-width: 20px;
-  height: 20px;
+  min-width: 24px; /* Увеличен размер кнопок */
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
