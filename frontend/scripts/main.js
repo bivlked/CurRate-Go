@@ -99,6 +99,20 @@ function initDateInput() {
         }
     });
     
+    // Обработчик paste для форматирования вставленного текста
+    dateInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = pastedText.replace(/\D/g, '').slice(0, 8); // Ограничиваем до 8 цифр
+        if (digits.length > 0) {
+            const formatted = autoFormatDate(digits);
+            dateInput.value = formatted;
+            setTimeout(() => {
+                dateInput.setSelectionRange(formatted.length, formatted.length);
+            }, 0);
+        }
+    });
+    
     // Обработчик input для автоформатирования
     dateInput.addEventListener('input', (e) => {
         const value = e.target.value;
