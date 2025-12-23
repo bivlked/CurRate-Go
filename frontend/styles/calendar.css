@@ -9,6 +9,9 @@
   box-shadow: var(--shadow-sm);
   user-select: none;
   width: 100%;
+  max-width: 280px; /* Ограничиваем ширину для квадратных ячеек (7 * 16px * 1.5 + gaps) */
+  margin-left: auto;
+  margin-right: auto;
   box-sizing: border-box;
 }
 
