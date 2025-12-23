@@ -9,6 +9,9 @@ import (
 	"github.com/bivlked/currate-go/internal/models"
 )
 
+var nowFunc = time.Now
+var sinceFunc = time.Since
+
 // LRUCache - потокобезопасный LRU кэш с поддержкой TTL
 // Использует комбинацию map и двусвязного списка для O(1) операций
 type LRUCache struct {
@@ -60,7 +63,7 @@ func (c *LRUCache) Get(currency models.Currency, date time.Time) (float64, bool)
 	entry := elem.Value.(*Entry)
 
 	// Проверка TTL
-	if time.Since(entry.timestamp) > c.ttl {
+	if sinceFunc(entry.timestamp) > c.ttl {
 		// TTL истек - удаляем запись
 		c.lru.Remove(elem)
 		delete(c.cache, key)
@@ -87,7 +90,7 @@ func (c *LRUCache) Set(currency models.Currency, date time.Time, rate float64) {
 	if elem, exists := c.cache[key]; exists {
 		entry := elem.Value.(*Entry)
 		entry.rate = rate
-		entry.timestamp = time.Now()
+		entry.timestamp = nowFunc()
 		c.lru.MoveToBack(elem)
 		return
 	}
@@ -105,7 +108,7 @@ func (c *LRUCache) Set(currency models.Currency, date time.Time, rate float64) {
 	entry := &Entry{
 		key:       key,
 		rate:      rate,
-		timestamp: time.Now(),
+		timestamp: nowFunc(),
 	}
 	elem := c.lru.PushBack(entry)
 	c.cache[key] = elem
