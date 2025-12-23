@@ -89,7 +89,7 @@ body {
 }
 
 .container {
-  max-width: 320px;
+  max-width: 340px; /* Соответствует ширине окна */
   margin: 0 auto;
   padding: var(--spacing-md);
   padding-bottom: 32px; /* Место для status bar */
@@ -251,7 +251,7 @@ body {
 /* Кнопка конвертации */
 .convert-btn {
   width: 100%;
-  max-width: 320px; /* Соответствует ширине календаря и карточек */
+  max-width: 340px; /* Соответствует ширине окна */
   margin-left: auto;
   margin-right: auto;
   padding: var(--spacing-sm);
