@@ -68,14 +68,15 @@
 
 .calendar-weekday {
   text-align: center;
-  font-size: 9px;
-  font-weight: var(--font-weight-medium);
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
   color: var(--text-secondary);
   padding: 1px;
 }
 
 .calendar-weekday.weekend {
   color: var(--weekend-color);
+  background: var(--weekend-bg);
 }
 
 .calendar-days {
@@ -93,6 +94,7 @@
   min-width: 0;
   min-height: 16px;
   max-height: 16px;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
