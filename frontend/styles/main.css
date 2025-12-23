@@ -135,14 +135,14 @@ body {
 }
 
 .date-input {
-  flex: 0 0 15%; /* Еще больше уменьшена ширина для компактности */
-  padding: var(--spacing-xs) var(--spacing-sm); /* Уменьшен вертикальный padding */
+  flex: 0 0 auto; /* Автоматическая ширина по содержимому */
+  width: 100px; /* Фиксированная ширина для формата ДД.ММ.ГГГГ (10 символов) */
+  padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
   font-family: var(--font-family);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-width: 0; /* Позволяет сжиматься */
 }
 
 .date-input:focus {
@@ -250,9 +250,7 @@ body {
 /* Кнопка конвертации */
 .convert-btn {
   width: 100%;
-  max-width: 320px; /* Соответствует ширине календаря */
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 100%; /* Занимает всю ширину родительского контейнера */
   padding: var(--spacing-sm);
   background: var(--primary-color);
   color: white;
@@ -264,6 +262,7 @@ body {
   transition: background-color 0.2s ease, transform 0.1s ease;
   margin-bottom: var(--spacing-sm);
   display: block;
+  box-sizing: border-box; /* Учитывает padding в ширине */
 }
 
 .convert-btn:hover {
