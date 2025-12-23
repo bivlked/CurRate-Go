@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -191,25 +192,26 @@ func TestNewHTTPClient(t *testing.T) {
 }
 
 func TestBuildURL(t *testing.T) {
+	baseDate := testPastDateUTC()
 	tests := []struct {
 		name     string
 		date     time.Time
 		expected string
 	}{
 		{
-			name:     "Дата 20 декабря 2025",
-			date:     time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC),
-			expected: "https://www.cbr.ru/scripts/XML_daily.asp?date_req=20/12/2025",
+			name:     "Базовая дата",
+			date:     baseDate,
+			expected: fmt.Sprintf("https://www.cbr.ru/scripts/XML_daily.asp?date_req=%s", baseDate.Format("02/01/2006")),
 		},
 		{
-			name:     "Дата 1 января 2024",
-			date:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			expected: "https://www.cbr.ru/scripts/XML_daily.asp?date_req=01/01/2024",
+			name:     "Дата на 30 дней ранее",
+			date:     baseDate.AddDate(0, 0, -30),
+			expected: fmt.Sprintf("https://www.cbr.ru/scripts/XML_daily.asp?date_req=%s", baseDate.AddDate(0, 0, -30).Format("02/01/2006")),
 		},
 		{
-			name:     "Дата 15 мая 2023",
-			date:     time.Date(2023, 5, 15, 10, 30, 0, 0, time.UTC),
-			expected: "https://www.cbr.ru/scripts/XML_daily.asp?date_req=15/05/2023",
+			name:     "Дата на 60 дней ранее",
+			date:     baseDate.AddDate(0, 0, -60),
+			expected: fmt.Sprintf("https://www.cbr.ru/scripts/XML_daily.asp?date_req=%s", baseDate.AddDate(0, 0, -60).Format("02/01/2006")),
 		},
 	}
 

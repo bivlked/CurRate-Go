@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 	"golang.org/x/text/encoding/charmap"
@@ -14,8 +13,10 @@ import (
 
 // TestParseXML_Success тестирует успешный парсинг валидного XML
 func TestParseXML_Success(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -30,11 +31,9 @@ func TestParseXML_Success(t *testing.T) {
         <Name>Евро</Name>
         <Value>88,1234</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	reader := strings.NewReader(xmlData)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
-
 	result, err := ParseXML(reader, date)
 	if err != nil {
 		t.Fatalf("ParseXML() error = %v, want nil", err)
@@ -115,8 +114,10 @@ func TestParseXML_DifferentNominals(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			date := testPastDateUTC()
+			dateStr := formatCBRDate(date)
 			xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -124,11 +125,9 @@ func TestParseXML_DifferentNominals(t *testing.T) {
         <Name>Test Currency</Name>
         <Value>%s</Value>
     </Valute>
-</ValCurs>`, tt.nominal, tt.value)
+			</ValCurs>`, dateStr, tt.nominal, tt.value)
 
 			reader := strings.NewReader(xmlData)
-			date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
-
 			result, err := ParseXML(reader, date)
 			if err != nil {
 				t.Fatalf("ParseXML() error = %v, want nil", err)
@@ -170,7 +169,7 @@ func TestParseXML_InvalidXML(t *testing.T) {
 		{
 			name: "No valutes",
 			xmlData: `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+<ValCurs Date="%s" name="Foreign Currency Market">
 </ValCurs>`,
 			wantErr: ErrNoXMLRates,
 		},
@@ -178,8 +177,10 @@ func TestParseXML_InvalidXML(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := strings.NewReader(tt.xmlData)
-			date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+			date := testPastDateUTC()
+			dateStr := formatCBRDate(date)
+			xmlData := fmt.Sprintf(tt.xmlData, dateStr)
+			reader := strings.NewReader(xmlData)
 
 			_, err := ParseXML(reader, date)
 			if err == nil {
@@ -196,8 +197,10 @@ func TestParseXML_InvalidXML(t *testing.T) {
 
 // TestParseXML_UnsupportedCurrency тестирует пропуск неподдерживаемых валют
 func TestParseXML_UnsupportedCurrency(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01589">
         <NumCode>960</NumCode>
         <CharCode>XDR</CharCode>
@@ -212,10 +215,9 @@ func TestParseXML_UnsupportedCurrency(t *testing.T) {
         <Name>Доллар США</Name>
         <Value>80,7220</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	reader := strings.NewReader(xmlData)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 
 	result, err := ParseXML(reader, date)
 	if err != nil {
@@ -240,8 +242,10 @@ func TestParseXML_UnsupportedCurrency(t *testing.T) {
 
 // TestParseXML_Windows1251 проверяет обработку XML в кодировке windows-1251
 func TestParseXML_Windows1251(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="windows-1251"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="windows-1251"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -249,7 +253,7 @@ func TestParseXML_Windows1251(t *testing.T) {
         <Name>Доллар США</Name>
         <Value>80,7220</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	encoder := charmap.Windows1251.NewEncoder()
 	encoded, err := encoder.Bytes([]byte(xmlData))
@@ -257,7 +261,6 @@ func TestParseXML_Windows1251(t *testing.T) {
 		t.Fatalf("Не удалось закодировать XML в windows-1251: %v", err)
 	}
 
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 	result, err := ParseXML(bytes.NewReader(encoded), date)
 	if err != nil {
 		t.Fatalf("ParseXML() error = %v, want nil", err)
@@ -270,8 +273,11 @@ func TestParseXML_Windows1251(t *testing.T) {
 
 // TestParseXML_UsesXMLDate проверяет, что дата берется из XML, если она указана
 func TestParseXML_UsesXMLDate(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="19.12.2025" name="Foreign Currency Market">
+	fallbackDate := testPastDateUTC()
+	xmlDate := fallbackDate.AddDate(0, 0, -1)
+	xmlDateStr := formatCBRDate(xmlDate)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -279,26 +285,26 @@ func TestParseXML_UsesXMLDate(t *testing.T) {
         <Name>Доллар США</Name>
         <Value>80,7220</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, xmlDateStr)
 
 	reader := strings.NewReader(xmlData)
-	fallbackDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 
 	result, err := ParseXML(reader, fallbackDate)
 	if err != nil {
 		t.Fatalf("ParseXML() error = %v, want nil", err)
 	}
 
-	expectedDate := time.Date(2025, 12, 19, 0, 0, 0, 0, time.UTC)
-	if !result.Date.Equal(expectedDate) {
-		t.Errorf("result.Date = %v, want %v", result.Date, expectedDate)
+	if !result.Date.Equal(xmlDate) {
+		t.Errorf("result.Date = %v, want %v", result.Date, xmlDate)
 	}
 }
 
 // TestParseXML_NoSupportedRates проверяет, что при отсутствии валидных курсов возвращается ошибка
 func TestParseXML_NoSupportedRates(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01589">
         <NumCode>960</NumCode>
         <CharCode>XDR</CharCode>
@@ -320,10 +326,9 @@ func TestParseXML_NoSupportedRates(t *testing.T) {
         <Name>Евро</Name>
         <Value>invalid</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	reader := strings.NewReader(xmlData)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 
 	_, err := ParseXML(reader, date)
 	if err == nil {
@@ -414,8 +419,10 @@ func TestParseXMLValue(t *testing.T) {
 
 // TestParseXML_InvalidNominal тестирует обработку некорректного Nominal
 func TestParseXML_InvalidNominal(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -423,10 +430,9 @@ func TestParseXML_InvalidNominal(t *testing.T) {
         <Name>Доллар США</Name>
         <Value>80,7220</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	reader := strings.NewReader(xmlData)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 
 	result, err := ParseXML(reader, date)
 
@@ -454,7 +460,7 @@ func TestParseXML_InvalidDateInXML(t *testing.T) {
 </ValCurs>`
 
 	reader := strings.NewReader(xmlData)
-	fallbackDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	fallbackDate := testPastDateUTC()
 
 	result, err := ParseXML(reader, fallbackDate)
 	if err != nil {
@@ -487,7 +493,7 @@ func TestParseXMLValue_NonErrInvalidRateError(t *testing.T) {
 func TestParseXML_ReadError(t *testing.T) {
 	// Создаем reader, который возвращает ошибку при чтении
 	errorReader := &errorReader{err: fmt.Errorf("read error")}
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	_, err := ParseXML(errorReader, date)
 	if err == nil {
@@ -521,8 +527,10 @@ func TestParseXML_Windows1251DecodeError(t *testing.T) {
 	// Поэтому этот тест может быть пропущен или упрощен
 
 	// Проверяем, что функция обрабатывает windows-1251 корректно (уже покрыто)
-	xmlData := `<?xml version="1.0" encoding="windows-1251"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="windows-1251"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -530,7 +538,7 @@ func TestParseXML_Windows1251DecodeError(t *testing.T) {
         <Name>Доллар США</Name>
         <Value>80,7220</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	encoder := charmap.Windows1251.NewEncoder()
 	encoded, err := encoder.Bytes([]byte(xmlData))
@@ -538,7 +546,6 @@ func TestParseXML_Windows1251DecodeError(t *testing.T) {
 		t.Fatalf("Не удалось закодировать XML в windows-1251: %v", err)
 	}
 
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 	result, err := ParseXML(bytes.NewReader(encoded), date)
 	if err != nil {
 		t.Fatalf("ParseXML() error = %v, want nil", err)

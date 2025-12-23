@@ -1,12 +1,9 @@
 package models
 
-import (
-	"testing"
-	"time"
-)
+import "testing"
 
 func TestNewRateData(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 	rd := NewRateData(date)
 
 	if rd == nil {
@@ -27,7 +24,7 @@ func TestNewRateData(t *testing.T) {
 }
 
 func TestRateDataAddRate(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 	rd := NewRateData(date)
 
 	rate := ExchangeRate{
@@ -54,7 +51,7 @@ func TestRateDataAddRate(t *testing.T) {
 }
 
 func TestRateDataGetRate(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 	rd := NewRateData(date)
 
 	usdRate := ExchangeRate{
@@ -95,7 +92,7 @@ func TestRateDataGetRate(t *testing.T) {
 }
 
 func TestExchangeRateStruct(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	rate := ExchangeRate{
 		Currency: USD,
@@ -122,7 +119,7 @@ func TestExchangeRateStruct(t *testing.T) {
 }
 
 func TestConversionResultStruct(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	result := ConversionResult{
 		SourceCurrency: USD,

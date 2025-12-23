@@ -360,7 +360,7 @@ func TestNewConverter_NilCacheUsesNoop(t *testing.T) {
 	}
 
 	// Проверяем, что noopCache работает корректно
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Get должен возвращать false
 	rate, found := converter.cache.Get(models.USD, date)
@@ -399,7 +399,7 @@ func TestConverter_Convert_NilProvider(t *testing.T) {
 }
 
 func TestConverter_Convert_Success(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Настройка мок provider
 	mockProvider := &MockRateProvider{
@@ -471,7 +471,7 @@ func TestConverter_Convert_Success(t *testing.T) {
 }
 
 func TestConverter_Convert_CacheHit(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Provider который не должен быть вызван
 	mockProvider := &MockRateProvider{
@@ -500,7 +500,7 @@ func TestConverter_Convert_CacheHit(t *testing.T) {
 }
 
 func TestConverter_Convert_RUB(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	mockProvider := &MockRateProvider{
 		err: errors.New("provider should not be called"),
@@ -529,7 +529,7 @@ func TestConverter_Convert_RUB(t *testing.T) {
 }
 
 func TestConverter_Convert_ValidationErrors(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 	futureDate := time.Now().AddDate(0, 0, 1)
 
 	mockProvider := &MockRateProvider{}
@@ -588,7 +588,7 @@ func TestConverter_Convert_ValidationErrors(t *testing.T) {
 }
 
 func TestConverter_Convert_ProviderError(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Provider который возвращает ошибку
 	mockProvider := &MockRateProvider{
@@ -610,7 +610,7 @@ func TestConverter_Convert_ProviderError(t *testing.T) {
 }
 
 func TestConverter_Convert_CurrencyNotFound(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Provider возвращает данные, но без USD
 	mockProvider := &MockRateProvider{
@@ -637,7 +637,7 @@ func TestConverter_Convert_CurrencyNotFound(t *testing.T) {
 }
 
 func TestConverter_Convert_MultipleConversions(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	mockProvider := &MockRateProvider{
 		rateData: &models.RateData{
@@ -681,7 +681,7 @@ func TestConverter_Convert_MultipleConversions(t *testing.T) {
 }
 
 func TestConverter_Convert_NormalizesNominalRate(t *testing.T) {
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	mockProvider := &MockRateProvider{
 		rateData: &models.RateData{
@@ -723,8 +723,9 @@ func TestConverter_Convert_NormalizesNominalRate(t *testing.T) {
 }
 
 func TestConverter_Convert_NormalizesDateForCache(t *testing.T) {
-	date := time.Date(2025, 12, 20, 15, 30, 0, 0, time.UTC)
-	sameDayLater := time.Date(2025, 12, 20, 22, 45, 0, 0, time.UTC)
+	baseDate := testPastDateUTC()
+	date := time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), 15, 30, 0, 0, time.UTC)
+	sameDayLater := time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), 22, 45, 0, 0, time.UTC)
 
 	mockProvider := &MockRateProvider{
 		rateData: &models.RateData{

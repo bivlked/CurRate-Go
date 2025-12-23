@@ -32,9 +32,10 @@ func TestNewLRUCache(t *testing.T) {
 
 func TestLRUCache_SetAndGet(t *testing.T) {
 	cache := NewLRUCache(100, 24*time.Hour)
+	baseDate := testPastDateUTC()
 
 	t.Run("Set и Get одной записи", func(t *testing.T) {
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := baseDate
 		cache.Set(models.USD, date, 80.5)
 
 		rate, found := cache.Get(models.USD, date)
@@ -52,7 +53,7 @@ func TestLRUCache_SetAndGet(t *testing.T) {
 	})
 
 	t.Run("Get несуществующей записи", func(t *testing.T) {
-		date := time.Date(2025, 12, 25, 0, 0, 0, 0, time.UTC)
+		date := baseDate.AddDate(0, 0, 5)
 		rate, found := cache.Get(models.EUR, date)
 
 		if found {
@@ -67,8 +68,8 @@ func TestLRUCache_SetAndGet(t *testing.T) {
 	t.Run("Set нескольких записей", func(t *testing.T) {
 		cache := NewLRUCache(100, 24*time.Hour)
 
-		date1 := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
-		date2 := time.Date(2025, 12, 21, 0, 0, 0, 0, time.UTC)
+		date1 := baseDate
+		date2 := baseDate.AddDate(0, 0, 1)
 
 		cache.Set(models.USD, date1, 80.5)
 		cache.Set(models.EUR, date1, 94.2)
@@ -99,7 +100,7 @@ func TestLRUCache_SetAndGet(t *testing.T) {
 func TestLRUCache_Update(t *testing.T) {
 	cache := NewLRUCache(100, 24*time.Hour)
 
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Первоначальное значение
 	cache.Set(models.USD, date, 80.5)
@@ -127,7 +128,7 @@ func TestLRUCache_Update(t *testing.T) {
 func TestLRUCache_Eviction(t *testing.T) {
 	t.Run("Вытеснение при переполнении", func(t *testing.T) {
 		cache := NewLRUCache(3, 24*time.Hour)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		// Добавляем 3 записи (заполняем кэш)
 		cache.Set(models.USD, date.AddDate(0, 0, 0), 80.0)
@@ -170,7 +171,7 @@ func TestLRUCache_Eviction(t *testing.T) {
 
 	t.Run("LRU порядок обновляется при Get", func(t *testing.T) {
 		cache := NewLRUCache(3, 24*time.Hour)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		// Добавляем 3 записи
 		cache.Set(models.USD, date.AddDate(0, 0, 0), 80.0) // oldest
@@ -214,7 +215,7 @@ func TestLRUCache_TTL(t *testing.T) {
 	t.Run("Запись с истекшим TTL удаляется", func(t *testing.T) {
 		// Короткий TTL для теста
 		cache := NewLRUCache(100, 100*time.Millisecond)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		cache.Set(models.USD, date, 80.5)
 
@@ -244,7 +245,7 @@ func TestLRUCache_TTL(t *testing.T) {
 
 	t.Run("Запись с актуальным TTL остается", func(t *testing.T) {
 		cache := NewLRUCache(100, 1*time.Second)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		cache.Set(models.USD, date, 80.5)
 
@@ -263,7 +264,7 @@ func TestLRUCache_TTL(t *testing.T) {
 
 	t.Run("Update обновляет timestamp", func(t *testing.T) {
 		cache := NewLRUCache(100, 200*time.Millisecond)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		cache.Set(models.USD, date, 80.5)
 
@@ -292,7 +293,7 @@ func TestLRUCache_TTL(t *testing.T) {
 func TestLRUCache_ThreadSafety(t *testing.T) {
 	t.Run("Конкурентный доступ (100 goroutines)", func(t *testing.T) {
 		cache := NewLRUCache(100, 24*time.Hour)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		var wg sync.WaitGroup
 		goroutineCount := 100
@@ -334,7 +335,7 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 
 	t.Run("Конкурентный Set одной записи", func(t *testing.T) {
 		cache := NewLRUCache(100, 24*time.Hour)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		var wg sync.WaitGroup
 		goroutineCount := 50
@@ -369,7 +370,7 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 
 	t.Run("Конкурентный Get и Set", func(t *testing.T) {
 		cache := NewLRUCache(50, 24*time.Hour)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		var wg sync.WaitGroup
 
@@ -405,7 +406,7 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 
 func TestLRUCache_Clear(t *testing.T) {
 	cache := NewLRUCache(100, 24*time.Hour)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Добавляем записи
 	cache.Set(models.USD, date, 80.5)
@@ -445,6 +446,7 @@ func TestLRUCache_Clear(t *testing.T) {
 
 func TestLRUCache_MakeKey(t *testing.T) {
 	cache := NewLRUCache(100, 24*time.Hour)
+	baseDate := testPastDateUTC()
 
 	tests := []struct {
 		name     string
@@ -453,22 +455,22 @@ func TestLRUCache_MakeKey(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "USD 20 декабря 2025",
+			name:     "USD базовая дата",
 			currency: models.USD,
-			date:     time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC),
-			expected: "USD:2025-12-20",
+			date:     baseDate,
+			expected: "USD:" + baseDate.Format("2006-01-02"),
 		},
 		{
-			name:     "EUR 1 января 2024",
+			name:     "EUR базовая дата минус 30 дней",
 			currency: models.EUR,
-			date:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			expected: "EUR:2024-01-01",
+			date:     baseDate.AddDate(0, 0, -30),
+			expected: "EUR:" + baseDate.AddDate(0, 0, -30).Format("2006-01-02"),
 		},
 		{
 			name:     "USD с временем (должно игнорироваться)",
 			currency: models.USD,
-			date:     time.Date(2025, 12, 20, 15, 30, 45, 0, time.UTC),
-			expected: "USD:2025-12-20",
+			date:     time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), 15, 30, 45, 0, time.UTC),
+			expected: "USD:" + baseDate.Format("2006-01-02"),
 		},
 	}
 
@@ -486,7 +488,7 @@ func TestLRUCache_MakeKey(t *testing.T) {
 
 func BenchmarkLRUCache_Set(b *testing.B) {
 	cache := NewLRUCache(1000, 24*time.Hour)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -496,7 +498,7 @@ func BenchmarkLRUCache_Set(b *testing.B) {
 
 func BenchmarkLRUCache_Get(b *testing.B) {
 	cache := NewLRUCache(1000, 24*time.Hour)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	// Предварительно заполняем кэш
 	for i := 0; i < 100; i++ {
@@ -511,7 +513,7 @@ func BenchmarkLRUCache_Get(b *testing.B) {
 
 func BenchmarkLRUCache_Concurrent(b *testing.B) {
 	cache := NewLRUCache(1000, 24*time.Hour)
-	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	date := testPastDateUTC()
 
 	b.RunParallel(func(pb *testing.PB) {
 		i := 0

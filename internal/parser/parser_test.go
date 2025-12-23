@@ -2,9 +2,9 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 )
@@ -257,8 +257,10 @@ func TestParseCurrency(t *testing.T) {
 
 // Бенчмарк для ParseXML
 func BenchmarkParseXML(b *testing.B) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	testDate := testPastDateUTC()
+	dateStr := formatCBRDate(testDate)
+	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -273,9 +275,8 @@ func BenchmarkParseXML(b *testing.B) {
         <Name>Евро</Name>
         <Value>94,5120</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 	reader := strings.NewReader(xmlData)
-	testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
