@@ -15,9 +15,9 @@ function initApp() {
         if (typeof window.go !== 'undefined' && window.go.app && window.go.app.App) {
             appInstance = window.go.app.App;
             
-    // Инициализация компонентов
-    initDateInput();
-    initCalendar();
+            // Инициализация компонентов
+            initCalendar(); // Сначала календарь
+            initDateInput(); // Затем поле даты (вызывает updateRatePreview)
             initCurrencySelection();
             initAmountInput();
             initConvertButton();
@@ -68,10 +68,12 @@ function initDateInput() {
     }
     
     // Показываем курс на сегодня при запуске
-    // Используем setTimeout для гарантии, что appInstance готов
+    // Используем setTimeout для гарантии, что appInstance готов и календарь инициализирован
     setTimeout(() => {
-        updateRatePreview();
-    }, 100);
+        if (appInstance) {
+            updateRatePreview();
+        }
+    }, 200);
     
     // Обработчик ввода даты
     dateInput.addEventListener('input', debounce(() => {
@@ -295,11 +297,11 @@ const updateRatePreview = debounce(async () => {
         
         if (response.success) {
             rateValue.textContent = `${formatNumber(response.rate, 4)} ₽`;
-            ratePreview.style.display = 'flex';
+            // ratePreview всегда видим (display: flex в CSS), не нужно менять display
         } else {
-            hideRatePreview();
+            hideRatePreview(); // Показывает '—' вместо скрытия
             if (response.error) {
-                // Не показываем ошибку в status bar для live preview, только скрываем preview
+                // Не показываем ошибку в status bar для live preview, только показываем прочерк
                 console.warn('Rate preview error:', response.error);
             }
         }
