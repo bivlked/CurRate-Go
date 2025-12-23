@@ -79,7 +79,8 @@ internal/
 │   ├── converter.go    # Главный конвертер
 │   ├── validator.go    # Валидация входных данных
 │   └── formatter.go    # Форматирование результата
-└── pkg/utils/      # Утилиты (парсинг чисел, форматирование)
+pkg/
+└── utils/          # Утилиты (парсинг чисел, форматирование)
 ```
 
 ---
@@ -130,14 +131,16 @@ func main() {
     // Создаем кэш
     cacheStorage := cache.NewLRUCache(100, 24*time.Hour)
 
-    // Создаем конвертер
-    conv := converter.NewConverter(parser.FetchRates, cacheStorage)
+    // Создаем адаптер для parser.FetchRates под интерфейс RateProvider
+    rateProvider := &rateProviderAdapter{}
+
+    // Создаем конвертер (результат всегда в RUB)
+    conv := converter.NewConverter(rateProvider, cacheStorage)
 
     // Конвертируем 1000 USD в RUB на сегодня
     result, err := conv.Convert(
         1000.0,
         models.USD,
-        models.RUB,
         time.Now(),
     )
 
@@ -147,6 +150,15 @@ func main() {
 
     fmt.Println(result.FormattedStr)
     // Вывод: 80 722,00 руб. ($1 000,00 по курсу 80,7220)
+}
+```
+
+```go
+// rateProviderAdapter адаптирует функцию parser.FetchRates к интерфейсу RateProvider
+type rateProviderAdapter struct{}
+
+func (r *rateProviderAdapter) FetchRates(date time.Time) (*models.RateData, error) {
+    return parser.FetchRates(date)
 }
 ```
 
@@ -168,7 +180,7 @@ func main() {
 
 ### Статус разработки
 
-**🚧 В разработке** - документация готова, реализация запланирована
+**✅ Реализовано** - GUI доступен, документация актуализируется по мере развития
 
 ### Доступная документация
 
