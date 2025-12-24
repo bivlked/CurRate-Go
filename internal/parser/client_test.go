@@ -227,23 +227,35 @@ func TestBuildURL(t *testing.T) {
 
 // Тест redirect логики
 func TestHTTPClientRedirects(t *testing.T) {
-	t.Run("Остановка на первом редиректе", func(t *testing.T) {
-		redirectCount := 0
+	t.Run("Автоматическая обработка редиректов", func(t *testing.T) {
+		requestCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			redirectCount++
-			http.Redirect(w, r, "/redirect", http.StatusFound)
+			requestCount++
+			if r.URL.Path == "/" {
+				// Первый запрос - редирект
+				http.Redirect(w, r, "/final", http.StatusFound)
+			} else if r.URL.Path == "/final" {
+				// Финальный запрос после редиректа
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
+			}
 		}))
 		defer server.Close()
 
 		client := newHTTPClient()
 		resp, err := doRequest(client, server.URL)
-		if err == nil {
-			resp.Body.Close()
-			t.Fatal("Ожидалась ошибка для редиректа")
+		if err != nil {
+			t.Fatalf("Не ожидалась ошибка для редиректа: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Ожидался статус 200, получен %d", resp.StatusCode)
 		}
 
-		if redirectCount != 1 {
-			t.Errorf("Ожидался один запрос без следования редиректу, получено %d", redirectCount)
+		// Должно быть 2 запроса: начальный и после редиректа
+		if requestCount != 2 {
+			t.Errorf("Ожидалось 2 запроса (начальный + редирект), получено %d", requestCount)
 		}
 	})
 
@@ -268,7 +280,7 @@ func TestHTTPClientRedirects(t *testing.T) {
 		}
 	})
 
-	t.Run("Less than 10 redirects (returns ErrUseLastResponse)", func(t *testing.T) {
+	t.Run("Less than 10 redirects (разрешает автоматическую обработку)", func(t *testing.T) {
 		client := newHTTPClient()
 
 		// Создаем запрос с менее чем 10 редиректами
@@ -279,8 +291,9 @@ func TestHTTPClientRedirects(t *testing.T) {
 		}
 
 		err := client.CheckRedirect(req, via)
-		if err != http.ErrUseLastResponse {
-			t.Errorf("Ожидалась ошибка http.ErrUseLastResponse для <10 редиректов, получена: %v", err)
+		// Теперь возвращаем nil для автоматической обработки редиректа
+		if err != nil {
+			t.Errorf("Ожидался nil для <10 редиректов (автоматическая обработка), получена ошибка: %v", err)
 		}
 	})
 }

@@ -28,6 +28,14 @@ func TestParseXML_Windows1251CaseInsensitive(t *testing.T) {
 			name:     "WINDOWS-1251 в верхнем регистре",
 			encoding: "WINDOWS-1251",
 		},
+		{
+			name:     "WinDows-1251 смешанный регистр",
+			encoding: "WinDows-1251",
+		},
+		{
+			name:     "WiNdOwS-1251 чередующийся регистр",
+			encoding: "WiNdOwS-1251",
+		},
 	}
 
 	for _, tc := range testCases {

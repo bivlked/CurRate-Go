@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 // App - основной backend для GUI приложения
 // Предоставляет методы для взаимодействия с frontend через Wails bindings
 type App struct {
-	ctx       context.Context
 	converter *converter.Converter
 }
 
@@ -24,8 +24,9 @@ func NewApp(conv *converter.Converter) *App {
 }
 
 // Startup вызывается при запуске приложения
+// ctx не используется, но параметр обязателен для интерфейса Wails
 func (a *App) Startup(ctx context.Context) {
-	a.ctx = ctx
+	_ = ctx // Игнорируем неиспользуемый параметр
 }
 
 // ConvertRequest - запрос на конвертацию из JavaScript
@@ -145,26 +146,26 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 // translateError преобразует ошибку в понятное сообщение на русском языке
+// Использует errors.Is для распознавания базовых ошибок, даже если они обёрнуты
 func translateError(err error) string {
 	if err == nil {
 		return ""
 	}
 
-	errStr := err.Error()
-
-	// Переводим известные ошибки
+	// Проверяем базовые ошибки через errors.Is (работает с обёрнутыми ошибками)
 	switch {
-	case errStr == "источник курсов не задан":
+	case errors.Is(err, converter.ErrNilRateProvider):
 		return "Ошибка конфигурации: источник курсов не настроен"
-	case errStr == "сумма должна быть положительным числом":
+	case errors.Is(err, converter.ErrInvalidAmount):
 		return "Сумма должна быть положительным числом"
-	case errStr == "дата не может быть в будущем":
+	case errors.Is(err, converter.ErrDateInFuture):
 		return "Дата не может быть в будущем"
-	case errStr == "неподдерживаемая валюта":
+	case errors.Is(err, models.ErrUnsupportedCurrency):
 		return "Неподдерживаемая валюта. Поддерживаются только USD, EUR и RUB"
 	default:
 		// Для неизвестных ошибок возвращаем оригинальное сообщение
 		// или общее сообщение, если оно слишком техническое
+		errStr := err.Error()
 		if len(errStr) > 100 {
 			return "Произошла ошибка при выполнении операции. Попробуйте еще раз."
 		}

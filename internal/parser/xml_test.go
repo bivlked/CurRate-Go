@@ -43,9 +43,12 @@ func TestParseXML_Success(t *testing.T) {
 		t.Fatal("ParseXML() returned nil result")
 	}
 
-	// Проверяем дату
-	if !result.Date.Equal(date) {
-		t.Errorf("result.Date = %v, want %v", result.Date, date)
+	// Проверяем дату (сравниваем только календарную дату, игнорируя время)
+	// ParseXML нормализует дату к началу дня, поэтому сравниваем только Year, Month, Day
+	if result.Date.Year() != date.Year() || result.Date.Month() != date.Month() || result.Date.Day() != date.Day() {
+		t.Errorf("result.Date = %v (календарная дата %d.%d.%d), want календарная дата %d.%d.%d",
+			result.Date, result.Date.Year(), result.Date.Month(), result.Date.Day(),
+			date.Year(), date.Month(), date.Day())
 	}
 
 	// Проверяем количество валют
@@ -294,8 +297,12 @@ func TestParseXML_UsesXMLDate(t *testing.T) {
 		t.Fatalf("ParseXML() error = %v, want nil", err)
 	}
 
-	if !result.Date.Equal(xmlDate) {
-		t.Errorf("result.Date = %v, want %v", result.Date, xmlDate)
+	// Проверяем дату (сравниваем только календарную дату, игнорируя время)
+	// ParseXML нормализует дату к началу дня, поэтому сравниваем только Year, Month, Day
+	if result.Date.Year() != xmlDate.Year() || result.Date.Month() != xmlDate.Month() || result.Date.Day() != xmlDate.Day() {
+		t.Errorf("result.Date = %v (календарная дата %d.%d.%d), want календарная дата %d.%d.%d",
+			result.Date, result.Date.Year(), result.Date.Month(), result.Date.Day(),
+			xmlDate.Year(), xmlDate.Month(), xmlDate.Day())
 	}
 }
 

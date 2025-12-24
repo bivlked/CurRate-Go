@@ -65,21 +65,55 @@ func TestNewLRUCache(t *testing.T) {
 	}
 }
 
+func TestNewLRUCache_PanicsOnZeroMaxSize(t *testing.T) {
+	defer func() {
+		recovered := recover()
+		if recovered == nil {
+			t.Fatal("NewLRUCache должна паниковать при maxSize = 0")
+		}
+		expectedMsg := "cache: maxSize must be positive"
+		if recovered != expectedMsg {
+			t.Errorf("Сообщение паники: ожидалось %q, получено %q", expectedMsg, recovered)
+		}
+	}()
+
+	NewLRUCache(0, 24*time.Hour)
+}
+
+func TestNewLRUCache_PanicsOnNegativeMaxSize(t *testing.T) {
+	defer func() {
+		recovered := recover()
+		if recovered == nil {
+			t.Fatal("NewLRUCache должна паниковать при maxSize < 0")
+		}
+		expectedMsg := "cache: maxSize must be positive"
+		if recovered != expectedMsg {
+			t.Errorf("Сообщение паники: ожидалось %q, получено %q", expectedMsg, recovered)
+		}
+	}()
+
+	NewLRUCache(-1, 24*time.Hour)
+}
+
 func TestLRUCache_SetAndGet(t *testing.T) {
 	cache := NewLRUCache(100, 24*time.Hour)
 	baseDate := testPastDateUTC()
 
 	t.Run("Set и Get одной записи", func(t *testing.T) {
 		date := baseDate
-		cache.Set(models.USD, date, 80.5)
+		cache.Set(models.USD, date, 80.5, date) // requestedDate и actualDate одинаковы
 
-		rate, found := cache.Get(models.USD, date)
+		rate, actualDate, found := cache.Get(models.USD, date)
 		if !found {
 			t.Fatal("Запись должна быть найдена")
 		}
 
 		if rate != 80.5 {
 			t.Errorf("Курс: ожидалось 80.5, получено %v", rate)
+		}
+
+		if !actualDate.Equal(date) {
+			t.Errorf("Фактическая дата: ожидалось %v, получено %v", date, actualDate)
 		}
 
 		if cache.Size() != 1 {
@@ -89,7 +123,7 @@ func TestLRUCache_SetAndGet(t *testing.T) {
 
 	t.Run("Get несуществующей записи", func(t *testing.T) {
 		date := baseDate.AddDate(0, 0, 5)
-		rate, found := cache.Get(models.EUR, date)
+		rate, actualDate, found := cache.Get(models.EUR, date)
 
 		if found {
 			t.Error("Запись не должна быть найдена")
@@ -97,6 +131,10 @@ func TestLRUCache_SetAndGet(t *testing.T) {
 
 		if rate != 0 {
 			t.Errorf("Rate должен быть 0, получено %v", rate)
+		}
+
+		if !actualDate.IsZero() {
+			t.Errorf("ActualDate должен быть нулевым, получено %v", actualDate)
 		}
 	})
 
@@ -106,26 +144,26 @@ func TestLRUCache_SetAndGet(t *testing.T) {
 		date1 := baseDate
 		date2 := baseDate.AddDate(0, 0, 1)
 
-		cache.Set(models.USD, date1, 80.5)
-		cache.Set(models.EUR, date1, 94.2)
-		cache.Set(models.USD, date2, 81.0)
+		cache.Set(models.USD, date1, 80.5, date1) // requestedDate и actualDate одинаковы
+		cache.Set(models.EUR, date1, 94.2, date1)
+		cache.Set(models.USD, date2, 81.0, date2)
 
 		if cache.Size() != 3 {
 			t.Errorf("Размер: ожидалось 3, получено %d", cache.Size())
 		}
 
 		// Проверяем все записи
-		rate1, _ := cache.Get(models.USD, date1)
+		rate1, _, _ := cache.Get(models.USD, date1)
 		if rate1 != 80.5 {
 			t.Errorf("USD date1: ожидалось 80.5, получено %v", rate1)
 		}
 
-		rate2, _ := cache.Get(models.EUR, date1)
+		rate2, _, _ := cache.Get(models.EUR, date1)
 		if rate2 != 94.2 {
 			t.Errorf("EUR date1: ожидалось 94.2, получено %v", rate2)
 		}
 
-		rate3, _ := cache.Get(models.USD, date2)
+		rate3, _, _ := cache.Get(models.USD, date2)
 		if rate3 != 81.0 {
 			t.Errorf("USD date2: ожидалось 81.0, получено %v", rate3)
 		}
@@ -138,12 +176,12 @@ func TestLRUCache_Update(t *testing.T) {
 	date := testPastDateUTC()
 
 	// Первоначальное значение
-	cache.Set(models.USD, date, 80.5)
+	cache.Set(models.USD, date, 80.5, date) // requestedDate и actualDate одинаковы
 
 	// Обновление
-	cache.Set(models.USD, date, 85.0)
+	cache.Set(models.USD, date, 85.0, date)
 
-	rate, found := cache.Get(models.USD, date)
+	rate, _, found := cache.Get(models.USD, date)
 	if !found {
 		t.Fatal("Запись должна быть найдена")
 	}
@@ -166,39 +204,43 @@ func TestLRUCache_Eviction(t *testing.T) {
 		date := testPastDateUTC()
 
 		// Добавляем 3 записи (заполняем кэш)
-		cache.Set(models.USD, date.AddDate(0, 0, 0), 80.0)
-		cache.Set(models.USD, date.AddDate(0, 0, 1), 81.0)
-		cache.Set(models.USD, date.AddDate(0, 0, 2), 82.0)
+		date0 := date.AddDate(0, 0, 0)
+		date1 := date.AddDate(0, 0, 1)
+		date2 := date.AddDate(0, 0, 2)
+		date3 := date.AddDate(0, 0, 3)
+		cache.Set(models.USD, date0, 80.0, date0) // requestedDate и actualDate одинаковы
+		cache.Set(models.USD, date1, 81.0, date1)
+		cache.Set(models.USD, date2, 82.0, date2)
 
 		if cache.Size() != 3 {
 			t.Errorf("Размер: ожидалось 3, получено %d", cache.Size())
 		}
 
 		// Добавляем 4-ю запись - должна вытеснить первую
-		cache.Set(models.USD, date.AddDate(0, 0, 3), 83.0)
+		cache.Set(models.USD, date3, 83.0, date3)
 
 		if cache.Size() != 3 {
 			t.Errorf("Размер: ожидалось 3 (после вытеснения), получено %d", cache.Size())
 		}
 
 		// Первая запись должна быть вытеснена
-		_, found := cache.Get(models.USD, date.AddDate(0, 0, 0))
+		_, _, found := cache.Get(models.USD, date0)
 		if found {
 			t.Error("Первая запись должна быть вытеснена")
 		}
 
 		// Остальные записи должны остаться
-		_, found = cache.Get(models.USD, date.AddDate(0, 0, 1))
+		_, _, found = cache.Get(models.USD, date1)
 		if !found {
 			t.Error("Вторая запись должна остаться")
 		}
 
-		_, found = cache.Get(models.USD, date.AddDate(0, 0, 2))
+		_, _, found = cache.Get(models.USD, date.AddDate(0, 0, 2))
 		if !found {
 			t.Error("Третья запись должна остаться")
 		}
 
-		_, found = cache.Get(models.USD, date.AddDate(0, 0, 3))
+		_, _, found = cache.Get(models.USD, date.AddDate(0, 0, 3))
 		if !found {
 			t.Error("Четвертая запись должна быть добавлена")
 		}
@@ -209,35 +251,39 @@ func TestLRUCache_Eviction(t *testing.T) {
 		date := testPastDateUTC()
 
 		// Добавляем 3 записи
-		cache.Set(models.USD, date.AddDate(0, 0, 0), 80.0) // oldest
-		cache.Set(models.USD, date.AddDate(0, 0, 1), 81.0)
-		cache.Set(models.USD, date.AddDate(0, 0, 2), 82.0) // newest
+		date0 := date.AddDate(0, 0, 0)
+		date1 := date.AddDate(0, 0, 1)
+		date2 := date.AddDate(0, 0, 2)
+		date3 := date.AddDate(0, 0, 3)
+		cache.Set(models.USD, date0, 80.0, date0) // oldest, requestedDate и actualDate одинаковы
+		cache.Set(models.USD, date1, 81.0, date1)
+		cache.Set(models.USD, date2, 82.0, date2) // newest
 
 		// Обращаемся к oldest записи - она становится newest
-		cache.Get(models.USD, date.AddDate(0, 0, 0))
+		cache.Get(models.USD, date0)
 
 		// Добавляем новую запись - должна вытеснить вторую (теперь она oldest)
-		cache.Set(models.USD, date.AddDate(0, 0, 3), 83.0)
+		cache.Set(models.USD, date3, 83.0, date3)
 
 		// Первая запись должна остаться (была перемещена в конец)
-		_, found := cache.Get(models.USD, date.AddDate(0, 0, 0))
+		_, _, found := cache.Get(models.USD, date0)
 		if !found {
 			t.Error("Первая запись должна остаться (была обновлена через Get)")
 		}
 
 		// Вторая запись должна быть вытеснена (стала oldest)
-		_, found = cache.Get(models.USD, date.AddDate(0, 0, 1))
+		_, _, found = cache.Get(models.USD, date1)
 		if found {
 			t.Error("Вторая запись должна быть вытеснена")
 		}
 
 		// Третья и четвертая должны остаться
-		_, found = cache.Get(models.USD, date.AddDate(0, 0, 2))
+		_, _, found = cache.Get(models.USD, date2)
 		if !found {
 			t.Error("Третья запись должна остаться")
 		}
 
-		_, found = cache.Get(models.USD, date.AddDate(0, 0, 3))
+		_, _, found = cache.Get(models.USD, date3)
 		if !found {
 			t.Error("Четвертая запись должна быть добавлена")
 		}
@@ -254,10 +300,10 @@ func TestLRUCache_TTL(t *testing.T) {
 		cache := NewLRUCache(100, 100*time.Millisecond)
 		date := testPastDateUTC()
 
-		cache.Set(models.USD, date, 80.5)
+		cache.Set(models.USD, date, 80.5, date) // requestedDate и actualDate одинаковы
 
 		// Проверяем что запись есть
-		rate, found := cache.Get(models.USD, date)
+		rate, _, found := cache.Get(models.USD, date)
 		if !found {
 			t.Fatal("Запись должна быть найдена")
 		}
@@ -269,7 +315,7 @@ func TestLRUCache_TTL(t *testing.T) {
 		clock.Advance(150 * time.Millisecond)
 
 		// Запись должна быть удалена
-		_, found = cache.Get(models.USD, date)
+		_, _, found = cache.Get(models.USD, date)
 		if found {
 			t.Error("Запись с истекшим TTL должна быть удалена")
 		}
@@ -286,13 +332,13 @@ func TestLRUCache_TTL(t *testing.T) {
 		cache := NewLRUCache(100, 1*time.Second)
 		date := testPastDateUTC()
 
-		cache.Set(models.USD, date, 80.5)
+		cache.Set(models.USD, date, 80.5, date) // requestedDate и actualDate одинаковы
 
 		// Небольшой шаг времени (меньше TTL)
 		clock.Advance(100 * time.Millisecond)
 
 		// Запись должна быть доступна
-		rate, found := cache.Get(models.USD, date)
+		rate, _, found := cache.Get(models.USD, date)
 		if !found {
 			t.Error("Запись с актуальным TTL должна быть найдена")
 		}
@@ -307,19 +353,19 @@ func TestLRUCache_TTL(t *testing.T) {
 		cache := NewLRUCache(100, 200*time.Millisecond)
 		date := testPastDateUTC()
 
-		cache.Set(models.USD, date, 80.5)
+		cache.Set(models.USD, date, 80.5, date) // requestedDate и actualDate одинаковы
 
 		// Двигаем время вперед
 		clock.Advance(120 * time.Millisecond)
 
 		// Обновляем запись
-		cache.Set(models.USD, date, 81.0)
+		cache.Set(models.USD, date, 81.0, date)
 
 		// Двигаем время вперед
 		clock.Advance(120 * time.Millisecond)
 
 		// Запись должна быть доступна (timestamp был обновлен)
-		rate, found := cache.Get(models.USD, date)
+		rate, _, found := cache.Get(models.USD, date)
 		if !found {
 			t.Error("Обновленная запись должна быть найдена (timestamp обновлен)")
 		}
@@ -351,10 +397,11 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 				}
 
 				// Set
-				cache.Set(currency, date.AddDate(0, 0, id%10), float64(80+id))
+				reqDate := date.AddDate(0, 0, id%10)
+				cache.Set(currency, reqDate, float64(80+id), reqDate) // requestedDate и actualDate одинаковы
 
 				// Get
-				cache.Get(currency, date.AddDate(0, 0, id%10))
+				cache.Get(currency, date.AddDate(0, 0, id%10)) // Игнорируем возвращаемые значения
 
 				// Size
 				cache.Size()
@@ -370,7 +417,7 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 		}
 
 		// Проверяем что можем получить записи
-		_, found := cache.Get(models.USD, date)
+		_, _, found := cache.Get(models.USD, date)
 		_ = found // Результат не критичен, главное что нет паники
 	})
 
@@ -386,14 +433,14 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
-				cache.Set(models.USD, date, float64(80+id))
+				cache.Set(models.USD, date, float64(80+id), date) // requestedDate и actualDate одинаковы
 			}(i)
 		}
 
 		wg.Wait()
 
 		// Проверяем что запись существует
-		rate, found := cache.Get(models.USD, date)
+		rate, _, found := cache.Get(models.USD, date)
 		if !found {
 			t.Error("Запись должна быть найдена после конкурентных Set")
 		}
@@ -420,7 +467,8 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
-				cache.Set(models.USD, date.AddDate(0, 0, id), float64(80+id))
+				reqDate := date.AddDate(0, 0, id)
+				cache.Set(models.USD, reqDate, float64(80+id), reqDate) // requestedDate и actualDate одинаковы
 			}(i)
 		}
 
@@ -429,7 +477,7 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
-				cache.Get(models.USD, date.AddDate(0, 0, id))
+				cache.Get(models.USD, date.AddDate(0, 0, id)) // Игнорируем возвращаемые значения
 			}(i)
 		}
 
@@ -450,9 +498,9 @@ func TestLRUCache_Clear(t *testing.T) {
 	date := testPastDateUTC()
 
 	// Добавляем записи
-	cache.Set(models.USD, date, 80.5)
-	cache.Set(models.EUR, date, 94.2)
-	cache.Set(models.USD, date.AddDate(0, 0, 1), 81.0)
+	cache.Set(models.USD, date, 80.5, date) // requestedDate и actualDate одинаковы
+	cache.Set(models.EUR, date, 94.2, date)
+	cache.Set(models.USD, date.AddDate(0, 0, 1), 81.0, date.AddDate(0, 0, 1))
 
 	if cache.Size() != 3 {
 		t.Errorf("Размер до Clear: ожидалось 3, получено %d", cache.Size())
@@ -466,18 +514,18 @@ func TestLRUCache_Clear(t *testing.T) {
 	}
 
 	// Проверяем что все записи удалены
-	_, found := cache.Get(models.USD, date)
+	_, _, found := cache.Get(models.USD, date)
 	if found {
 		t.Error("Запись должна быть удалена после Clear")
 	}
 
-	_, found = cache.Get(models.EUR, date)
+	_, _, found = cache.Get(models.EUR, date)
 	if found {
 		t.Error("Запись должна быть удалена после Clear")
 	}
 
 	// Проверяем что можем добавить новые записи
-	cache.Set(models.USD, date, 85.0)
+	cache.Set(models.USD, date, 85.0, date) // requestedDate и actualDate одинаковы
 	if cache.Size() != 1 {
 		t.Errorf("Размер после добавления: ожидалось 1, получено %d", cache.Size())
 	}
@@ -533,7 +581,8 @@ func BenchmarkLRUCache_Set(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cache.Set(models.USD, date.AddDate(0, 0, i%100), float64(80+i))
+		reqDate := date.AddDate(0, 0, i%100)
+		cache.Set(models.USD, reqDate, float64(80+i), reqDate) // requestedDate и actualDate одинаковы
 	}
 }
 
@@ -543,7 +592,8 @@ func BenchmarkLRUCache_Get(b *testing.B) {
 
 	// Предварительно заполняем кэш
 	for i := 0; i < 100; i++ {
-		cache.Set(models.USD, date.AddDate(0, 0, i), float64(80+i))
+		reqDate := date.AddDate(0, 0, i)
+		cache.Set(models.USD, reqDate, float64(80+i), reqDate) // requestedDate и actualDate одинаковы
 	}
 
 	b.ResetTimer()
@@ -560,7 +610,8 @@ func BenchmarkLRUCache_Concurrent(b *testing.B) {
 		i := 0
 		for pb.Next() {
 			if i%2 == 0 {
-				cache.Set(models.USD, date.AddDate(0, 0, i%100), float64(80+i))
+				reqDate := date.AddDate(0, 0, i%100)
+				cache.Set(models.USD, reqDate, float64(80+i), reqDate) // requestedDate и actualDate одинаковы
 			} else {
 				cache.Get(models.USD, date.AddDate(0, 0, i%100))
 			}

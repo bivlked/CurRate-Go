@@ -20,10 +20,13 @@ type RateProvider interface {
 // Позволяет использовать моки для тестирования
 type CacheStorage interface {
 	// Get получает курс из кэша
-	Get(currency models.Currency, date time.Time) (float64, bool)
+	// Возвращает (rate, actualDate, found), где actualDate - фактическая дата курса из XML
+	Get(currency models.Currency, date time.Time) (float64, time.Time, bool)
 
 	// Set сохраняет курс в кэш
-	Set(currency models.Currency, date time.Time, rate float64)
+	// requestedDate - запрошенная дата (используется как ключ кэша)
+	// actualDate - фактическая дата курса из XML (сохраняется в Entry)
+	Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time)
 
 	// Clear очищает весь кэш
 	Clear()
@@ -103,7 +106,7 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 	}
 
 	// Получаем курс через внутренний метод (использует кэш и provider)
-	rate, err := c.getRateInternal(currency, normalizedDate)
+	rate, actualDate, err := c.getRateInternal(currency, normalizedDate)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +121,7 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 			SourceAmount:   amount,
 			TargetAmount:   resultRUB,
 			Rate:           1,
-			Date:           normalizedDate,
+			Date:           normalizedDate, // Для RUB используем запрошенную дату
 			FormattedStr:   formatted,
 		}, nil
 	}
@@ -135,37 +138,42 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 		SourceAmount:   amount,
 		TargetAmount:   resultRUB,
 		Rate:           rate,
-		Date:           normalizedDate,
+		Date:           actualDate, // Используем фактическую дату из XML
 		FormattedStr:   formatted,
 	}, nil
 }
 
 // getRateInternal получает курс валюты на указанную дату без форматирования
+// Возвращает (rate, actualDate, error), где actualDate - фактическая дата из XML
 // Это внутренний метод, который используется как в Convert, так и в GetRate
 // для избежания дублирования кода
-func (c *Converter) getRateInternal(currency models.Currency, normalizedDate time.Time) (float64, error) {
+func (c *Converter) getRateInternal(currency models.Currency, normalizedDate time.Time) (float64, time.Time, error) {
 	if c.provider == nil {
-		return 0, ErrNilRateProvider
+		return 0, time.Time{}, ErrNilRateProvider
 	}
 
 	// Для RUB всегда возвращаем 1.0
 	if currency == models.RUB {
-		return 1.0, nil
+		return 1.0, normalizedDate, nil
 	}
 
-	// Получение курса (сначала проверяем кэш)
-	rate, found := c.cache.Get(currency, normalizedDate)
+	// Получение курса (сначала проверяем кэш по запрошенной дате)
+	// Ключ кэша - запрошенная дата, но в Entry хранится фактическая дата
+	rate, actualDate, found := c.cache.Get(currency, normalizedDate)
 	if !found {
 		// Курса нет в кэше - получаем через provider
 		rateData, err := c.provider.FetchRates(normalizedDate)
 		if err != nil {
-			return 0, fmt.Errorf("failed to fetch rates: %w", err)
+			return 0, time.Time{}, fmt.Errorf("failed to fetch rates: %w", err)
 		}
+
+		// Используем фактическую дату из XML
+		actualDate = normalizeDate(rateData.Date)
 
 		// Извлекаем курс для нужной валюты
 		exchangeRate, exists := rateData.Rates[currency]
 		if !exists {
-			return 0, fmt.Errorf("currency %s not found in rates", currency)
+			return 0, time.Time{}, fmt.Errorf("currency %s not found in rates", currency)
 		}
 
 		rate = exchangeRate.Rate
@@ -173,11 +181,15 @@ func (c *Converter) getRateInternal(currency models.Currency, normalizedDate tim
 			rate = rate / float64(exchangeRate.Nominal)
 		}
 
-		// Сохраняем в кэш
-		c.cache.Set(currency, normalizedDate, rate)
+		// Сохраняем в кэш по запрошенной дате (ключ), но с фактической датой в Entry
+		// Это позволяет найти запись по запрошенной дате, но вернуть фактическую дату
+		c.cache.Set(currency, normalizedDate, rate, actualDate)
+		
+		return rate, actualDate, nil
 	}
-
-	return rate, nil
+	
+	// Курс найден в кэше - возвращаем с фактической датой из кэша
+	return rate, actualDate, nil
 }
 
 // GetRate получает курс валюты на указанную дату без форматирования
@@ -200,15 +212,17 @@ func (c *Converter) GetRate(currency models.Currency, date time.Time) (float64, 
 	}
 
 	// Используем внутренний метод для получения курса
-	return c.getRateInternal(currency, normalizedDate)
+	// Для live preview фактическая дата не нужна, поэтому игнорируем её
+	rate, _, err := c.getRateInternal(currency, normalizedDate)
+	return rate, err
 }
 
 type noopCache struct{}
 
-func (noopCache) Get(currency models.Currency, date time.Time) (float64, bool) {
-	return 0, false
+func (noopCache) Get(currency models.Currency, date time.Time) (float64, time.Time, bool) {
+	return 0, time.Time{}, false
 }
 
-func (noopCache) Set(currency models.Currency, date time.Time, rate float64) {}
+func (noopCache) Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time) {}
 
 func (noopCache) Clear() {}

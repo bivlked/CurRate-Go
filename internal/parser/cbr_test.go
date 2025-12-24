@@ -206,7 +206,7 @@ func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
 	t.Cleanup(func() { http.DefaultTransport = oldTransport })
 
 	var capturedQuery url.Values
-	http.DefaultTransport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+	http.DefaultTransport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		if req.Method != http.MethodGet {
 			t.Fatalf("ожидался GET, получен %s", req.Method)
 		}
@@ -260,7 +260,7 @@ func TestFetchLatestRates_UsesCurrentDateAndParsesXMLDate(t *testing.T) {
 	oldTransport := http.DefaultTransport
 	t.Cleanup(func() { http.DefaultTransport = oldTransport })
 
-	http.DefaultTransport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+	http.DefaultTransport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		if req.URL.Query().Get("date_req") == "" {
 			t.Fatal("date_req не должен быть пустым")
 		}

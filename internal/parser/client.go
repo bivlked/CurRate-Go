@@ -92,13 +92,14 @@ func doRequest(client *http.Client, url string) (*http.Response, error) {
 func newHTTPClient() *http.Client {
 	return &http.Client{
 		Timeout: DefaultTimeout,
-		// Не следуем редиректам автоматически (для безопасности)
+		// Разрешаем автоматические редиректы с лимитом на 10 редиректов
+		// Это защищает от бесконечных циклов, но позволяет обрабатывать нормальные редиректы
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 10 {
 				return errors.New("too many redirects")
 			}
-			// Останавливаемся на первом редиректе и возвращаем ответ вызывающему коду.
-			return http.ErrUseLastResponse
+			// Возвращаем nil для продолжения автоматической обработки редиректа
+			return nil
 		},
 	}
 }

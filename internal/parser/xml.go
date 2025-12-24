@@ -7,13 +7,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 	"golang.org/x/text/encoding/charmap"
 )
+
+// windows1251Regex используется для case-insensitive замены декларации кодировки
+// Компилируется один раз при загрузке пакета для оптимизации производительности
+var windows1251Regex = regexp.MustCompile(`(?i)windows-1251`)
 
 // Ошибки XML парсинга
 var (
@@ -45,7 +49,7 @@ type Valute struct {
 	ID       string `xml:"ID,attr"`
 	NumCode  string `xml:"NumCode"`
 	CharCode string `xml:"CharCode"`
-	Nominal  int    `xml:"Nominal"`
+	Nominal  string `xml:"Nominal"` // Строка для обработки некорректных значений без падения всего парсинга
 	Name     string `xml:"Name"`
 	Value    string `xml:"Value"` // Строка, так как ЦБ использует запятую
 }
@@ -70,10 +74,9 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 			return nil, fmt.Errorf("failed to decode windows-1251: %w", err)
 		}
 		// Заменяем декларацию кодировки на UTF-8 (case-insensitive)
-		// Используем bytes.ReplaceAll для всех возможных вариантов регистра
-		xmlData = bytes.ReplaceAll(xmlData, []byte("windows-1251"), []byte("UTF-8"))
-		xmlData = bytes.ReplaceAll(xmlData, []byte("Windows-1251"), []byte("UTF-8"))
-		xmlData = bytes.ReplaceAll(xmlData, []byte("WINDOWS-1251"), []byte("UTF-8"))
+		// Используем regex для полностью регистронезависимой замены
+		// Это обрабатывает все возможные варианты регистра (windows-1251, Windows-1251, WINDOWS-1251, WinDows-1251 и т.д.)
+		xmlData = windows1251Regex.ReplaceAll(xmlData, []byte("UTF-8"))
 	}
 
 	// Декодируем XML в структуру
@@ -95,8 +98,8 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 		}
 	}
 
-	// Конвертируем в нашу структуру данных
-	rates := make(map[models.Currency]models.ExchangeRate)
+	// Создаём RateData через NewRateData для единообразия
+	rateData := models.NewRateData(parsedDate)
 
 	for _, valute := range valCurs.Valutes {
 		// Парсим код валюты
@@ -113,29 +116,30 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 			continue
 		}
 
-		// Валидируем номинал
-		nominal, err := parseNominal(strconv.Itoa(valute.Nominal))
+		// Парсим номинал с обработкой ошибок
+		// Теперь valute.Nominal - string, что позволяет обработать некорректные значения
+		// без падения всего парсинга XML
+		nominal, err := parseNominal(valute.Nominal)
 		if err != nil {
+			// Пропускаем валюту с некорректным номиналом
 			continue
 		}
 
-		// Сохраняем результат
-		rates[currency] = models.ExchangeRate{
+		// Добавляем курс через AddRate для единообразия
+		exchangeRate := models.ExchangeRate{
 			Currency: currency,
 			Rate:     rate,
 			Nominal:  nominal,
 			Date:     parsedDate,
 		}
+		rateData.AddRate(exchangeRate)
 	}
 
-	if len(rates) == 0 {
+	if len(rateData.Rates) == 0 {
 		return nil, ErrNoXMLRates
 	}
 
-	return &models.RateData{
-		Date:  parsedDate,
-		Rates: rates,
-	}, nil
+	return rateData, nil
 }
 
 // parseXMLValue парсит строку значения из XML в формате "80,7220" (с запятой)

@@ -27,28 +27,46 @@ func (m *MockRateProvider) FetchRates(date time.Time) (*models.RateData, error) 
 
 // MockCacheStorage - мок для CacheStorage
 type MockCacheStorage struct {
-	data map[string]float64
+	data map[string]struct {
+		rate       float64
+		actualDate time.Time
+	}
 }
 
 func NewMockCache() *MockCacheStorage {
 	return &MockCacheStorage{
-		data: make(map[string]float64),
+		data: make(map[string]struct {
+			rate       float64
+			actualDate time.Time
+		}),
 	}
 }
 
-func (m *MockCacheStorage) Get(currency models.Currency, date time.Time) (float64, bool) {
+func (m *MockCacheStorage) Get(currency models.Currency, date time.Time) (float64, time.Time, bool) {
 	key := string(currency) + ":" + date.Format("2006-01-02")
-	rate, exists := m.data[key]
-	return rate, exists
+	entry, exists := m.data[key]
+	if !exists {
+		return 0, time.Time{}, false
+	}
+	return entry.rate, entry.actualDate, true
 }
 
-func (m *MockCacheStorage) Set(currency models.Currency, date time.Time, rate float64) {
-	key := string(currency) + ":" + date.Format("2006-01-02")
-	m.data[key] = rate
+func (m *MockCacheStorage) Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time) {
+	key := string(currency) + ":" + requestedDate.Format("2006-01-02")
+	m.data[key] = struct {
+		rate       float64
+		actualDate time.Time
+	}{
+		rate:       rate,
+		actualDate: actualDate,
+	}
 }
 
 func (m *MockCacheStorage) Clear() {
-	m.data = make(map[string]float64)
+	m.data = make(map[string]struct {
+		rate       float64
+		actualDate time.Time
+	})
 }
 
 // Тесты для validator.go
@@ -363,19 +381,22 @@ func TestNewConverter_NilCacheUsesNoop(t *testing.T) {
 	date := testPastDateUTC()
 
 	// Get должен возвращать false
-	rate, found := converter.cache.Get(models.USD, date)
+	rate, actualDate, found := converter.cache.Get(models.USD, date)
 	if found {
 		t.Error("noopCache.Get() должен возвращать false")
 	}
 	if rate != 0 {
 		t.Errorf("noopCache.Get() должен возвращать rate=0, получено %v", rate)
 	}
+	if !actualDate.IsZero() {
+		t.Errorf("noopCache.Get() должен возвращать нулевую дату, получено %v", actualDate)
+	}
 
 	// Set не должен вызывать ошибок
-	converter.cache.Set(models.USD, date, 80.0)
+	converter.cache.Set(models.USD, date, 80.0, date)
 
 	// После Set Get все равно должен возвращать false (noop cache)
-	rate, found = converter.cache.Get(models.USD, date)
+	rate, actualDate, found = converter.cache.Get(models.USD, date)
 	if found {
 		t.Error("noopCache.Get() после Set должен все равно возвращать false")
 	}
@@ -461,7 +482,7 @@ func TestConverter_Convert_Success(t *testing.T) {
 	}
 
 	// Проверяем что курс сохранен в кэше
-	cachedRate, found := cache.Get(models.USD, date)
+		cachedRate, _, found := cache.Get(models.USD, date)
 	if !found {
 		t.Error("Курс должен быть сохранен в кэше")
 	}
@@ -480,7 +501,7 @@ func TestConverter_Convert_CacheHit(t *testing.T) {
 
 	cache := NewMockCache()
 	// Предварительно заполняем кэш
-	cache.Set(models.USD, date, 85.0)
+		cache.Set(models.USD, date, 85.0, date) // requestedDate и actualDate одинаковы
 
 	converter := NewConverter(mockProvider, cache)
 
@@ -713,7 +734,7 @@ func TestConverter_Convert_NormalizesNominalRate(t *testing.T) {
 		t.Errorf("TargetAmount: ожидалось 100.0, получено %v", result.TargetAmount)
 	}
 
-	cachedRate, found := cache.Get(models.USD, date)
+		cachedRate, _, found := cache.Get(models.USD, date)
 	if !found {
 		t.Fatal("Ожидался сохраненный курс в кэше")
 	}

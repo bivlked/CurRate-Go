@@ -36,8 +36,12 @@ func TestParseXML_Windows1251Encoding(t *testing.T) {
 		t.Fatalf("ParseXML() ошибка: %v", err)
 	}
 
-	if !data.Date.Equal(xmlDate) {
-		t.Fatalf("Дата курсов должна быть взята из XML, получено: %v", data.Date)
+	// Проверяем дату (сравниваем только календарную дату, игнорируя время)
+	// ParseXML нормализует дату к началу дня, поэтому сравниваем только Year, Month, Day
+	if data.Date.Year() != xmlDate.Year() || data.Date.Month() != xmlDate.Month() || data.Date.Day() != xmlDate.Day() {
+		t.Fatalf("Дата курсов должна быть взята из XML, получено: %v (календарная дата %d.%d.%d), ожидалось календарная дата %d.%d.%d",
+			data.Date, data.Date.Year(), data.Date.Month(), data.Date.Day(),
+			xmlDate.Year(), xmlDate.Month(), xmlDate.Day())
 	}
 
 	usdRate, ok := data.Rates[models.USD]
