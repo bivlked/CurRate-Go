@@ -411,7 +411,7 @@ async function handleConvert()
 
 1. Считывает значения из UI (amount, currency, date)
 2. Валидирует сумму
-3. Вызывает `window.go.main.App.Convert()`
+3. Вызывает `window.go.app.App.Convert()`
 4. Показывает результат или ошибку
 
 **Пример вызова:**
