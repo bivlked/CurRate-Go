@@ -269,7 +269,8 @@ function parseAmount(str) {
     // Парсим результат
     const num = parseFloat(normalized);
     
-    if (isNaN(num) || num < 0) {
+    // Отклоняем 0 и отрицательные числа (согласуется с бэкендом: amount > 0)
+    if (isNaN(num) || num <= 0) {
         return null;
     }
     

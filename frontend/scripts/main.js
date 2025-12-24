@@ -182,7 +182,6 @@ function initDateInput() {
         if (typeof setCalendarDate === 'function') {
             setCalendarDate(date);
         }
-        setCalendarDate(date);
         updateRatePreview();
         clearStatus();
     }, 300));
@@ -387,12 +386,16 @@ const updateRatePreview = debounce(async () => {
 }, 300);
 
 /**
- * Скрывает live preview курса
+ * Скрывает live preview курса (показывает прочерк)
  */
 function hideRatePreview() {
     const ratePreview = document.getElementById('rate-preview');
-    if (ratePreview) {
-        ratePreview.style.display = 'none';
+    const rateValue = document.getElementById('rate-value');
+    
+    if (ratePreview && rateValue) {
+        // Не скрываем элемент, показываем прочерк
+        rateValue.textContent = '—';
+        // Элемент остается видимым (display: flex из CSS)
     }
 }
 
