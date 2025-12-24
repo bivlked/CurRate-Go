@@ -4,13 +4,46 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func setTestHTTPClientFactory(t *testing.T, rt http.RoundTripper) {
+	t.Helper()
+	originalFactory := httpClientFactory
+	httpClientFactory = func() *http.Client {
+		return &http.Client{Transport: rt}
+	}
+	t.Cleanup(func() {
+		httpClientFactory = originalFactory
+	})
+}
+
+func newResponse(req *http.Request, statusCode int, body string) *http.Response {
+	statusText := http.StatusText(statusCode)
+	status := fmt.Sprintf("%d %s", statusCode, statusText)
+	if statusText == "" {
+		status = fmt.Sprintf("%d", statusCode)
+	}
+
+	return &http.Response{
+		StatusCode: statusCode,
+		Status:     status,
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
+		Request:    req,
+	}
+}
 
 // Unit тесты с мок-сервером
 func TestFetchRates(t *testing.T) {
@@ -36,15 +69,11 @@ func TestFetchRates(t *testing.T) {
 </ValCurs>`, dateStr)
 
 	t.Run("Успешное получение курсов", func(t *testing.T) {
-		// Создаем мок сервер
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(mockXML))
+		setTestHTTPClientFactory(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return newResponse(req, http.StatusOK, mockXML), nil
 		}))
-		defer server.Close()
 
-		// Используем fetchRatesFromURL с тестовым сервером
-		data, err := fetchRatesFromURL(server.URL, testDate)
+		data, err := fetchRatesFromURL("http://example.test", testDate)
 		if err != nil {
 			t.Fatalf("Ошибка fetchRatesFromURL: %v", err)
 		}
@@ -78,12 +107,11 @@ func TestFetchRates(t *testing.T) {
 	})
 
 	t.Run("Ошибка HTTP 500", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusInternalServerError)
+		setTestHTTPClientFactory(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return newResponse(req, http.StatusInternalServerError, ""), nil
 		}))
-		defer server.Close()
 
-		data, err := fetchRatesFromURL(server.URL, testDate)
+		data, err := fetchRatesFromURL("http://example.test", testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для статуса 500")
 		}
@@ -94,13 +122,11 @@ func TestFetchRates(t *testing.T) {
 	})
 
 	t.Run("Невалидный XML", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<html><body>Not XML response</body></html>"))
+		setTestHTTPClientFactory(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return newResponse(req, http.StatusOK, "<html><body>Not XML response</body></html>"), nil
 		}))
-		defer server.Close()
 
-		data, err := fetchRatesFromURL(server.URL, testDate)
+		data, err := fetchRatesFromURL("http://example.test", testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для невалидного XML")
 		}
@@ -111,16 +137,13 @@ func TestFetchRates(t *testing.T) {
 	})
 
 	t.Run("Ошибка парсинга XML", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			// XML без валют
-			w.Write([]byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+		setTestHTTPClientFactory(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return newResponse(req, http.StatusOK, fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="%s" name="Foreign Currency Market">
-</ValCurs>`, dateStr)))
+</ValCurs>`, dateStr)), nil
 		}))
-		defer server.Close()
 
-		data, err := fetchRatesFromURL(server.URL, testDate)
+		data, err := fetchRatesFromURL("http://example.test", testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для XML без валют")
 		}
@@ -135,16 +158,13 @@ func TestFetchRates(t *testing.T) {
 func TestFetchRates_ParseError(t *testing.T) {
 	testDate := testPastDateUTC()
 	dateStr := formatCBRDate(testDate)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		// XML без валют (вызовет ErrNoXMLRates)
-		w.Write([]byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+	setTestHTTPClientFactory(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return newResponse(req, http.StatusOK, fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="%s" name="Foreign Currency Market">
-</ValCurs>`, dateStr)))
+</ValCurs>`, dateStr)), nil
 	}))
-	defer server.Close()
 
-	data, err := fetchRatesFromURL(server.URL, testDate)
+	data, err := fetchRatesFromURL("http://example.test", testDate)
 	if err == nil {
 		t.Fatal("Ожидалась ошибка для XML без валют")
 	}
@@ -168,12 +188,6 @@ func TestFetchLatestRates(t *testing.T) {
 		// Такой тест помечается как интеграционный и запускается отдельно
 		t.Skip("Интеграционный тест, требует доступа к реальному API ЦБ РФ")
 	})
-}
-
-type roundTripperFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req)
 }
 
 func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
