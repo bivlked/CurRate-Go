@@ -28,6 +28,7 @@
   "garble": false,
   "upx": false,
   "upxflags": "",
+  "ldflags": "-s -w",
   "windows": {
     "icon": "build/windows/icon.ico"
   }
