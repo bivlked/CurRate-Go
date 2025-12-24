@@ -1,8 +1,9 @@
 # ДЕТАЛЬНЫЙ ПЛАН РАЗРАБОТКИ GUI НА WAILS V2
 ## Проект: CurRate Go Rewrite
 
-**Версия:** 1.0
+**Версия:** 1.1
 **Дата:** 22 декабря 2025
+**Обновлено:** 24 декабря 2025
 **Основа:** Wails v2.11.0 + Vanilla JavaScript
 **Автор:** Claude (Anthropic)
 
@@ -31,9 +32,8 @@
 
 ### 1.2. Размеры окна
 
-- **Минимальный размер:** 340x455 (как в Python-версии)
-- **Стартовый размер:** 400x600 (удобнее для календаря)
-- **Изменяемость:** Да (пользователь может расширить)
+- **Размер окна:** 340×700 (фиксированный, не изменяется)
+- **Компактный дизайн:** все элементы помещаются без прокрутки
 
 ---
 
@@ -70,16 +70,14 @@
 ### 2.2. Структура проекта
 
 ```
-CurRate-Go-Rewrite/
+CurRate-Go/
 │
-├── cmd/
-│   └── currate/
-│       └── main.go                  # Точка входа Wails
+├── main_gui.go                      # Точка входа Wails
+├── wails.json                       # Конфигурация Wails
 │
 ├── internal/
 │   ├── app/
-│   │   ├── app.go                   # App struct с методами для frontend
-│   │   └── app_test.go              # Тесты
+│   │   └── app.go                   # App struct с методами для frontend
 │   │
 │   ├── converter/                   # ✅ Уже реализовано (Этап 5)
 │   ├── parser/                      # ✅ Уже реализовано (Этап 3)
@@ -87,17 +85,16 @@ CurRate-Go-Rewrite/
 │   └── models/                      # ✅ Уже реализовано (Этап 2)
 │
 ├── frontend/
-│   ├── src/
-│   │   ├── index.html               # Главная разметка
-│   │   ├── styles/
-│   │   │   ├── main.css             # Основные стили
-│   │   │   └── calendar.css         # Стили календаря
-│   │   ├── scripts/
-│   │   │   ├── main.js              # Главная логика
-│   │   │   ├── calendar.js          # Логика календаря
-│   │   │   └── utils.js             # Вспомогательные функции
-│   │   └── assets/
-│   │       └── icon.png             # Иконка приложения
+│   ├── index.html                   # Главная разметка
+│   ├── styles/
+│   │   ├── main.css                 # Основные стили
+│   │   └── calendar.css              # Стили календаря
+│   ├── scripts/
+│   │   ├── main.js                  # Главная логика
+│   │   ├── calendar.js              # Логика календаря
+│   │   ├── status-bar.js             # Управление строкой состояния
+│   │   └── utils.js                 # Вспомогательные функции
+│   └── wailsjs/                     # Автогенерируемые биндинги
 │   └── dist/                        # Build output (генерируется)
 │
 ├── build/
@@ -702,7 +699,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function init() {
     // Получить сегодняшнюю дату из Go
-    const today = await GetTodayDate();
+    // Установить текущую дату используя JavaScript Date
+    const today = new Date();
+    const todayDate = formatDate(today);
     document.getElementById('dateInput').value = today;
 
     // Инициализация календаря
@@ -930,12 +929,12 @@ export function formatAmount(amount) {
 ### Этап 6.2: Создание базовой структуры
 - [ ] Создать `cmd/currate/main.go`
 - [ ] Создать `internal/app/app.go`
-- [ ] Создать `frontend/src/index.html`
+- [x] Создать `frontend/index.html` ✅
 - [ ] Создать `wails.json` конфигурацию
 
 ### Этап 6.3: Реализация календаря
-- [ ] Создать `frontend/src/scripts/calendar.js`
-- [ ] Создать `frontend/src/styles/calendar.css`
+- [x] Создать `frontend/scripts/calendar.js` ✅
+- [x] Создать `frontend/styles/calendar.css` ✅
 - [ ] Реализовать логику выделения выходных
 - [ ] Добавить навигацию по месяцам
 - [ ] Тестирование календаря
