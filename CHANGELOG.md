@@ -8,6 +8,35 @@
 
 ## [Unreleased]
 
+### Добавлено (Added)
+- **[2025-12-24] Phase 4.7: Комплексная переработка документации**
+  - Обновлены все основные документы проекта для соответствия текущей реализации
+  - Исправлены устаревшие упоминания технологий, путей и методов API
+
+### Изменено (Changed)
+- **[2025-12-24] Обновление документации проекта**
+  - `README.md` - обновлена версия Go (1.21+ → 1.25.5), структура проекта, бейджи
+  - `docs/02-ТЕХНОЛОГИЧЕСКИЙ-СТЕК.md` - исправлены пути frontend, удалены устаревшие зависимости
+  - `docs/03-АРХИТЕКТУРНЫЙ-ДИЗАЙН.md` - обновлена структура проекта
+  - `docs/04-ПЛАН-РАЗРАБОТКИ.md` - обновлен технологический стек
+  - `docs/08-WAILS-GUI-ПЛАН.md` - исправлена структура проекта, удалены несуществующие методы
+  - `docs/09-WAILS-GUI-РУКОВОДСТВО-ПОЛЬЗОВАТЕЛЯ.md` - уточнено описание кэширования
+  - `docs/10-WAILS-GUI-РУКОВОДСТВО-РАЗРАБОТЧИКА.md` - исправлены API методы, версия Go, пути
+  - `docs/11-WAILS-GUI-API-ДОКУМЕНТАЦИЯ.md` - исправлены API методы (window.go.app.App), структура ConvertResponse
+  - `docs/12-WAILS-GUI-АРХИТЕКТУРА.md` - исправлены API методы, размер окна (340×700)
+
+### Исправлено (Fixed)
+- **[2025-12-24] Исправления в документации**
+  - Исправлены все упоминания `window.go.main.App` → `window.go.app.App`
+  - Удалены упоминания несуществующих методов: `GetTodayDate`, `GetExchangeRate`
+  - Добавлено описание метода `GetRate` для live preview курса
+  - Исправлена структура `ConvertResponse` (удалены поля `RubAmount` и `Rate`)
+  - Исправлены пути: `frontend/src/` → `frontend/scripts/`, `frontend/styles/`
+  - Исправлена структура проекта: `cmd/currate/` → `main_gui.go`
+  - Обновлена версия Go: 1.21+ → 1.25.5
+  - Исправлен размер окна: 800×650 → 340×700
+  - Уточнено описание офлайн-режима (кэш работает только в пределах сессии)
+
 ---
 
 ## [v0.6.0] - 2025-12-22 - Документация Desktop GUI
@@ -33,8 +62,8 @@
     - Best Practices и Troubleshooting
     - CI/CD с GitHub Actions
   - `docs/11-WAILS-GUI-API-ДОКУМЕНТАЦИЯ.md` - справочник API
-    - Детальное описание Go Backend API (App.Convert, App.GetTodayDate)
-    - Описание JavaScript Frontend API (main.js, calendar.js, utils.js)
+    - Детальное описание Go Backend API (App.Convert, App.GetRate)
+    - Описание JavaScript Frontend API (main.js, calendar.js, status-bar.js, utils.js)
     - Модели данных (ConvertRequest, ConvertResponse)
     - Обработка ошибок с примерами
     - Примеры интеграции
@@ -220,7 +249,7 @@
     - `internal/parser/client_test.go` - новые URLs для XML API
   - Зависимости:
     - Добавлено: `golang.org/x/text/encoding/charmap` v0.32.0 (для windows-1251)
-    - Deprecated: `github.com/PuerkitoBio/goquery` (оставлено для обратной совместимости)
+    - Удалено: `github.com/PuerkitoBio/goquery` (заменено на стандартную библиотеку encoding/xml)
   - Производительность:
     - ~5-10 мс вместо ~50-100 мс (улучшение в 10 раз)
     - Использование стандартной библиотеки encoding/xml
@@ -234,8 +263,8 @@
   - `github.com/andybalholm/cascadia`: v1.3.1 → **v1.3.3** (косвенная зависимость от goquery)
   - `golang.org/x/net`: v0.7.0 → **v0.47.0** (косвенная зависимость от goquery)
   - `golang.org/x/sys`: v0.5.0 → **v0.39.0** (косвенная зависимость)
-  - `github.com/lxn/walk`: v0.0.0-20210112085537-c389da54e794 (без изменений, последняя стабильная)
-  - `github.com/atotto/clipboard`: v0.1.4 (без изменений, актуальная версия)
+  - `github.com/lxn/walk`: удалена (заменена на Wails v2 для GUI)
+  - `github.com/atotto/clipboard`: удалена (используется navigator.clipboard в frontend)
 - Обновлена документация:
   - `docs/02-ТЕХНОЛОГИЧЕСКИЙ-СТЕК.md` - версия 1.1
   - `SUMMARY.md` - обновлены версии зависимостей
@@ -259,10 +288,11 @@
   - `.golangci.yml`
   - `LICENSE` (MIT)
   - `go.mod`
-- Папки для модулей:
-  - `cmd/currate/` - точка входа
-  - `internal/` - внутренние пакеты
-  - `pkg/` - публичные пакеты
+- Структура проекта:
+  - `main_gui.go` - точка входа для GUI приложения
+  - `internal/` - внутренние пакеты (app, converter, parser, cache, models)
+  - `pkg/` - публичные пакеты (utils)
+  - `frontend/` - frontend для GUI (HTML/CSS/JS)
 
 ---
 
