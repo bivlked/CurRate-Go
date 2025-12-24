@@ -21,7 +21,7 @@ func TestFetchRatesIntegration(t *testing.T) {
 
 	t.Run("Реальный запрос к XML API ЦБ РФ", func(t *testing.T) {
 		// Используем недавнюю дату (не сегодняшнюю, так как данные могут обновляться)
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 		data, err := FetchRates(date)
 
 		if err != nil {
@@ -83,7 +83,7 @@ func TestFetchRatesIntegration(t *testing.T) {
 
 	t.Run("Запрос с устаревшей датой", func(t *testing.T) {
 		// Проверяем, что API работает и с более старыми датами
-		date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC().AddDate(0, 0, -90)
 		data, err := FetchRates(date)
 
 		if err != nil {
@@ -148,7 +148,7 @@ func TestXMLAPIResponseFormat(t *testing.T) {
 	}
 
 	t.Run("Проверка формата XML ответа", func(t *testing.T) {
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+		date := testPastDateUTC()
 
 		// Строим URL и выполняем запрос вручную, чтобы проверить формат
 		url := buildURL(date)

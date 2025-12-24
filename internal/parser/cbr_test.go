@@ -1,22 +1,24 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 )
 
 // Unit тесты с мок-сервером
 func TestFetchRates(t *testing.T) {
+	testDate := testPastDateUTC()
+	dateStr := formatCBRDate(testDate)
 	// Мок XML с реального API ЦБ РФ (упрощенная версия)
-	mockXML := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
+	mockXML := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -31,7 +33,7 @@ func TestFetchRates(t *testing.T) {
         <Name>Евро</Name>
         <Value>94,5120</Value>
     </Valute>
-</ValCurs>`
+</ValCurs>`, dateStr)
 
 	t.Run("Успешное получение курсов", func(t *testing.T) {
 		// Создаем мок сервер
@@ -40,8 +42,6 @@ func TestFetchRates(t *testing.T) {
 			w.Write([]byte(mockXML))
 		}))
 		defer server.Close()
-
-		testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 
 		// Используем fetchRatesFromURL с тестовым сервером
 		data, err := fetchRatesFromURL(server.URL, testDate)
@@ -83,7 +83,6 @@ func TestFetchRates(t *testing.T) {
 		}))
 		defer server.Close()
 
-		testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 		data, err := fetchRatesFromURL(server.URL, testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для статуса 500")
@@ -101,7 +100,6 @@ func TestFetchRates(t *testing.T) {
 		}))
 		defer server.Close()
 
-		testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 		data, err := fetchRatesFromURL(server.URL, testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для невалидного XML")
@@ -116,13 +114,12 @@ func TestFetchRates(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			// XML без валют
-			w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
-</ValCurs>`))
+			w.Write([]byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
+</ValCurs>`, dateStr)))
 		}))
 		defer server.Close()
 
-		testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 		data, err := fetchRatesFromURL(server.URL, testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для XML без валют")
@@ -136,16 +133,17 @@ func TestFetchRates(t *testing.T) {
 
 // TestFetchRates_WithBuildURL проверяет обработку ошибки парсинга XML
 func TestFetchRates_ParseError(t *testing.T) {
+	testDate := testPastDateUTC()
+	dateStr := formatCBRDate(testDate)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		// XML без валют (вызовет ErrNoXMLRates)
-		w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="20.12.2025" name="Foreign Currency Market">
-</ValCurs>`))
+		w.Write([]byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
+</ValCurs>`, dateStr)))
 	}))
 	defer server.Close()
 
-	testDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
 	data, err := fetchRatesFromURL(server.URL, testDate)
 	if err == nil {
 		t.Fatal("Ожидалась ошибка для XML без валют")
