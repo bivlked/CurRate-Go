@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -10,26 +11,448 @@ import (
 	"github.com/bivlked/currate-go/internal/models"
 )
 
-// MockConverter - мок для converter.Converter
-type MockConverter struct {
-	convertResult *models.ConversionResult
-	convertError  error
-	getRateResult float64
-	getRateError  error
+// mockRateProvider - мок для RateProvider
+type mockRateProvider struct {
+	rateData *models.RateData
+	err      error
 }
 
-func (m *MockConverter) Convert(amount float64, currency models.Currency, date time.Time) (*models.ConversionResult, error) {
-	if m.convertError != nil {
-		return nil, m.convertError
+func (m *mockRateProvider) FetchRates(date time.Time) (*models.RateData, error) {
+	if m.err != nil {
+		return nil, m.err
 	}
-	return m.convertResult, nil
+	return m.rateData, nil
 }
 
-func (m *MockConverter) GetRate(currency models.Currency, date time.Time) (float64, error) {
-	if m.getRateError != nil {
-		return 0, m.getRateError
+// mockCacheStorage - мок для CacheStorage
+type mockCacheStorage struct {
+	data map[string]struct {
+		rate       float64
+		actualDate time.Time
 	}
-	return m.getRateResult, nil
+}
+
+func newMockCache() *mockCacheStorage {
+	return &mockCacheStorage{
+		data: make(map[string]struct {
+			rate       float64
+			actualDate time.Time
+		}),
+	}
+}
+
+func (m *mockCacheStorage) Get(currency models.Currency, date time.Time) (float64, time.Time, bool) {
+	key := string(currency) + ":" + date.Format("2006-01-02")
+	entry, exists := m.data[key]
+	if !exists {
+		return 0, time.Time{}, false
+	}
+	return entry.rate, entry.actualDate, true
+}
+
+func (m *mockCacheStorage) Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time) {
+	key := string(currency) + ":" + requestedDate.Format("2006-01-02")
+	m.data[key] = struct {
+		rate       float64
+		actualDate time.Time
+	}{
+		rate:       rate,
+		actualDate: actualDate,
+	}
+}
+
+func (m *mockCacheStorage) Clear() {
+	m.data = make(map[string]struct {
+		rate       float64
+		actualDate time.Time
+	})
+}
+
+// createTestConverter создает Converter с моками для тестирования
+func createTestConverter(rateData *models.RateData, rateError error, cacheRate float64, cacheFound bool) *converter.Converter {
+	mockProvider := &mockRateProvider{
+		rateData: rateData,
+		err:      rateError,
+	}
+	mockCache := newMockCache()
+	if cacheFound && cacheRate > 0 {
+		date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+		mockCache.Set(models.USD, date, cacheRate, date)
+	}
+	return converter.NewConverter(mockProvider, mockCache)
+}
+
+func TestNewApp(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {
+				Currency: models.USD,
+				Rate:     80.0,
+				Nominal:  1,
+				Date:     date,
+			},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	if app == nil {
+		t.Fatal("NewApp() returned nil")
+	}
+
+	if app.converter == nil {
+		t.Error("NewApp() converter is nil")
+	}
+}
+
+func TestApp_Startup(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {
+				Currency: models.USD,
+				Rate:     80.0,
+				Nominal:  1,
+				Date:     date,
+			},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	// Startup не должен паниковать
+	ctx := context.Background()
+	app.Startup(ctx)
+}
+
+func TestApp_Convert_Success(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {
+				Currency: models.USD,
+				Rate:     80.0,
+				Nominal:  1,
+				Date:     date,
+			},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	req := ConvertRequest{
+		Amount:   100,
+		Currency: "USD",
+		Date:     "15.01.2024",
+	}
+
+	result := app.Convert(req)
+
+	if !result.Success {
+		t.Errorf("Convert() Success = false, want true. Error: %q", result.Error)
+	}
+
+	if result.Error != "" {
+		t.Errorf("Convert() Error = %q, want empty", result.Error)
+	}
+
+	if !contains(result.Result, "8 000") {
+		t.Errorf("Convert() Result = %q, want to contain '8 000'", result.Result)
+	}
+}
+
+func TestApp_Convert_InvalidCurrency(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	req := ConvertRequest{
+		Amount:   100,
+		Currency: "GBP",
+		Date:     "15.01.2024",
+	}
+
+	result := app.Convert(req)
+
+	if result.Success {
+		t.Errorf("Convert() Success = true, want false")
+	}
+
+	if result.Error == "" {
+		t.Error("Convert() Error is empty, want error message")
+	}
+
+	if !contains(result.Error, "Неподдерживаемая валюта") {
+		t.Errorf("Convert() Error = %q, want to contain 'Неподдерживаемая валюта'", result.Error)
+	}
+}
+
+func TestApp_Convert_InvalidDate(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	req := ConvertRequest{
+		Amount:   100,
+		Currency: "USD",
+		Date:     "invalid-date",
+	}
+
+	result := app.Convert(req)
+
+	if result.Success {
+		t.Errorf("Convert() Success = true, want false")
+	}
+
+	if result.Error == "" {
+		t.Error("Convert() Error is empty, want error message")
+	}
+
+	if !contains(result.Error, "Неверный формат даты") {
+		t.Errorf("Convert() Error = %q, want to contain 'Неверный формат даты'", result.Error)
+	}
+}
+
+func TestApp_Convert_ConverterError(t *testing.T) {
+	// Тест с отрицательной суммой должна вызвать ErrInvalidAmount
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {
+				Currency: models.USD,
+				Rate:     80.0,
+				Nominal:  1,
+				Date:     date,
+			},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	req := ConvertRequest{
+		Amount:   -100, // Отрицательная сумма должна вызвать ошибку
+		Currency: "USD",
+		Date:     "15.01.2024",
+	}
+
+	result := app.Convert(req)
+
+	if result.Success {
+		t.Errorf("Convert() Success = true, want false")
+	}
+
+	if result.Error == "" {
+		t.Error("Convert() Error is empty, want error message")
+	}
+
+	if !contains(result.Error, "Сумма должна быть положительным числом") {
+		t.Errorf("Convert() Error = %q, want to contain 'Сумма должна быть положительным числом'", result.Error)
+	}
+}
+
+func TestApp_GetRate_Success(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {
+				Currency: models.USD,
+				Rate:     80.5,
+				Nominal:  1,
+				Date:     date,
+			},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	result := app.GetRate("USD", "15.01.2024")
+
+	if !result.Success {
+		t.Errorf("GetRate() Success = false, want true. Error: %q", result.Error)
+	}
+
+	if result.Error != "" {
+		t.Errorf("GetRate() Error = %q, want empty", result.Error)
+	}
+
+	if result.Rate != 80.5 {
+		t.Errorf("GetRate() Rate = %v, want 80.5", result.Rate)
+	}
+}
+
+func TestApp_GetRate_RUB(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	result := app.GetRate("RUB", "15.01.2024")
+
+	if !result.Success {
+		t.Errorf("GetRate() Success = false, want true")
+	}
+
+	if result.Error != "" {
+		t.Errorf("GetRate() Error = %q, want empty", result.Error)
+	}
+
+	if result.Rate != 1.0 {
+		t.Errorf("GetRate() Rate = %v, want 1.0", result.Rate)
+	}
+}
+
+func TestApp_GetRate_InvalidCurrency(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	result := app.GetRate("GBP", "15.01.2024")
+
+	if result.Success {
+		t.Errorf("GetRate() Success = true, want false")
+	}
+
+	if result.Error == "" {
+		t.Error("GetRate() Error is empty, want error message")
+	}
+
+	if !contains(result.Error, "Неподдерживаемая валюта") {
+		t.Errorf("GetRate() Error = %q, want to contain 'Неподдерживаемая валюта'", result.Error)
+	}
+}
+
+func TestApp_GetRate_InvalidDate(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	result := app.GetRate("USD", "invalid-date")
+
+	if result.Success {
+		t.Errorf("GetRate() Success = true, want false")
+	}
+
+	if result.Error == "" {
+		t.Error("GetRate() Error is empty, want error message")
+	}
+
+	if !contains(result.Error, "Неверный формат даты") {
+		t.Errorf("GetRate() Error = %q, want to contain 'Неверный формат даты'", result.Error)
+	}
+}
+
+func TestApp_GetRate_ConverterError(t *testing.T) {
+	// Тест с датой в будущем должна вызвать ErrDateInFuture
+	date := time.Now().AddDate(0, 0, 1) // Завтра
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {
+				Currency: models.USD,
+				Rate:     80.0,
+				Nominal:  1,
+				Date:     date,
+			},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+
+	// Используем дату в будущем
+	futureDateStr := date.Format("02.01.2006")
+	result := app.GetRate("USD", futureDateStr)
+
+	if result.Success {
+		t.Errorf("GetRate() Success = true, want false")
+	}
+
+	if result.Error == "" {
+		t.Error("GetRate() Error is empty, want error message")
+	}
+
+	if !contains(result.Error, "Дата не может быть в будущем") {
+		t.Errorf("GetRate() Error = %q, want to contain 'Дата не может быть в будущем'", result.Error)
+	}
+}
+
+func TestParseDate_Success(t *testing.T) {
+	dateStr := "15.01.2024"
+	date, err := parseDate(dateStr)
+
+	if err != nil {
+		t.Fatalf("parseDate() error = %v, want nil", err)
+	}
+
+	expectedDate := time.Date(2024, 1, 15, 0, 0, 0, 0, time.Local)
+	if !date.Equal(expectedDate) {
+		t.Errorf("parseDate() date = %v, want %v", date, expectedDate)
+	}
+}
+
+func TestParseDate_InvalidFormat(t *testing.T) {
+	tests := []struct {
+		name    string
+		dateStr string
+	}{
+		{
+			name:    "Invalid format",
+			dateStr: "2024-01-15",
+		},
+		{
+			name:    "Empty string",
+			dateStr: "",
+		},
+		{
+			name:    "Wrong separator",
+			dateStr: "15/01/2024",
+		},
+		{
+			name:    "Invalid day",
+			dateStr: "32.01.2024",
+		},
+		{
+			name:    "Invalid month",
+			dateStr: "15.13.2024",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseDate(tt.dateStr)
+			if err == nil {
+				t.Errorf("parseDate() error = nil, want error for %q", tt.dateStr)
+			}
+
+			if !contains(err.Error(), "неверный формат даты") {
+				t.Errorf("parseDate() error = %q, want to contain 'неверный формат даты'", err.Error())
+			}
+		})
+	}
 }
 
 func TestTranslateError(t *testing.T) {
@@ -155,3 +578,15 @@ func TestTranslateError_WrappedErrors(t *testing.T) {
 	}
 }
 
+// contains проверяет, содержит ли строка подстроку
+func contains(s, substr string) bool {
+	if len(s) < len(substr) {
+		return false
+	}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

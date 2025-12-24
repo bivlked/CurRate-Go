@@ -69,6 +69,138 @@ func (m *MockCacheStorage) Clear() {
 	})
 }
 
+// Тесты для проблемы 4: Rate date - использование фактической даты из XML
+
+// TestConverter_Convert_UsesActualDateFromXML проверяет, что Convert использует фактическую дату из XML
+func TestConverter_Convert_UsesActualDateFromXML(t *testing.T) {
+	// Запрошенная дата - понедельник
+	requestedDate := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC) // Понедельник
+
+	// Фактическая дата из XML - предыдущий рабочий день (пятница)
+	actualDateFromXML := time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC) // Пятница
+
+	mockProvider := &MockRateProvider{
+		rateData: &models.RateData{
+			Date: actualDateFromXML, // Фактическая дата из XML (предыдущий рабочий день)
+			Rates: map[models.Currency]models.ExchangeRate{
+				models.USD: {
+					Currency: models.USD,
+					Rate:     80.0,
+					Nominal:  1,
+					Date:     actualDateFromXML,
+				},
+			},
+		},
+	}
+
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+
+	result, err := converter.Convert(100, models.USD, requestedDate)
+	if err != nil {
+		t.Fatalf("Convert() error = %v, want nil", err)
+	}
+
+	if result == nil {
+		t.Fatal("Convert() returned nil result")
+	}
+
+	// Проверяем, что используется фактическая дата из XML, а не запрошенная
+	if !result.Date.Equal(actualDateFromXML) {
+		t.Errorf("Convert() result.Date = %v, want %v (actual date from XML)", result.Date, actualDateFromXML)
+	}
+
+	if result.Date.Equal(requestedDate) {
+		t.Errorf("Convert() result.Date should not equal requestedDate %v, but got %v", requestedDate, result.Date)
+	}
+}
+
+// TestConverter_Convert_UsesActualDateFromCache проверяет, что Convert использует фактическую дату из кэша
+func TestConverter_Convert_UsesActualDateFromCache(t *testing.T) {
+	requestedDate := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+	actualDateFromXML := time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC)
+
+	mockProvider := &MockRateProvider{
+		rateData: &models.RateData{
+			Date: actualDateFromXML,
+			Rates: map[models.Currency]models.ExchangeRate{
+				models.USD: {
+					Currency: models.USD,
+					Rate:     80.0,
+					Nominal:  1,
+					Date:     actualDateFromXML,
+				},
+			},
+		},
+	}
+
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+
+	// Первый вызов - получаем из provider и кэшируем
+	result1, err := converter.Convert(100, models.USD, requestedDate)
+	if err != nil {
+		t.Fatalf("First Convert() error = %v, want nil", err)
+	}
+
+	if !result1.Date.Equal(actualDateFromXML) {
+		t.Errorf("First Convert() result.Date = %v, want %v", result1.Date, actualDateFromXML)
+	}
+
+	// Второй вызов - должен использовать кэш с фактической датой
+	result2, err := converter.Convert(200, models.USD, requestedDate)
+	if err != nil {
+		t.Fatalf("Second Convert() error = %v, want nil", err)
+	}
+
+	// Проверяем, что используется фактическая дата из кэша
+	if !result2.Date.Equal(actualDateFromXML) {
+		t.Errorf("Second Convert() result.Date = %v, want %v (from cache)", result2.Date, actualDateFromXML)
+	}
+
+	// Проверяем, что provider был вызван только один раз (второй раз использован кэш)
+	if mockProvider.callCount != 1 {
+		t.Errorf("MockRateProvider.FetchRates() callCount = %d, want 1 (second call should use cache)", mockProvider.callCount)
+	}
+}
+
+// TestConverter_GetRateInternal_UsesActualDate проверяет, что getRateInternal возвращает фактическую дату
+func TestConverter_GetRateInternal_UsesActualDate(t *testing.T) {
+	requestedDate := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+	actualDateFromXML := time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC)
+
+	mockProvider := &MockRateProvider{
+		rateData: &models.RateData{
+			Date: actualDateFromXML,
+			Rates: map[models.Currency]models.ExchangeRate{
+				models.USD: {
+					Currency: models.USD,
+					Rate:     80.0,
+					Nominal:  1,
+					Date:     actualDateFromXML,
+				},
+			},
+		},
+	}
+
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+
+	// Используем рефлексию или тестируем через публичный метод GetRate
+	// Но getRateInternal - приватный метод, поэтому тестируем через Convert
+	// и проверяем, что actualDate используется корректно
+
+	result, err := converter.Convert(100, models.USD, requestedDate)
+	if err != nil {
+		t.Fatalf("Convert() error = %v, want nil", err)
+	}
+
+	// Проверяем, что дата в результате - фактическая дата из XML
+	if !result.Date.Equal(actualDateFromXML) {
+		t.Errorf("Convert() result.Date = %v, want %v (actual date from XML)", result.Date, actualDateFromXML)
+	}
+}
+
 // Тесты для validator.go
 
 func TestValidateAmount(t *testing.T) {
