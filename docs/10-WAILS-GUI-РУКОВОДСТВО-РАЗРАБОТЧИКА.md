@@ -1,8 +1,9 @@
 # CurRate-Go - Руководство разработчика Desktop GUI
 
-> **Версия документа:** 1.0
+> **Версия документа:** 1.1
 > **Дата создания:** 2025-12-22
-> **Статус:** Подготовка к реализации
+> **Обновлено:** 2025-12-24
+> **Статус:** Актуально (соответствует реализации)
 > **Целевая аудитория:** Разработчики, контрибьюторы
 
 ---
@@ -63,7 +64,7 @@
 | Компонент | Технология | Версия |
 |-----------|------------|--------|
 | **Framework** | Wails | v2.11.0 |
-| **Backend** | Go | 1.21+ |
+| **Backend** | Go | 1.25.5 |
 | **Frontend** | Vanilla JS | ES6+ |
 | **UI Rendering** | WebView2 | Latest (Windows) |
 | **Build Tool** | Wails CLI | v2.11.0 |
@@ -77,7 +78,7 @@
 
 | Компонент | Требование |
 |-----------|------------|
-| **Go** | 1.21.0 или выше |
+| **Go** | 1.25.5 |
 | **Node.js** | 16.0+ (для инструментов сборки) |
 | **npm** | 8.0+ |
 | **OS** | Windows 10 (1809+) / Windows 11 |
@@ -99,7 +100,7 @@
 ```bash
 # Проверить версию Go
 go version
-# Ожидается: go version go1.21.x или выше
+# Ожидается: go version go1.25.5
 
 # Проверить версию Node.js
 node --version
@@ -170,7 +171,7 @@ Scanning system - Please wait (this may take a long time)...
 OS:           Windows 11 x64
 Version:      22H2 (Build: 22621)
 ID:           windows
-Go Version:   go1.21.5
+Go Version:   go1.25.5
 Platform:     windows
 Architecture: amd64
 
@@ -446,16 +447,9 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 
 	// Успешный результат
 	return ConvertResponse{
-		Success:   true,
-		Result:    result.FormattedStr,
-		RubAmount: result.TargetAmount,
-		Rate:      result.Rate,
+		Success: true,
+		Result:  result.FormattedStr,
 	}
-}
-
-// GetTodayDate возвращает текущую дату в формате DD.MM.YYYY
-func (a *App) GetTodayDate() string {
-	return time.Now().Format("02.01.2006")
 }
 
 // handleError обрабатывает ошибки и возвращает понятное сообщение
@@ -473,7 +467,7 @@ func handleError(err error) string {
 }
 ```
 
-#### `frontend/src/main.js` — Frontend логика
+#### `frontend/scripts/main.js` — Frontend логика
 
 ```javascript
 // Глобальные переменные
@@ -485,8 +479,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initApp() {
-    // Установить текущую дату
-    const todayDate = await window.go.main.App.GetTodayDate();
+    // Установить текущую дату (используя JavaScript Date)
+    const today = new Date();
+    const todayDate = formatDate(today);
     document.getElementById('date-input').value = todayDate;
 
     // Инициализировать календарь
@@ -494,6 +489,9 @@ async function initApp() {
 
     // Установить обработчики событий
     setupEventListeners();
+    
+    // Загрузить курс валюты на текущую дату
+    await loadRateForDate(todayDate);
 }
 
 function setupEventListeners() {
@@ -531,7 +529,7 @@ async function handleConvert() {
 
     try {
         // Вызвать Go метод через Wails bindings
-        const response = await window.go.main.App.Convert({
+        const response = await window.go.app.App.Convert({
             amount: amount,
             currency: currency,
             date: date
@@ -654,7 +652,7 @@ DEB | [App] Application started
 ### Hot Reload
 
 **Frontend изменения (HTML/CSS/JS):**
-- Сохраните файл в `frontend/src/`
+- Сохраните файл в `frontend/scripts/`
 - Браузер автоматически перезагрузится
 - Изменения видны мгновенно
 
@@ -894,7 +892,7 @@ Bind: []interface{}{
 
 ```javascript
 // Правильное имя: window.go.<пакет>.<Структура>.<Метод>
-await window.go.main.App.Convert(...)
+await window.go.app.App.Convert(...)
 ```
 
 **4. Проверить типы данных:**
@@ -924,27 +922,39 @@ wails dev
 **Шаг 1:** Добавить метод в `app/app.go`:
 
 ```go
-// GetExchangeRate возвращает только курс без конвертации
-func (a *App) GetExchangeRate(currency string, date string) (float64, error) {
-    // Парсинг даты
-    parsedDate, err := time.Parse("02.01.2006", date)
-    if err != nil {
-        return 0, err
-    }
-
+// GetRate получает курс валюты на указанную дату (для live preview)
+func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
     // Парсинг валюты
-    curr, err := models.ParseCurrency(currency)
+    currency, err := models.ParseCurrency(currencyStr)
     if err != nil {
-        return 0, err
+        return RateResponse{
+            Success: false,
+            Error:   fmt.Sprintf("Неподдерживаемая валюта: %s", currencyStr),
+        }
     }
 
-    // Получить курс через конвертер
-    result, err := a.converter.Convert(1.0, curr, models.RUB, parsedDate)
+    // Парсинг даты
+    date, err := parseDate(dateStr)
     if err != nil {
-        return 0, err
+        return RateResponse{
+            Success: false,
+            Error:   fmt.Sprintf("Неверный формат даты: %s", dateStr),
+        }
     }
 
-    return result.Rate, nil
+    // Используем оптимизированный метод GetRate
+    rate, err := a.converter.GetRate(currency, date)
+    if err != nil {
+        return RateResponse{
+            Success: false,
+            Error:   translateError(err),
+        }
+    }
+
+    return RateResponse{
+        Success: true,
+        Rate:    rate,
+    }
 }
 ```
 
@@ -956,10 +966,14 @@ async function fetchRate() {
     const date = '22.12.2025';
 
     try {
-        const rate = await window.go.main.App.GetExchangeRate(currency, date);
-        console.log(`Курс ${currency}: ${rate}`);
+        const response = await window.go.app.App.GetRate(currency, date);
+        if (response.success) {
+            console.log(`Курс ${currency}: ${response.rate}`);
+        } else {
+            console.error('Ошибка получения курса:', response.error);
+        }
     } catch (error) {
-        console.error('Ошибка получения курса:', error);
+        console.error('Ошибка вызова метода:', error);
     }
 }
 ```
@@ -968,7 +982,7 @@ async function fetchRate() {
 
 ### Изменение UI
 
-**HTML (`frontend/src/index.html`):**
+**HTML (`frontend/index.html`):**
 
 ```html
 <!-- Добавить новый элемент -->
@@ -991,7 +1005,7 @@ async function fetchRate() {
 }
 ```
 
-**JavaScript (`frontend/src/main.js`):**
+**JavaScript (`frontend/scripts/main.js`):**
 
 ```javascript
 function updateLastUpdateTime() {
@@ -1028,7 +1042,7 @@ func (c Currency) Validate() error {
 }
 ```
 
-**Шаг 2:** Обновить UI (`frontend/src/index.html`):
+**Шаг 2:** Обновить UI (`frontend/index.html`):
 
 ```html
 <div class="currency-selection">
@@ -1283,7 +1297,7 @@ CurRate-Go/
 **Как это работает:**
 
 ```
-JavaScript → window.go.main.App.Convert()
+JavaScript → window.go.app.App.Convert()
               ↓
           Go App.Convert()
               ↓
@@ -1346,12 +1360,12 @@ log.Printf("Convert: %.2f %s on %s", req.Amount, req.Currency, req.Date)
 ```javascript
 // ✅ Правильно
 async function handleConvert() {
-    const response = await window.go.main.App.Convert(...);
+    const response = await window.go.app.App.Convert(...);
 }
 
 // ❌ Неправильно (промисы без обработки)
 function handleConvert() {
-    window.go.main.App.Convert(...); // Результат игнорируется
+    window.go.app.App.Convert(...); // Результат игнорируется
 }
 ```
 
@@ -1359,7 +1373,7 @@ function handleConvert() {
 
 ```javascript
 try {
-    const response = await window.go.main.App.Convert(...);
+    const response = await window.go.app.App.Convert(...);
     if (!response.success) {
         showError(response.error);
     }
