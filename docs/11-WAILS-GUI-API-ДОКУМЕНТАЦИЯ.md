@@ -1,8 +1,9 @@
 # CurRate-Go - API Документация Desktop GUI
 
-> **Версия документа:** 1.0
+> **Версия документа:** 1.1
 > **Дата создания:** 2025-12-22
-> **Статус:** Подготовка к реализации
+> **Обновлено:** 2025-12-24
+> **Статус:** Актуально (соответствует реализации)
 > **Целевая аудитория:** Разработчики, интеграторы
 
 ---
@@ -28,7 +29,7 @@
 ```
 ┌──────────────────────────────────────────┐
 │         JavaScript Frontend              │
-│   - Вызов через window.go.main.App.*    │
+│   - Вызов через window.go.app.App.*     │
 │   - Автоматическая JSON сериализация     │
 └───────────────┬──────────────────────────┘
                 │ Wails Runtime Bridge
@@ -59,7 +60,6 @@ Backend API реализован в `app/app.go` через структуру `
 ```go
 // App struct — основной контейнер для GUI backend
 type App struct {
-	ctx       context.Context
 	converter *converter.Converter
 }
 ```
@@ -112,11 +112,9 @@ type ConvertRequest struct {
 
 ```go
 type ConvertResponse struct {
-	Success   bool    `json:"success"`   // true если успех, false если ошибка
-	Result    string  `json:"result"`    // Форматированная строка результата
-	RubAmount float64 `json:"rubAmount"` // Сумма в рублях (число)
-	Rate      float64 `json:"rate"`      // Курс валюты (за 1 единицу)
-	Error     string  `json:"error"`     // Сообщение об ошибке (пусто если Success=true)
+	Success bool   `json:"success"` // true если успех, false если ошибка
+	Result  string `json:"result"`  // Форматированная строка результата (если success=true)
+	Error   string `json:"error"`   // Сообщение об ошибке (если success=false)
 }
 ```
 
@@ -124,8 +122,6 @@ type ConvertResponse struct {
 |------|-----|---------------------|----------|
 | `success` | `bool` | ✅ | Флаг успешности операции |
 | `result` | `string` | Только если `success=true` | Форматированная строка: `"80 722,00 руб. ($1 000,00 по курсу 80,7220)"` |
-| `rubAmount` | `float64` | Только если `success=true` | Числовое значение суммы в рублях |
-| `rate` | `float64` | Только если `success=true` | Курс валюты (например, 80.7220) |
 | `error` | `string` | Только если `success=false` | Понятное сообщение об ошибке |
 
 #### Примеры
@@ -146,8 +142,6 @@ type ConvertResponse struct {
 {
   "success": true,
   "result": "80 722,00 руб. ($1 000,00 по курсу 80,7220)",
-  "rubAmount": 80722.00,
-  "rate": 80.7220,
   "error": ""
 }
 ```
@@ -168,8 +162,6 @@ type ConvertResponse struct {
 {
   "success": true,
   "result": "43 225,50 руб. (€500,00 по курсу 86,4510)",
-  "rubAmount": 43225.50,
-  "rate": 86.4510,
   "error": ""
 }
 ```
@@ -190,9 +182,7 @@ type ConvertResponse struct {
 {
   "success": false,
   "result": "",
-  "rubAmount": 0,
-  "rate": 0,
-  "error": "Некорректный формат даты. Используйте ДД.ММ.ГГГГ"
+  "error": "Неверный формат даты: invalid-date. Используйте формат ДД.ММ.ГГГГ"
 }
 ```
 
@@ -212,8 +202,6 @@ type ConvertResponse struct {
 {
   "success": false,
   "result": "",
-  "rubAmount": 0,
-  "rate": 0,
   "error": "Дата не может быть в будущем"
 }
 ```
@@ -234,9 +222,7 @@ type ConvertResponse struct {
 {
   "success": false,
   "result": "",
-  "rubAmount": 0,
-  "rate": 0,
-  "error": "Сумма должна быть больше нуля"
+  "error": "Сумма должна быть положительным числом"
 }
 ```
 
@@ -256,8 +242,6 @@ type ConvertResponse struct {
 {
   "success": false,
   "result": "",
-  "rubAmount": 0,
-  "rate": 0,
   "error": "Неподдерживаемая валюта: GBP"
 }
 ```
@@ -279,7 +263,7 @@ type ConvertResponse struct {
    3.2. Расчёт: rubAmount = amount * rate
    3.3. Форматирование результата
 
-4. Return { success: true, result: "...", rubAmount: ..., rate: ... }
+4. Return { success: true, result: "..." }
 ```
 
 #### Производительность
@@ -297,60 +281,90 @@ type ConvertResponse struct {
 
 ---
 
-### Метод: `GetTodayDate`
+### Метод: `GetRate`
 
-Возвращает текущую дату в формате DD.MM.YYYY.
+Получает курс валюты на указанную дату (для live preview). Вызывается из JavaScript при изменении даты для автоматического отображения курса.
 
 #### Сигнатура
 
 ```go
-func (a *App) GetTodayDate() string
+func (a *App) GetRate(currencyStr string, dateStr string) RateResponse
 ```
 
 #### Параметры
 
-Нет параметров.
+- `currencyStr` (string) — код валюты: "USD", "EUR" или "RUB"
+- `dateStr` (string) — дата в формате "DD.MM.YYYY"
 
 #### Возвращаемое значение
 
-**string** — текущая дата в формате `DD.MM.YYYY`
+**RateResponse** — структура ответа:
+
+```go
+type RateResponse struct {
+	Success bool    `json:"success"` // Успешность операции
+	Rate    float64 `json:"rate"`   // Курс валюты (если success=true)
+	Error   string  `json:"error"`  // Сообщение об ошибке (если success=false)
+}
+```
 
 #### Примеры
 
 **Запрос:**
 ```javascript
-const today = await window.go.main.App.GetTodayDate();
+const response = await window.go.app.App.GetRate("USD", "22.12.2025");
 ```
 
-**Ответ:**
-```javascript
-"22.12.2025"
+**Ответ (успех):**
+```json
+{
+  "success": true,
+  "rate": 80.7220,
+  "error": ""
+}
+```
+
+**Ответ (ошибка):**
+```json
+{
+  "success": false,
+  "rate": 0,
+  "error": "Дата не может быть в будущем"
+}
 ```
 
 #### Использование
 
-Метод используется для инициализации поля даты при запуске приложения:
+Метод используется для live preview курса при изменении даты:
 
 ```javascript
-document.addEventListener('DOMContentLoaded', async () => {
-    const todayDate = await window.go.main.App.GetTodayDate();
-    document.getElementById('date-input').value = todayDate;
+document.getElementById('date-input').addEventListener('change', async (e) => {
+    const currency = document.querySelector('input[name="currency"]:checked').value;
+    const date = e.target.value;
+    
+    const response = await window.go.app.App.GetRate(currency, date);
+    if (response.success) {
+        document.getElementById('rate-preview').textContent = response.rate.toFixed(4);
+    }
 });
 ```
 
-#### Timezone
+#### Производительность
 
-Метод использует локальную временную зону сервера (не UTC). Если приложение запущено в Москве, вернёт московское время.
+- Использует оптимизированный метод `converter.GetRate()` без форматирования
+- Кэширование автоматическое (24 часа TTL)
+- С кэшем: ~1-2 мс, без кэша: ~100-500 мс
 
 ---
 
 ## JavaScript Frontend API
 
-Frontend API реализован в `frontend/src/` и состоит из трёх основных модулей:
+Frontend API реализован в `frontend/scripts/` и состоит из четырёх основных модулей:
 
 1. **main.js** — основная логика приложения
 2. **calendar.js** — календарь с выделением выходных
-3. **utils.js** — вспомогательные функции
+3. **status-bar.js** — управление строкой состояния
+4. **utils.js** — вспомогательные функции
 
 ---
 
@@ -368,10 +382,10 @@ async function initApp()
 
 **Что делает:**
 
-1. Загружает текущую дату через `window.go.main.App.GetTodayDate()`
-2. Устанавливает дату в поле ввода
-3. Инициализирует календарь
-4. Устанавливает обработчики событий
+1. Устанавливает текущую дату в поле ввода (используя JavaScript Date)
+2. Инициализирует календарь
+3. Устанавливает обработчики событий
+4. Загружает курс валюты на текущую дату через `GetRate()`
 
 **Использование:**
 
@@ -425,7 +439,7 @@ async function handleConvert() {
 
     try {
         // Вызов Go метода
-        const response = await window.go.main.App.Convert({
+        const response = await window.go.app.App.Convert({
             amount: amount,
             currency: currency,
             date: date
@@ -945,11 +959,9 @@ const request = {
 
 ```go
 type ConvertResponse struct {
-	Success   bool    `json:"success"`
-	Result    string  `json:"result"`
-	RubAmount float64 `json:"rubAmount"`
-	Rate      float64 `json:"rate"`
-	Error     string  `json:"error"`
+	Success bool   `json:"success"`
+	Result  string `json:"result"`
+	Error   string `json:"error"`
 }
 ```
 
@@ -959,8 +971,6 @@ type ConvertResponse struct {
 {
   "success": true,
   "result": "80 722,00 руб. ($1 000,00 по курсу 80,7220)",
-  "rubAmount": 80722.00,
-  "rate": 80.7220,
   "error": ""
 }
 ```
@@ -971,8 +981,6 @@ type ConvertResponse struct {
 {
   "success": false,
   "result": "",
-  "rubAmount": 0,
-  "rate": 0,
   "error": "Дата не может быть в будущем"
 }
 ```
@@ -980,12 +988,10 @@ type ConvertResponse struct {
 **JavaScript обработка:**
 
 ```javascript
-const response = await window.go.main.App.Convert(request);
+const response = await window.go.app.App.Convert(request);
 
 if (response.success) {
     console.log('Результат:', response.result);
-    console.log('Сумма в рублях:', response.rubAmount);
-    console.log('Курс:', response.rate);
 } else {
     console.error('Ошибка:', response.error);
 }
@@ -1013,7 +1019,7 @@ if (response.success) {
 ```javascript
 async function handleConvert() {
     try {
-        const response = await window.go.main.App.Convert(request);
+        const response = await window.go.app.App.Convert(request);
 
         if (!response.success) {
             // Обработать ошибку из backend
@@ -1059,7 +1065,7 @@ async function convertUSD() {
         date: "22.12.2025"
     };
 
-    const response = await window.go.main.App.Convert(request);
+    const response = await window.go.app.App.Convert(request);
 
     if (response.success) {
         console.log(response.result);
@@ -1077,7 +1083,7 @@ async function convertMultiple(amounts) {
     const results = [];
 
     for (const amount of amounts) {
-        const response = await window.go.main.App.Convert({
+        const response = await window.go.app.App.Convert({
             amount: amount,
             currency: "USD",
             date: "22.12.2025"
@@ -1086,8 +1092,7 @@ async function convertMultiple(amounts) {
         if (response.success) {
             results.push({
                 amount: amount,
-                result: response.rubAmount,
-                rate: response.rate
+                result: response.result
             });
         }
     }
@@ -1214,6 +1219,7 @@ document.getElementById('amount-input').addEventListener('input', (e) => {
 
 **Спасибо за использование CurRate-Go API!**
 
-*Документ подготовлен: 2025-12-22*
-*Версия: 1.0*
-*Статус: Подготовка к реализации*
+*Документ подготовлен: 2025-12-22*  
+*Обновлено: 2025-12-24*  
+*Версия: 1.1*  
+*Статус: Актуально (соответствует реализации)*
