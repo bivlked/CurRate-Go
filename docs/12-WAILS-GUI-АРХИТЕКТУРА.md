@@ -189,7 +189,7 @@
 │  └─────────────────────────────────────────────────────────┘   │
 │           │                                                     │
 │           │ Wails Bindings                                     │
-│           │ (window.go.main.App.*)                             │
+│           │ (window.go.app.App.*)                              │
 │           ▼                                                     │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Backend Components (Go)                                │   │
@@ -197,7 +197,7 @@
 │  │  ┌──────────────────┐                                   │   │
 │  │  │  App (GUI Facade)│                                   │   │
 │  │  │  - Convert()     │                                   │   │
-│  │  │  - GetTodayDate()│                                   │   │
+│  │  │  - GetRate(currency, date)                           │   │
 │  │  └────────┬─────────┘                                   │   │
 │  │           │ uses                                        │   │
 │  │           ▼                                             │   │
@@ -382,7 +382,7 @@
 │       currency: "USD",                                        │
 │       date: "22.12.2025"                                      │
 │     };                                                        │
-│     const response = await window.go.main.App.Convert(req);  │
+│     const response = await window.go.app.App.Convert(req);   │
 └───────────────────┬───────────────────────────────────────────┘
                     │ Wails JSON serialization
                     ▼
@@ -508,7 +508,7 @@ User          Wails        App.go      Converter    Parser      Cache
  ├──────────────────────────►│             │            │          │
  │ initApp()                │             │            │          │
  │              │            │             │            │          │
- │ GetTodayDate()           │             │            │          │
+ │ GetRate(currency, date)   │             │            │          │
  ├─────────────────────────►│             │            │          │
  │              │            │ time.Now() │            │          │
  │              │            │ Format()   │            │          │
@@ -632,7 +632,7 @@ User    JavaScript   App.go   Converter   Cache   Parser      CBR API
    │
    ├─ DOMContentLoaded event fires
    ├─ JavaScript calls initApp()
-   ├─ GetTodayDate() via Wails bindings
+   ├─ GetRate() via Wails bindings для live preview
    ├─ Initialize Calendar
    ├─ Setup event listeners
    │
@@ -653,7 +653,7 @@ User    JavaScript   App.go   Converter   Cache   Parser      CBR API
 │  User interaction → JavaScript event handler   │
 │         │                                       │
 │         ▼                                       │
-│  window.go.main.App.Method() call               │
+│  window.go.app.App.Method() call                │
 │         │                                       │
 │         ▼                                       │
 │  Wails serialization (JS → JSON → Go)          │
