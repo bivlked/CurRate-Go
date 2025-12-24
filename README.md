@@ -5,7 +5,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25.5-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
+[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bivlked/CurRate-Go)](https://goreportcard.com/report/github.com/bivlked/CurRate-Go)
 [![CBR API](https://img.shields.io/badge/API-CBR%20XML-blue)](https://www.cbr.ru/scripts/XML_daily.asp)
 [![Wails](https://img.shields.io/badge/UI-Wails%20v2.11.0-red?logo=wails)](https://wails.io/)
@@ -24,7 +24,7 @@
 - 💾 **Умное кэширование**: LRU кэш с TTL для минимизации запросов
 - 🔄 **Retry логика**: Exponential backoff (1s, 2s, 4s) для отказоустойчивости
 - 🌐 **Поддержка кодировок**: Автоматическая конвертация windows-1251 → UTF-8
-- 🧪 **97.2% покрытие тестами**: Unit + интеграционные тесты
+- 🧪 **96% покрытие тестами**: Unit + интеграционные тесты
 - 📱 **Современный UI**: Desktop приложение на Wails v2 с карточным дизайном Windows 11
 
 ---
@@ -234,7 +234,7 @@ BenchmarkLRUCache_Concurrent-8    200000    7891 ns/op    672 B/op   10 allocs/o
 
 ## 🧪 Тестирование
 
-Проект имеет **comprehensive test coverage ~97%**:
+Проект имеет **comprehensive test coverage ~96%**:
 
 ```bash
 # Запустить все тесты
@@ -261,7 +261,7 @@ go test -bench=. -benchmem ./...
 | `pkg/utils` | 100.0% | ✅ |
 | `internal/parser` | 82.7% | ✅ |
 | `internal/app` | 0.0% | ⚠️ (GUI слой, тестируется через интеграционные тесты) |
-| **Общее** | **~97%** | ✅ |
+| **Общее** | **~96%** | ✅ |
 
 ---
 
@@ -363,7 +363,7 @@ Contributions, issues и feature requests приветствуются!
 - ✅ Улучшена структура и наглядность документации
 - ✅ Добавлены Mermaid диаграммы
 - ✅ Исправлена валидация дат (timezone-aware)
-- ✅ Покрытие тестами: 97.2% (100% для models, converter, cache, utils)
+- ✅ Покрытие тестами: 96% (100% для models, cache, utils; 97.6% для converter; 82.7% для parser)
 
 **v0.5.1** (2025-12-22) - Улучшения и рефакторинг
 - ✅ Nil-safe конвертер с проверками и noopCache
