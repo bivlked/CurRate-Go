@@ -43,12 +43,26 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Build
-        run: wails build -clean
+        run: wails build -clean -ldflags "-s -w"
+
+      - name: Prepare Release Notes
+        id: release-notes
+        shell: pwsh
+        run: |
+          $releaseNotesFile = "release-notes-v1.0.0.md"
+          if (Test-Path $releaseNotesFile) {
+            $releaseNotes = Get-Content -Path $releaseNotesFile -Raw -Encoding utf8
+          } else {
+            $releaseNotes = "# v1.0.0 - Первый стабильный релиз CurRate-Go`n`nОсновные изменения:`n- Полностью функциональный backend с ~96% покрытием тестами`n- Современный desktop GUI на Wails v2.11.0`n- Оптимизированная production сборка (~10 MB)`n- Полная документация и CI/CD pipeline"
+          }
+          $releaseNotes | Out-File -FilePath "$env:GITHUB_WORKSPACE/release-notes.md" -Encoding utf8
+          echo "notes-path=$env:GITHUB_WORKSPACE/release-notes.md" >> $env:GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: build/bin/CurRate.exe
+          body_path: ${{ steps.release-notes.outputs.notes-path }}
           draft: false
           prerelease: false
         env:
