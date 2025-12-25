@@ -340,6 +340,88 @@ go test -tags=integration ./...
 
 ---
 
+## Локальное тестирование GitHub Actions workflows
+
+Для локального тестирования GitHub Actions workflows можно использовать инструмент [act](https://github.com/nektos/act).
+
+### Установка act
+
+**Вариант 1: Через Go (рекомендуется)**
+```bash
+go install github.com/nektos/act@latest
+```
+
+**Вариант 2: Прямой download**
+Скачайте последнюю версию с [GitHub Releases](https://github.com/nektos/act/releases) и добавьте в PATH.
+
+**Требования:**
+- Docker Desktop (для Windows) или Docker Engine
+- Git
+
+### Использование
+
+**Список всех workflows:**
+```bash
+act -l
+```
+
+**Тестирование конкретного workflow:**
+```bash
+# Тестирование lint workflow
+act -W .github/workflows/lint.yml push
+
+# Тестирование test workflow (частично, так как использует windows-latest)
+act -W .github/workflows/test.yml push
+```
+
+**Тестирование с конкретным event:**
+```bash
+act push                  # Тестирование push event
+act pull_request          # Тестирование PR event
+```
+
+### Ограничения
+
+⚠️ **Важно:** `act` работает в Linux контейнерах, поэтому:
+
+1. **Windows workflows не будут работать полностью:**
+   - `build.yml` использует `windows-latest` - не будет работать в act
+   - `test.yml` использует `windows-latest` - не будет работать в act
+   - `release.yml` использует `windows-latest` - не будет работать в act
+
+2. **Linux workflows работают частично:**
+   - `lint.yml` использует `ubuntu-latest` - **будет работать** в act
+   - Но некоторые GitHub Actions могут работать по-другому локально
+
+3. **Рекомендации:**
+   - Используйте `act` для проверки синтаксиса и базовой логики workflows
+   - Для полного тестирования Windows workflows используйте GitHub Actions на GitHub
+   - Для проверки YAML синтаксиса используйте `yamllint` (см. раздел выше)
+
+### Примеры
+
+**Проверка lint workflow:**
+```bash
+# Список jobs в lint workflow
+act -l -W .github/workflows/lint.yml
+
+# Запуск lint workflow
+act -W .github/workflows/lint.yml push
+```
+
+**Проверка всех workflows (только Linux-совместимые):**
+```bash
+# Только lint.yml будет работать полностью
+act -W .github/workflows/lint.yml push
+```
+
+### Дополнительная информация
+
+- [Документация act](https://github.com/nektos/act#readme)
+- [Примеры использования](https://github.com/nektos/act#example-commands)
+
+---
+
 ## Полезные ссылки
 
 ### Документация проекта

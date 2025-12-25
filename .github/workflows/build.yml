@@ -2,14 +2,14 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,11 +20,28 @@ jobs:
           go-version: '1.25.5'
           cache-dependency-path: go.sum
 
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      - name: Get Go bin path
+        id: go-bin-path
+        shell: pwsh
+        run: |
+          $goBinPath = (go env GOPATH) + "\bin"
+          echo "path=$goBinPath" >> $env:GITHUB_OUTPUT
+
+      - name: Cache Wails CLI
+        uses: actions/cache@v4
+        id: cache-wails
+        with:
+          path: ${{ steps.go-bin-path.outputs.path }}
+          key: ${{ runner.os }}-wails-${{ hashFiles('go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-wails-
 
       - name: Download dependencies
         run: go mod download
+
+      - name: Install Wails
+        if: steps.cache-wails.outputs.cache-hit != 'true'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Build
         run: wails build -clean
@@ -35,4 +52,3 @@ jobs:
           name: CurRate-Windows-amd64
           path: build/bin/CurRate.exe
           retention-days: 7
-
