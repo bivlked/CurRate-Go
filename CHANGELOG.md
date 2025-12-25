@@ -8,6 +8,28 @@
 
 ## [Unreleased]
 
+### Добавлено (Added)
+- **[2025-12-24] Phase 5.3: Полное "причесывание" репозитория на GitHub - ЗАВЕРШЕНО**
+  - Реализованы CI/CD workflows (GitHub Actions):
+    - `build.yml` - автоматическая сборка при push/PR
+    - `test.yml` - запуск тестов с покрытием
+    - `lint.yml` - проверка кода линтером
+    - `release.yml` - автоматический релиз при создании тега
+  - Создана документация для контрибьюторов:
+    - `CONTRIBUTING.md` - подробное руководство для контрибьюторов
+    - `SECURITY.md` - политика безопасности
+  - Созданы шаблоны для Issues и Pull Requests:
+    - `.github/ISSUE_TEMPLATE/bug_report.md` - шаблон для багов
+    - `.github/ISSUE_TEMPLATE/feature_request.md` - шаблон для feature requests
+    - `.github/ISSUE_TEMPLATE/documentation.md` - шаблон для документации
+    - `.github/PULL_REQUEST_TEMPLATE.md` - шаблон для PR
+  - Настроен Dependabot:
+    - `.github/dependabot.yml` - автоматическое обновление Go модулей и GitHub Actions
+  - Обновлен README.md:
+    - Добавлены ссылки на CONTRIBUTING.md и SECURITY.md
+    - Добавлен раздел Security
+    - Обновлен Roadmap (CI/CD отмечен как завершенный)
+
 ### Исправлено (Fixed)
 - **[2025-12-24] Phase 4.11: Исправление замечаний от сторонней команды (Phase 3) - ЗАВЕРШЕНО**
   - Исправлен двойной вызов `setCalendarDate` в `initDateInput()` (удален безусловный вызов)
