@@ -9,7 +9,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/bivlked/CurRate-Go)](https://goreportcard.com/report/github.com/bivlked/CurRate-Go)
 [![CBR API](https://img.shields.io/badge/API-CBR%20XML-blue)](https://www.cbr.ru/scripts/XML_daily.asp)
 [![Wails](https://img.shields.io/badge/UI-Wails%20v2.11.0-red?logo=wails)](https://wails.io/)
-[![Platform](https://img.shields.io/badge/platform-Windows%2011+-blue)](https://www.microsoft.com/windows)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20(22H2%2B)%20%2F%20Windows%2011-blue)](https://www.microsoft.com/windows)
 
 ---
 
@@ -260,7 +260,7 @@ go test -bench=. -benchmem ./...
 | `internal/converter` | 97.6% | ✅ |
 | `pkg/utils` | 100.0% | ✅ |
 | `internal/parser` | 82.7% | ✅ |
-| `internal/app` | 0.0% | ⚠️ (GUI слой, тестируется через интеграционные тесты) |
+| `internal/app` | 100.0% | ✅ |
 | **Общее** | **~96%** | ✅ |
 
 ---

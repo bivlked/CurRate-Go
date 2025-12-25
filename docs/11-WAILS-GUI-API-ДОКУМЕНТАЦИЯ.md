@@ -53,7 +53,7 @@
 
 ## Go Backend API
 
-Backend API реализован в `app/app.go` через структуру `App`.
+Backend API реализован в `internal/app/app.go` через структуру `App`.
 
 ### Структура App
 
@@ -95,15 +95,21 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse
 ```go
 type ConvertRequest struct {
 	Amount   float64 `json:"amount"`   // Сумма для конвертации (> 0)
-	Currency string  `json:"currency"` // Код валюты: "USD" или "EUR"
+	Currency string  `json:"currency"` // Код валюты: "USD", "EUR" или "RUB" (для API)
 	Date     string  `json:"date"`     // Дата в формате "DD.MM.YYYY"
 }
+
+**Примечание о валютах:**
+- **UI (пользовательский интерфейс):** поддерживает только USD и EUR
+- **Backend API:** поддерживает USD, EUR и RUB
+- RUB не включен в UI, так как конвертация RUB→RUB не имеет практического смысла
+- При вызове API с RUB, backend возвращает курс 1.0
 ```
 
 | Поле | Тип | Обязательное | Описание | Пример |
 |------|-----|--------------|----------|--------|
 | `amount` | `float64` | ✅ | Сумма для конвертации | `1000.50` |
-| `currency` | `string` | ✅ | Код валюты (USD, EUR) | `"USD"` |
+| `currency` | `string` | ✅ | Код валюты (USD, EUR для UI; USD, EUR, RUB для API) | `"USD"` |
 | `date` | `string` | ✅ | Дата в российском формате | `"22.12.2025"` |
 
 #### Возвращаемое значение
@@ -255,7 +261,7 @@ type ConvertResponse struct {
 2. Парсинг валюты (USD/EUR)
    └─ Ошибка → return { success: false, error: "..." }
 
-3. Вызов converter.Convert(amount, currency, RUB, date)
+3. Вызов converter.Convert(amount, currency, date)
    3.1. Проверка кэша
         └─ Есть в кэше → использовать кэшированный курс
         └─ Нет в кэше → запрос к CBR XML API
@@ -1008,7 +1014,7 @@ if (response.success) {
 | `ERR_INVALID_DATE` | "Некорректный формат даты. Используйте ДД.ММ.ГГГГ" | Неправильный формат даты |
 | `ERR_DATE_FUTURE` | "Дата не может быть в будущем" | Дата больше сегодняшней |
 | `ERR_INVALID_AMOUNT` | "Сумма должна быть больше нуля" | amount <= 0 |
-| `ERR_UNSUPPORTED_CURRENCY` | "Неподдерживаемая валюта: XXX" | Валюта не USD/EUR |
+| `ERR_UNSUPPORTED_CURRENCY` | "Неподдерживаемая валюта: XXX" | Валюта не USD/EUR/RUB (для API) или не USD/EUR (для UI) |
 | `ERR_NETWORK` | "Ошибка загрузки курсов. Проверьте интернет-соединение" | Нет доступа к CBR API |
 | `ERR_RATE_NOT_FOUND` | "Курс валюты на эту дату не найден" | ЦБ РФ не предоставляет курс |
 

@@ -18,8 +18,8 @@
 
 | Python | Go | Назначение |
 |--------|-----|-----------|
-| `src/currate/main.py` | `cmd/currate/main.go` | Точка входа |
-| `src/currate/gui.py` | `internal/gui/window.go` + `callbacks.go` | GUI |
+| `src/currate/main.py` | `main_gui.go` | Точка входа GUI |
+| `src/currate/gui.py` | `internal/app/app.go` | GUI Backend (Wails) |
 | `src/currate/currency_converter.py` | `internal/converter/converter.go` | Конвертация |
 | `src/currate/cbr_parser.py` | `internal/parser/cbr.go` | Парсинг ЦБ РФ |
 | `src/currate/cache.py` | `internal/cache/lru.go` | Кэширование |
@@ -48,8 +48,8 @@ import (
     "time"
     "net/http"
 
-    "github.com/lxn/walk"
-    "github.com/PuerkitoBio/goquery"
+    "github.com/wailsapp/wails/v2"
+    "encoding/xml" // Стандартная библиотека для XML парсинга
 )
 ```
 

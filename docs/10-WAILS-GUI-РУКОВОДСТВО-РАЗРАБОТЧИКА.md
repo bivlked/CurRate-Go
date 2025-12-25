@@ -79,11 +79,11 @@
 | Компонент | Требование |
 |-----------|------------|
 | **Go** | 1.25.5 |
-| **Node.js** | 16.0+ (для инструментов сборки) |
-| **npm** | 8.0+ |
-| **OS** | Windows 10 (1809+) / Windows 11 |
+| **OS** | Windows 10 (22H2+) / Windows 11 |
 | **IDE** | VS Code / GoLand / любой с Go поддержкой |
 | **Git** | 2.30+ |
+
+**Примечание:** Node.js и npm **не требуются**, так как фронтенд использует статический vanilla JavaScript без сборки.
 
 ### Рекомендуемые инструменты
 
@@ -102,17 +102,11 @@
 go version
 # Ожидается: go version go1.25.5
 
-# Проверить версию Node.js
-node --version
-# Ожидается: v16.x.x или выше
-
-# Проверить версию npm
-npm --version
-# Ожидается: 8.x.x или выше
-
 # Проверить Git
 git --version
 # Ожидается: git version 2.30.x или выше
+
+**Примечание:** Node.js и npm не требуются, так как фронтенд - статический vanilla JavaScript.
 ```
 
 ---
@@ -190,8 +184,9 @@ Your system is ready for Wails development!
 
 **Если есть ошибки:**
 - **WebView2 не установлен:** скачайте https://go.microsoft.com/fwlink/p/?LinkId=2124703
-- **npm не найден:** установите Node.js с https://nodejs.org/
 - **upx не найден:** опционально для сжатия бинарника (см. ниже)
+
+**Примечание:** npm и Node.js не требуются, так как фронтенд использует статический vanilla JavaScript.
 
 ### Шаг 4: Установить UPX (опционально, для сжатия)
 
@@ -246,22 +241,21 @@ CurRate-Go/
 │
 ├── pkg/utils/                   # Утилиты
 │
-├── app/                         # 🆕 GUI код (Wails)
-│   ├── app.go                   # 🆕 Backend: App struct, Go ↔ JS bindings
-│   ├── main.go                  # 🆕 Entry point для GUI версии
-│   └── models.go                # 🆕 DTO для передачи между Go и JS
+├── internal/app/               # 🆕 GUI код (Wails)
+│   └── app.go                   # 🆕 Backend: App struct, Go ↔ JS bindings
+│
+├── main_gui.go                  # 🆕 Entry point для GUI версии
 │
 ├── frontend/                    # 🆕 Frontend код
-│   ├── src/
-│   │   ├── index.html           # 🆕 Главный HTML
+│   ├── index.html               # 🆕 Главный HTML
+│   ├── scripts/
 │   │   ├── main.js              # 🆕 Основная логика JS
 │   │   ├── calendar.js          # 🆕 Календарь с выделением выходных
 │   │   └── utils.js             # 🆕 Утилиты (форматирование, валидация)
 │   ├── styles/
 │   │   ├── main.css             # 🆕 Основные стили
 │   │   └── calendar.css         # 🆕 Стили календаря
-│   └── assets/
-│       └── icons/               # 🆕 Иконки приложения (.ico, .icns, .png)
+│   └── wailsjs/                 # 🆕 Автогенерируемые Wails bindings
 │
 ├── build/                       # 🆕 Конфигурация сборки
 │   ├── windows/
@@ -292,8 +286,10 @@ CurRate-Go/
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "CurRate-Go",
   "outputfilename": "CurRate",
-  "frontend:install": "npm install",
-  "frontend:build": "npm run build",
+  "frontend:install": "",
+  "frontend:build": "",
+  "assetdir": "frontend",
+  "wailsjsdir": "frontend/wailsjs",
   "author": {
     "name": "Ivan Bondarev",
     "email": "your-email@example.com"
@@ -308,7 +304,7 @@ CurRate-Go/
 }
 ```
 
-#### `app/main.go` — Entry point GUI приложения
+#### `main_gui.go` — Entry point GUI приложения
 
 ```go
 package main
@@ -366,7 +362,7 @@ func main() {
 }
 ```
 
-#### `app/app.go` — Backend структура
+#### `internal/app/app.go` — Backend структура
 
 ```go
 package main
@@ -657,7 +653,7 @@ DEB | [App] Application started
 - Изменения видны мгновенно
 
 **Backend изменения (Go):**
-- Сохраните файл в `app/`
+- Сохраните файл в `internal/app/`
 - Wails автоматически перекомпилирует
 - Приложение перезапустится (~2-3 секунды)
 
@@ -840,7 +836,7 @@ log.Println("Converting currency...")
 go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Запуск с отладчиком
-dlv debug app/main.go
+dlv debug main_gui.go
 ```
 
 ### Отладка JavaScript frontend
@@ -919,7 +915,7 @@ wails dev
 
 ### Добавление нового Go метода
 
-**Шаг 1:** Добавить метод в `app/app.go`:
+**Шаг 1:** Добавить метод в `internal/app/app.go`:
 
 ```go
 // GetRate получает курс валюты на указанную дату (для live preview)
@@ -1080,9 +1076,9 @@ func parseCurrency(code string) (models.Currency, error) {
 
 ### Unit тесты (Go backend)
 
-Существующие тесты уже покрывают бизнес-логику (96% coverage). Для GUI нужно добавить тесты `app/app.go`:
+Существующие тесты уже покрывают бизнес-логику (96% coverage). Для GUI нужно добавить тесты `internal/app/app.go`:
 
-**Создать `app/app_test.go`:**
+**Создать `internal/app/app_test.go`:**
 
 ```go
 package main
@@ -1157,7 +1153,7 @@ func TestApp_GetTodayDate(t *testing.T) {
 **Запуск:**
 
 ```bash
-go test ./app/...
+go test ./internal/app/...
 ```
 
 ### E2E тесты (Frontend)
@@ -1167,7 +1163,10 @@ go test ./app/...
 **Пример с Playwright:**
 
 ```bash
-npm install --save-dev @playwright/test
+# Примечание: Для E2E тестов требуется Node.js и npm
+# В текущем проекте E2E тесты не используются, так как фронтенд - статический vanilla JS
+# Если планируется добавить E2E тесты, установите:
+# npm install --save-dev @playwright/test
 ```
 
 **Создать `frontend/tests/e2e.spec.js`:**
@@ -1272,9 +1271,9 @@ npx playwright test
 
 ```
 CurRate-Go/
-├── cmd/currate/      # CLI entry point
-├── app/              # GUI entry point
+├── main_gui.go       # GUI entry point
 └── internal/         # Общая бизнес-логика
+    └── app/          # GUI backend (App struct)
 ```
 
 ### Кэширование на уровне GUI
@@ -1493,7 +1492,7 @@ setx PATH "%PATH%;%USERPROFILE%\go\bin"
 3. **Неправильное имя в JS:**
    ```javascript
    // Правильно
-   window.go.main.App.Convert(...)
+   window.go.app.App.Convert(...)
 
    // Неправильно
    window.go.App.Convert(...) // Пропущен пакет
@@ -1514,7 +1513,7 @@ wails dev -clean
 # Если не помогает
 rm -rf build/
 rm -rf frontend/node_modules/
-npm install
+# Node.js и npm не требуются для текущего проекта
 wails dev
 ```
 
@@ -1523,6 +1522,7 @@ wails dev
 **Решение:**
 
 ```bash
+# Примечание: Удаление node_modules не требуется, так как фронтенд не использует npm
 # Использовать все оптимизации
 wails build -clean -upx -ldflags "-s -w"
 
@@ -1539,6 +1539,8 @@ ls -lh build/bin/CurRate.exe
 ## CI/CD
 
 ### GitHub Actions для автоматической сборки
+
+> ⚠️ **Примечание:** Раздел CI/CD описывает рекомендуемую конфигурацию. Реальные workflow-файлы могут отсутствовать в репозитории. Для добавления CI/CD следуйте примерам ниже.
 
 **Создать `.github/workflows/build.yml`:**
 
@@ -1562,12 +1564,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
+          go-version: '1.25.5'
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -1575,8 +1572,7 @@ jobs:
       - name: Install dependencies
         run: |
           go mod download
-          cd frontend
-          npm install
+          # Примечание: npm install не требуется, так как фронтенд - статический vanilla JS
 
       - name: Build
         run: wails build -clean
@@ -1611,7 +1607,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25.5'
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -1648,10 +1644,11 @@ git push origin v1.0.0
 
 ### Быстрый старт для нового разработчика
 
-1. **Установить инструменты:** Go, Node.js, Wails CLI
+1. **Установить инструменты:** Go 1.25.5, Wails CLI
+   - **Примечание:** Node.js и npm не требуются, так как фронтенд - статический vanilla JavaScript
 2. **Клонировать репозиторий:** `git clone ...`
 3. **Запустить в dev режиме:** `wails dev`
-4. **Начать разработку:** изменять файлы в `app/` и `frontend/`
+4. **Начать разработку:** изменять файлы в `internal/app/` и `frontend/`
 5. **Тестировать:** `go test ./...` для backend, E2E для frontend
 6. **Собрать:** `wails build -upx`
 
@@ -1674,4 +1671,4 @@ git push origin v1.0.0
 
 *Документ подготовлен: 2025-12-22*
 *Версия: 1.0*
-*Статус: Подготовка к реализации*
+*Статус: Реализовано/Актуально*

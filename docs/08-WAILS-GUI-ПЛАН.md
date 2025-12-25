@@ -54,7 +54,7 @@
                ▼
 ┌─────────────────────────────────────────┐
 │  BACKEND: Go                            │
-│  - internal/app/app.go (адаптер)        │
+│  - internal/app/app.go (адаптер) ✅      │
 │  - internal/converter/* (логика)        │
 │  - internal/parser/* (API ЦБ РФ)        │
 │  - internal/cache/* (кэширование)       │
@@ -77,7 +77,7 @@ CurRate-Go/
 │
 ├── internal/
 │   ├── app/
-│   │   └── app.go                   # App struct с методами для frontend
+│   │   └── app.go                   # App struct с методами для frontend (✅ internal/app/app.go)
 │   │
 │   ├── converter/                   # ✅ Уже реализовано (Этап 5)
 │   ├── parser/                      # ✅ Уже реализовано (Этап 3)
@@ -95,7 +95,7 @@ CurRate-Go/
 │   │   ├── status-bar.js             # Управление строкой состояния
 │   │   └── utils.js                 # Вспомогательные функции
 │   └── wailsjs/                     # Автогенерируемые биндинги
-│   └── dist/                        # Build output (генерируется)
+│   └── wailsjs/                     # Автогенерируемые Wails bindings
 │
 ├── build/
 │   ├── windows/
@@ -551,7 +551,7 @@ export class Calendar {
 
 ## 5. GO BACKEND (App struct)
 
-### 5.1. internal/app/app.go
+### 5.1. internal/app/app.go ✅ РЕАЛИЗОВАНО
 
 ```go
 package app
@@ -642,7 +642,7 @@ import (
 	"github.com/bivlked/currate-go/internal/app"
 )
 
-//go:embed all:frontend/dist
+//go:embed all:frontend
 var assets embed.FS
 
 func main() {

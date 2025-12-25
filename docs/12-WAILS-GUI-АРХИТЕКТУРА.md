@@ -43,7 +43,7 @@
 | **Frontend** | HTML/CSS/Vanilla JS | Пользовательский интерфейс |
 | **UI Rendering** | WebView2 (Chromium) | Рендеринг HTML |
 | **Bridge** | Wails v2 Runtime | Связь Go ↔ JavaScript |
-| **Backend** | Go 1.21+ | Бизнес-логика |
+| **Backend** | Go 1.25.5 | Бизнес-логика |
 | **Data Layer** | Go (parser, cache) | Работа с данными |
 | **External API** | CBR RF XML API | Источник курсов валют |
 
@@ -92,7 +92,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Backend Layer (Go)                         │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │  app/app.go - App struct                                 │  │
+│  │  internal/app/app.go - App struct                        │  │
 │  │                                                          │  │
 │  │  Methods:                                                │  │
 │  │  - Convert(ConvertRequest) ConvertResponse               │  │
@@ -257,7 +257,7 @@
 
 #### Backend Components
 
-**1. App (GUI Facade)** (`app/app.go`)
+**1. App (GUI Facade)** (`internal/app/app.go`)
 - **Роль:** Фасад для GUI, точка входа для Wails bindings
 - **Обязанности:**
   - Приём запросов из JavaScript
@@ -443,9 +443,8 @@
 │  9. App.Convert() (продолжение)                               │
 │     - Формирование ConvertResponse                            │
 │     - Success = true                                          │
-│     - Result = "80 722,00 руб. ..."                           │
-│     - RubAmount = 80722.00                                    │
-│     - Rate = 80.7220                                          │
+│     - Result = "80 722,00 руб. ($1 000,00 по курсу 80,7220)" │
+│     - Error = ""                                              │
 └───────────────────┬───────────────────────────────────────────┘
                     │ Wails JSON deserialization
                     ▼
@@ -963,4 +962,4 @@ conv := converter.NewConverter(ecbParser, cacheStorage)
 
 *Документ подготовлен: 2025-12-22*
 *Версия: 1.0*
-*Статус: Подготовка к реализации*
+*Статус: Реализовано/Актуально*

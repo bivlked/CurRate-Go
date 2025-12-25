@@ -258,8 +258,9 @@ import (
     "time"
 )
 
-// FetchRate получает курс валюты с XML API ЦБ РФ
-func FetchRate(currency string, date time.Time) (float64, error) {
+// FetchRates получает курсы валют с XML API ЦБ РФ на указанную дату
+// Возвращает *RateData с картой курсов для всех валют
+func FetchRates(date time.Time) (*models.RateData, error) {
     // 1. Нормализация входных данных
     currency = strings.TrimSpace(strings.ToUpper(currency))
 
