@@ -707,14 +707,41 @@ console.error('Validation failed:', error);
 
 Production сборка создаёт оптимизированный бинарник для конечных пользователей.
 
-### Команда сборки
+### Автоматизированная сборка (рекомендуется)
+
+Для удобства создан скрипт `build.bat`, который автоматизирует процесс сборки:
+
+```bash
+# Development build (без оптимизации)
+build.bat dev
+
+# Production build (оптимизированный, без UPX)
+build.bat prod
+
+# Production build с UPX сжатием (минимальный размер)
+build.bat prod-upx
+```
+
+**Преимущества build.bat:**
+- ✅ Автоматическая проверка результата сборки
+- ✅ Отображение размера собранного файла
+- ✅ Опциональное UPX сжатие с проверкой наличия UPX
+- ✅ Подробный вывод информации о процессе сборки
+- ✅ Обработка ошибок
+
+### Ручная сборка
+
+Если вы предпочитаете использовать команды напрямую:
 
 ```bash
 # Сборка с настройками по умолчанию
 wails build
 
-# Сборка с UPX сжатием
-wails build -upx
+# Production сборка с оптимизацией
+wails build -clean -ldflags "-s -w"
+
+# Production сборка с UPX сжатием
+wails build -clean -upx -ldflags "-s -w"
 
 # Сборка с отладочной информацией
 wails build -debug
@@ -769,8 +796,16 @@ build/
 **Рекомендация для релиза:**
 
 ```bash
-wails build -clean -upx -ldflags "-s -w -X main.version=1.0.0"
+# Используйте build.bat для автоматизации
+build.bat prod-upx
+
+# Или вручную:
+wails build -clean -upx -ldflags "-s -w"
 ```
+
+**Примечание:** Для UPX сжатия необходимо установить UPX:
+- Chocolatey: `choco install upx`
+- Или скачать вручную: https://upx.github.io/
 
 ### Создание установщика (Windows)
 

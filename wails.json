@@ -28,7 +28,9 @@
   "garble": false,
   "upx": false,
   "upxflags": "",
+  "_comment_upx": "UPX compression disabled by default. Use build.bat prod-upx for UPX compression",
   "ldflags": "-s -w",
+  "_comment_ldflags": "Production optimization: -s (strip symbol table), -w (omit DWARF symbol table)",
   "windows": {
     "icon": "build/windows/icon.ico"
   }
