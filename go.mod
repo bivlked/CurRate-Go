@@ -1,6 +1,6 @@
 module github.com/bivlked/currate-go
 
-go 1.25.5
+go 1.22.5
 
 require (
 	github.com/wailsapp/wails/v2 v2.11.0
