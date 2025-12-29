@@ -399,31 +399,6 @@ function hideRatePreview() {
     }
 }
 
-/**
- * Получает выбранную валюту
- * @returns {string|null} Код валюты или null
- */
-function getSelectedCurrency() {
-    const currencyInput = document.querySelector('input[name="currency"]:checked');
-    return currencyInput ? currencyInput.value : null;
-}
-
-/**
- * Получает выбранную дату
- * @returns {string|null} Дата в формате DD.MM.YYYY или null
- */
-function getSelectedDate() {
-    const dateInput = document.getElementById('date-input');
-    if (!dateInput || !dateInput.value) {
-        return null;
-    }
-    const dateStr = dateInput.value.trim();
-    if (!isValidDateFormat(dateStr)) {
-        return null;
-    }
-    return dateStr;
-}
-
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
@@ -433,4 +408,3 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('datechanged', (e) => {
     updateRatePreview();
 });
-
