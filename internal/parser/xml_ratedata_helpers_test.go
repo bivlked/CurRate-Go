@@ -49,8 +49,10 @@ func TestParseXML_UsesNewRateData(t *testing.T) {
 	}
 
 	// Проверяем, что дата установлена корректно
-	if !result.Date.Equal(date) {
-		t.Errorf("ParseXML() result.Date = %v, want %v", result.Date, date)
+	// ParseXML использует дату из XML (DD.MM.YYYY), которая нормализуется к полуночи
+	expectedDate := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	if !result.Date.Equal(expectedDate) {
+		t.Errorf("ParseXML() result.Date = %v, want %v", result.Date, expectedDate)
 	}
 }
 
@@ -146,8 +148,10 @@ func TestParseXML_RateDataHelpersIntegration(t *testing.T) {
 	if usdRate.Nominal != 1 {
 		t.Errorf("GetRate() USD nominal = %d, want 1", usdRate.Nominal)
 	}
-	if !usdRate.Date.Equal(date) {
-		t.Errorf("GetRate() USD date = %v, want %v", usdRate.Date, date)
+	// ParseXML использует дату из XML (DD.MM.YYYY), которая нормализуется к полуночи
+	expectedDate := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	if !usdRate.Date.Equal(expectedDate) {
+		t.Errorf("GetRate() USD date = %v, want %v", usdRate.Date, expectedDate)
 	}
 }
 
