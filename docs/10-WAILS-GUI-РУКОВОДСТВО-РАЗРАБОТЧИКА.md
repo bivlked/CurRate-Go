@@ -229,11 +229,9 @@ golangci-lint --version
 
 ```
 CurRate-Go/
-├── cmd/
-│   └── currate/
-│       └── main.go              # Entry point (CLI версия)
+├── main_gui.go                  # Entry point (GUI приложение)
 │
-├── internal/                    # Существующая бизнес-логика
+├── internal/                    # Бизнес-логика
 │   ├── models/                  # Модели данных
 │   ├── parser/                  # XML парсер ЦБ РФ
 │   ├── cache/                   # LRU кэш

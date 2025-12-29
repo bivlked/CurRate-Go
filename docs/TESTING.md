@@ -169,9 +169,15 @@ func TestConverter_Convert(t *testing.T) {
     result, err := conv.Convert(1000.0, models.USD, time.Now())
 
     // Assert
-    assert.NoError(t, err)
-    assert.NotNil(t, result)
-    assert.Greater(t, result.Amount, 0.0)
+    if err != nil {
+        t.Fatalf("Convert() error = %v, want nil", err)
+    }
+    if result == nil {
+        t.Fatal("Convert() returned nil result")
+    }
+    if result.TargetAmount <= 0.0 {
+        t.Errorf("Convert() result.TargetAmount = %v, want > 0", result.TargetAmount)
+    }
 }
 ```
 
@@ -188,9 +194,15 @@ func TestFetchRates_Integration(t *testing.T) {
     rates, err := parser.FetchRates(date)
 
     // Assert
-    assert.NoError(t, err)
-    assert.NotNil(t, rates)
-    assert.Greater(t, len(rates.Rates), 0)
+    if err != nil {
+        t.Fatalf("FetchRates() error = %v, want nil", err)
+    }
+    if rates == nil {
+        t.Fatal("FetchRates() returned nil")
+    }
+    if len(rates.Rates) == 0 {
+        t.Error("FetchRates() returned empty rates map")
+    }
 }
 ```
 
@@ -199,11 +211,11 @@ func TestFetchRates_Integration(t *testing.T) {
 ```go
 func BenchmarkLRUCache_Get(b *testing.B) {
     cache := cache.NewLRUCache(100, 24*time.Hour)
-    cache.Set("key", "value")
+    cache.Set(models.USD, time.Now(), 80.0, time.Now())
 
     b.ResetTimer()
     for i := 0; i < b.N; i++ {
-        cache.Get("key")
+        cache.Get(models.USD, time.Now())
     }
 }
 ```
@@ -241,12 +253,9 @@ func TestConverter_Convert(t *testing.T) {
 type mockRateProvider struct{}
 
 func (m *mockRateProvider) FetchRates(date time.Time) (*models.RateData, error) {
-    return &models.RateData{
-        Date: date,
-        Rates: []models.ExchangeRate{
-            {Currency: models.USD, Value: 80.0},
-        },
-    }, nil
+    rateData := models.NewRateData(date)
+    rateData.AddRate(models.USD, 80.0, 840, 1, "Доллар США")
+    return rateData, nil
 }
 ```
 
@@ -258,14 +267,23 @@ func (m *mockRateProvider) FetchRates(date time.Time) (*models.RateData, error) 
 - Невалидные данные
 - Ошибки сети
 
-### 4. Используйте assertions
+### 4. Проверяйте ошибки явно
 
 ```go
-import "github.com/stretchr/testify/assert"
+// Проверка отсутствия ошибок
+if err != nil {
+    t.Fatalf("unexpected error: %v", err)
+}
 
-assert.NoError(t, err)
-assert.NotNil(t, result)
-assert.Equal(t, expected, actual)
+// Проверка наличия результата
+if result == nil {
+    t.Fatal("result should not be nil")
+}
+
+// Проверка равенства
+if actual != expected {
+    t.Errorf("got %v, want %v", actual, expected)
+}
 ```
 
 ---

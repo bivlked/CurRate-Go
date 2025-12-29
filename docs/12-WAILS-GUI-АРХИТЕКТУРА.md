@@ -916,16 +916,20 @@ cacheStorage := cache.NewLRUCache(1000, 24*time.Hour)
 
 3. Обновить UI (добавить радиокнопку)
 
-**Добавление новых источников курсов:**
+**Добавление новых источников курсов (гипотетически):**
 
 1. Создать новый Parser (например, `internal/parser/ecb.go` для ECB API)
 2. Реализовать `RateProvider` interface
 3. Передать в Converter вместо CBR Parser
 
 ```go
-// Пример: использовать ECB вместо CBR
-ecbParser := parser.NewECBParser()
-conv := converter.NewConverter(ecbParser, cacheStorage)
+// Гипотетический пример: использовать ECB вместо CBR (не реализовано)
+// ecbParser := parser.NewECBParser()  // Этой функции не существует
+// conv := converter.NewConverter(ecbParser, cacheStorage)
+
+// Текущая реализация использует только CBR Parser
+cbrParser := parser.NewCBRParser(httpClient)
+conv := converter.NewConverter(cbrParser, cacheStorage)
 ```
 
 ---

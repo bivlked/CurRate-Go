@@ -69,73 +69,9 @@ wails build
 
 **Подробнее:** См. [Руководство пользователя](docs/09-WAILS-GUI-РУКОВОДСТВО-ПОЛЬЗОВАТЕЛЯ.md)
 
-### Первый запуск (API)
-
-```go
-package main
-
-import (
-    "fmt"
-    "time"
-    "github.com/bivlked/currate-go/internal/converter"
-    "github.com/bivlked/currate-go/internal/parser"
-    "github.com/bivlked/currate-go/internal/cache"
-    "github.com/bivlked/currate-go/internal/models"
-)
-
-func main() {
-    // Создаем кэш
-    cacheStorage := cache.NewLRUCache(100, 24*time.Hour)
-
-    // Создаем адаптер для parser.FetchRates под интерфейс RateProvider
-    rateProvider := &rateProviderAdapter{}
-
-    // Создаем конвертер (результат всегда в RUB)
-    conv := converter.NewConverter(rateProvider, cacheStorage)
-
-    // Конвертируем 1000 USD в RUB на сегодня
-    result, err := conv.Convert(
-        1000.0,
-        models.USD,
-        time.Now(),
-    )
-
-    if err != nil {
-        panic(err)
-    }
-
-    fmt.Println(result.FormattedStr)
-    // Вывод: 80 722,00 руб. ($1 000,00 по курсу 80,7220)
-}
-
-// rateProviderAdapter адаптирует функцию parser.FetchRates к интерфейсу RateProvider
-type rateProviderAdapter struct{}
-
-func (r *rateProviderAdapter) FetchRates(date time.Time) (*models.RateData, error) {
-    return parser.FetchRates(date)
-}
-```
-
-### Примеры использования
-
-**Пример 1: Конвертация USD → RUB**
-```go
-result, err := conv.Convert(1000.0, models.USD, time.Now())
-// Результат: 80 722,00 руб. ($1 000,00 по курсу 80,7220)
-```
-
-**Пример 2: Конвертация EUR → RUB на конкретную дату**
-```go
-date := time.Date(2025, 12, 25, 0, 0, 0, 0, time.UTC)
-result, err := conv.Convert(500.0, models.EUR, date)
-// Результат: 45 123,50 руб. (€500,00 по курсу 90,2470)
-```
-
-**Пример 3: Конвертация RUB → RUB (мгновенно, без API)**
-```go
-result, err := conv.Convert(1000.0, models.RUB, time.Now())
-// Результат: 1 000,00 руб. (без запроса к API)
-```
+> **💡 Примечание для разработчиков:**
+> CurRate-Go - это desktop приложение. Для использования программы установите `.exe` файл или запустите через `wails dev`.
+> Если вы хотите расширить функциональность или создать свою версию, см. [Руководство разработчика](docs/10-WAILS-GUI-РУКОВОДСТВО-РАЗРАБОТЧИКА.md) и [API документацию](docs/11-WAILS-GUI-API-ДОКУМЕНТАЦИЯ.md).
 
 ---
 
