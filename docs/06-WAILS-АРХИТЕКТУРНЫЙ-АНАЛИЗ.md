@@ -409,13 +409,15 @@ CurRate-Go-Rewrite/
 
 ### 6.3. Ключевые файлы
 
-#### cmd/currate/main.go
+#### main_gui.go
 ```go
 package main
 
 import (
+    "context"
     "embed"
     "log"
+    "time"
 
     "github.com/wailsapp/wails/v2"
     "github.com/wailsapp/wails/v2/pkg/options"
@@ -423,37 +425,64 @@ import (
     "github.com/wailsapp/wails/v2/pkg/options/windows"
 
     "github.com/bivlked/currate-go/internal/app"
+    "github.com/bivlked/currate-go/internal/cache"
+    "github.com/bivlked/currate-go/internal/converter"
+    "github.com/bivlked/currate-go/internal/models"
+    "github.com/bivlked/currate-go/internal/parser"
 )
 
-//go:embed all:frontend/dist
+//go:embed all:frontend
 var assets embed.FS
 
-func main() {
-    // Инициализация компонентов
-    application := app.NewApp()
+// rateProviderAdapter адаптирует функцию parser.FetchRates к интерфейсу converter.RateProvider
+type rateProviderAdapter struct{}
 
-    // Запуск Wails приложения
+func (r *rateProviderAdapter) FetchRates(date time.Time) (*models.RateData, error) {
+    return parser.FetchRates(date)
+}
+
+func main() {
+    // Создаем кэш для курсов валют (DI pattern)
+    cacheStorage := cache.NewLRUCache(100, 24*time.Hour)
+
+    // Создаем адаптер для parser.FetchRates
+    rateProvider := &rateProviderAdapter{}
+
+    // Создаем конвертер с парсером ЦБ РФ и кэшем
+    conv := converter.NewConverter(rateProvider, cacheStorage)
+
+    // Создаем App instance для GUI
+    appInstance := app.NewApp(conv)
+
+    // Запускаем Wails приложение
     err := wails.Run(&options.App{
-        Title:  "Конвертер валют (с) BiV 2024 г.",
+        Title:  "💱 Конвертер валют (c) BiV",
         Width:  340,
-        Height: 455,
+        Height: 700,
+        MinWidth:  340,
+        MaxWidth:  340,
+        MinHeight: 700,
+        MaxHeight: 700,
+        DisableResize: true,
         AssetServer: &assetserver.Options{
             Assets: assets,
         },
-        BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
-        OnStartup:        application.Startup,
+        BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
+        OnStartup: func(ctx context.Context) {
+            appInstance.Startup(ctx)
+        },
         Bind: []interface{}{
-            application,
+            appInstance,
         },
         Windows: &windows.Options{
             WebviewIsTransparent: false,
             WindowIsTranslucent:  false,
-            DisableWindowIcon:    false,
+            DisableWindowIcon:    true,
         },
     })
 
     if err != nil {
-        log.Fatal(err)
+        log.Fatal("Ошибка запуска приложения:", err)
     }
 }
 ```
@@ -475,59 +504,92 @@ import (
 
 // App структура для Wails приложения
 type App struct {
-    ctx       context.Context
     converter *converter.Converter
 }
 
-// NewApp создает новый App
-func NewApp() *App {
-    // Инициализация компонентов
-    cacheInstance := cache.NewLRUCache(100, 24*time.Hour)
-    httpClient := parser.NewHTTPClient(10 * time.Second)
-    cbrParser := parser.NewCBRParser(httpClient)
-    currencyConverter := converter.NewConverter(cbrParser, cacheInstance)
-
+// NewApp создает новый App с внедрением зависимостей
+func NewApp(conv *converter.Converter) *App {
     return &App{
-        converter: currencyConverter,
+        converter: conv,
     }
 }
 
-// Startup вызывается при старте приложения
+// Startup вызывается при запуске приложения
+// ctx не используется, но параметр обязателен для интерфейса Wails
 func (a *App) Startup(ctx context.Context) {
-    a.ctx = ctx
+    _ = ctx // Игнорируем неиспользуемый параметр
 }
 
 // ConvertRequest структура запроса на конвертацию
 type ConvertRequest struct {
     Amount   float64 `json:"amount"`
     Currency string  `json:"currency"`
-    Date     string  `json:"date"` // "2025-12-20"
+    Date     string  `json:"date"`     // "DD.MM.YYYY"
 }
 
-// Convert метод для вызова из JavaScript
-func (a *App) Convert(req ConvertRequest) (*models.ConversionResult, error) {
-    // Парсинг даты
-    date, err := time.Parse("2006-01-02", req.Date)
+// ConvertResponse - ответ на конвертацию для JavaScript
+type ConvertResponse struct {
+    Success bool   `json:"success"` // Успешность операции
+    Result  string `json:"result"`  // Отформатированный результат (если success=true)
+    Error   string `json:"error"`   // Сообщение об ошибке (если success=false)
+}
+
+// Convert конвертирует валюту
+// Вызывается из JavaScript для выполнения конвертации
+func (a *App) Convert(req ConvertRequest) ConvertResponse {
+    // Парсим валюту
+    currency, err := models.ParseCurrency(req.Currency)
     if err != nil {
-        return nil, fmt.Errorf("некорректный формат даты: %w", err)
+        return ConvertResponse{
+            Success: false,
+            Error:   fmt.Sprintf("Неподдерживаемая валюта: %s", req.Currency),
+        }
     }
 
-    // Парсинг валюты
-    currency := models.Currency(req.Currency)
+    // Парсим дату (формат DD.MM.YYYY)
+    date, err := parseDate(req.Date)
+    if err != nil {
+        return ConvertResponse{
+            Success: false,
+            Error:   fmt.Sprintf("Неверный формат даты: %s. Используйте формат ДД.ММ.ГГГГ", req.Date),
+        }
+    }
 
-    // Вызов конвертера
+    // Выполняем конвертацию
     result, err := a.converter.Convert(req.Amount, currency, date)
     if err != nil {
-        return nil, err
+        return ConvertResponse{
+            Success: false,
+            Error:   translateError(err),
+        }
     }
 
-    return result, nil
+    return ConvertResponse{
+        Success: true,
+        Result:  result.FormattedStr,
+    }
 }
 
-// GetTodayDate возвращает сегодняшнюю дату в формате YYYY-MM-DD
-func (a *App) GetTodayDate() string {
-    return time.Now().Format("2006-01-02")
+// parseDate парсит дату из формата "DD.MM.YYYY"
+func parseDate(dateStr string) (time.Time, error) {
+    layout := "02.01.2006"
+    date, err := time.ParseInLocation(layout, dateStr, time.Local)
+    if err != nil {
+        return time.Time{}, fmt.Errorf("неверный формат даты: %w", err)
+    }
+    return date, nil
 }
+
+// translateError преобразует ошибку в понятное сообщение на русском языке
+func translateError(err error) string {
+    if err == nil {
+        return ""
+    }
+    // Упрощенная версия для примера
+    return err.Error()
+}
+
+
 ```
 
 #### frontend/index.html
