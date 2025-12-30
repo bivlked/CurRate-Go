@@ -323,22 +323,34 @@ import (
 	"github.com/bivlked/currate-go/internal/parser"
 )
 
-//go:embed all:frontend/dist
+//go:embed all:frontend
 var assets embed.FS
 
+// rateProviderAdapter адаптирует функцию parser.FetchRates к интерфейсу converter.RateProvider
+type rateProviderAdapter struct{}
+
+func (r *rateProviderAdapter) FetchRates(date time.Time) (*models.RateData, error) {
+	return parser.FetchRates(date)
+}
+
 func main() {
-	// Создать конвертер (бизнес-логика)
+	// Создать кэш для курсов валют
 	cacheStorage := cache.NewLRUCache(100, 24*time.Hour)
-	conv := converter.NewConverter(parser.FetchRates, cacheStorage)
+
+	// Создать адаптер для parser.FetchRates
+	rateProvider := &rateProviderAdapter{}
+
+	// Создать конвертер с парсером ЦБ РФ и кэшем
+	conv := converter.NewConverter(rateProvider, cacheStorage)
 
 	// Создать App instance (GUI backend)
-	app := NewApp(conv)
+	appInstance := NewApp(conv)
 
 	// Запустить Wails приложение
 	err := wails.Run(&options.App{
-		Title:  "CurRate-Go - Конвертер валют",
-		Width:  800,
-		Height: 650,
+		Title:  "💱 Конвертер валют (c) BiV",
+		Width:  340,
+		Height: 700,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

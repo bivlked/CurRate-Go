@@ -151,14 +151,15 @@ function initDateInput() {
     });
     
     // Обработчик ввода даты (валидация и обновление)
-    dateInput.addEventListener('input', debounce(() => {
+    // Debounce убран отсюда - он уже есть внутри updateRatePreview
+    dateInput.addEventListener('input', () => {
         const dateStr = dateInput.value.trim();
-        
+
         if (!dateStr) {
             hideRatePreview();
             return;
         }
-        
+
         if (!isValidDateFormat(dateStr)) {
             // Не показываем ошибку сразу, ждем завершения ввода
             if (dateStr.length === 10) {
@@ -167,7 +168,7 @@ function initDateInput() {
             }
             return;
         }
-        
+
         const date = parseDate(dateStr);
         if (!date) {
             if (dateStr.length === 10) {
@@ -176,20 +177,20 @@ function initDateInput() {
             }
             return;
         }
-        
+
         if (isFutureDate(date)) {
             showError('Дата не может быть в будущем');
             hideRatePreview();
             return;
         }
-        
+
         // Обновляем календарь (если он инициализирован)
         if (typeof setCalendarDate === 'function') {
             setCalendarDate(date);
         }
         updateRatePreview();
         clearStatus();
-    }, 300));
+    });
     
     // Обработчик фокуса
     dateInput.addEventListener('focus', () => {

@@ -2,7 +2,6 @@
 package parser
 
 import (
-	"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -65,9 +64,8 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 	}
 
 	// Если XML содержит декларацию windows-1251 (case-insensitive), конвертируем в UTF-8
-	// Используем case-insensitive проверку для надежности (Windows-1251, WINDOWS-1251 и т.д.)
-	xmlDataLower := bytes.ToLower(xmlData)
-	if bytes.Contains(xmlDataLower, []byte("windows-1251")) {
+	// Используем regex с флагом (?i) для case-insensitive проверки без копирования данных
+	if windows1251Regex.Match(xmlData) {
 		decoder := charmap.Windows1251.NewDecoder()
 		xmlData, err = decoder.Bytes(xmlData)
 		if err != nil {

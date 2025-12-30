@@ -34,7 +34,6 @@ var (
 )
 
 var sleepFunc = time.Sleep
-var httpClientFactory = newHTTPClient
 
 // Глобальный HTTP-клиент для переиспользования соединений (HTTP keep-alive)
 // Создается один раз при инициализации пакета и используется для всех запросов
