@@ -911,3 +911,17 @@ func TestConverter_Convert_NormalizesDateForCache(t *testing.T) {
 		t.Errorf("Ожидался один вызов провайдера благодаря нормализации даты, получено %d", mockProvider.callCount)
 	}
 }
+
+func TestConverter_GetRate_NilProvider(t *testing.T) {
+	cache := NewMockCache()
+	converter := NewConverter(nil, cache)
+
+	_, err := converter.GetRate(models.USD, time.Now())
+	if err == nil {
+		t.Fatal("Ожидалась ошибка при отсутствии источника курсов")
+	}
+
+	if !errors.Is(err, ErrNilRateProvider) {
+		t.Fatalf("Ожидалась ошибка ErrNilRateProvider, получено: %v", err)
+	}
+}

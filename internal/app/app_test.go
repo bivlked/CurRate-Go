@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -160,7 +161,7 @@ func TestApp_Convert_Success(t *testing.T) {
 		t.Errorf("Convert() Error = %q, want empty", result.Error)
 	}
 
-	if !contains(result.Result, "8 000") {
+	if !strings.Contains(result.Result, "8 000") {
 		t.Errorf("Convert() Result = %q, want to contain '8 000'", result.Result)
 	}
 }
@@ -190,7 +191,7 @@ func TestApp_Convert_InvalidCurrency(t *testing.T) {
 		t.Error("Convert() Error is empty, want error message")
 	}
 
-	if !contains(result.Error, "Неподдерживаемая валюта") {
+	if !strings.Contains(result.Error, "Неподдерживаемая валюта") {
 		t.Errorf("Convert() Error = %q, want to contain 'Неподдерживаемая валюта'", result.Error)
 	}
 }
@@ -220,7 +221,7 @@ func TestApp_Convert_InvalidDate(t *testing.T) {
 		t.Error("Convert() Error is empty, want error message")
 	}
 
-	if !contains(result.Error, "Неверный формат даты") {
+	if !strings.Contains(result.Error, "Неверный формат даты") {
 		t.Errorf("Convert() Error = %q, want to contain 'Неверный формат даты'", result.Error)
 	}
 }
@@ -258,7 +259,7 @@ func TestApp_Convert_ConverterError(t *testing.T) {
 		t.Error("Convert() Error is empty, want error message")
 	}
 
-	if !contains(result.Error, "Сумма должна быть положительным числом") {
+	if !strings.Contains(result.Error, "Сумма должна быть положительным числом") {
 		t.Errorf("Convert() Error = %q, want to contain 'Сумма должна быть положительным числом'", result.Error)
 	}
 }
@@ -337,7 +338,7 @@ func TestApp_GetRate_InvalidCurrency(t *testing.T) {
 		t.Error("GetRate() Error is empty, want error message")
 	}
 
-	if !contains(result.Error, "Неподдерживаемая валюта") {
+	if !strings.Contains(result.Error, "Неподдерживаемая валюта") {
 		t.Errorf("GetRate() Error = %q, want to contain 'Неподдерживаемая валюта'", result.Error)
 	}
 }
@@ -361,7 +362,7 @@ func TestApp_GetRate_InvalidDate(t *testing.T) {
 		t.Error("GetRate() Error is empty, want error message")
 	}
 
-	if !contains(result.Error, "Неверный формат даты") {
+	if !strings.Contains(result.Error, "Неверный формат даты") {
 		t.Errorf("GetRate() Error = %q, want to contain 'Неверный формат даты'", result.Error)
 	}
 }
@@ -395,7 +396,7 @@ func TestApp_GetRate_ConverterError(t *testing.T) {
 		t.Error("GetRate() Error is empty, want error message")
 	}
 
-	if !contains(result.Error, "Дата не может быть в будущем") {
+	if !strings.Contains(result.Error, "Дата не может быть в будущем") {
 		t.Errorf("GetRate() Error = %q, want to contain 'Дата не может быть в будущем'", result.Error)
 	}
 }
@@ -448,7 +449,7 @@ func TestParseDate_InvalidFormat(t *testing.T) {
 				t.Errorf("parseDate() error = nil, want error for %q", tt.dateStr)
 			}
 
-			if !contains(err.Error(), "неверный формат даты") {
+			if !strings.Contains(err.Error(), "неверный формат даты") {
 				t.Errorf("parseDate() error = %q, want to contain 'неверный формат даты'", err.Error())
 			}
 		})
@@ -576,17 +577,4 @@ func TestTranslateError_WrappedErrors(t *testing.T) {
 			}
 		})
 	}
-}
-
-// contains проверяет, содержит ли строка подстроку
-func contains(s, substr string) bool {
-	if len(s) < len(substr) {
-		return false
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
