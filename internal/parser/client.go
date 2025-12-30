@@ -36,11 +36,21 @@ var (
 var sleepFunc = time.Sleep
 var httpClientFactory = newHTTPClient
 
+// Глобальный HTTP-клиент для переиспользования соединений (HTTP keep-alive)
+// Создается один раз при инициализации пакета и используется для всех запросов
+// Это значительно повышает производительность за счет:
+// - Переиспользования TCP соединений (keep-alive)
+// - Снижения накладных расходов на создание нового transport для каждого запроса
+// - Эффективного использования пула соединений
+var defaultHTTPClient = newHTTPClient()
+
 // fetchXML выполняет HTTP GET запрос с retry логикой и exponential backoff
 // url - URL для запроса
 // Возвращает io.ReadCloser с XML контентом (caller должен закрыть его)
 func fetchXML(url string) (io.ReadCloser, error) {
-	client := httpClientFactory()
+	// Используем глобальный HTTP-клиент для переиспользования соединений
+	// Это значительно улучшает производительность при частых запросах
+	client := defaultHTTPClient
 
 	var lastErr error
 	for attempt := 1; attempt <= MaxRetries; attempt++ {

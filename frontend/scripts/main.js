@@ -107,6 +107,11 @@ function initDateInput() {
         if (digits.length > 0) {
             const formatted = autoFormatDate(digits);
             dateInput.value = formatted;
+
+            // Явно вызываем событие input для запуска валидации и превью курса
+            // Это необходимо, потому что программная установка value не генерирует событие автоматически
+            dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+
             setTimeout(() => {
                 dateInput.setSelectionRange(formatted.length, formatted.length);
             }, 0);

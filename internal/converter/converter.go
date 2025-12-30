@@ -181,10 +181,17 @@ func (c *Converter) getRateInternal(currency models.Currency, normalizedDate tim
 			rate = rate / float64(exchangeRate.Nominal)
 		}
 
-		// Сохраняем в кэш по запрошенной дате (ключ), но с фактической датой в Entry
-		// Это позволяет найти запись по запрошенной дате, но вернуть фактическую дату
+		// Сохраняем в кэш дважды для максимальной эффективности:
+		// 1) По запрошенной дате - чтобы последующие запросы на ту же дату попадали в кэш
 		c.cache.Set(currency, normalizedDate, rate, actualDate)
-		
+
+		// 2) По фактической дате - чтобы избежать повторных сетевых запросов
+		//    Например: запрос на воскресенье вернет пятницу, затем запрос на пятницу
+		//    найдет данные в кэше без нового обращения к API ЦБ РФ
+		if !actualDate.Equal(normalizedDate) {
+			c.cache.Set(currency, actualDate, rate, actualDate)
+		}
+
 		return rate, actualDate, nil
 	}
 	

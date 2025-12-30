@@ -2,6 +2,10 @@
  * Управление строкой состояния (Status Bar)
  */
 
+// Хранение ID таймера для автоматического скрытия статус-бара
+// Это предотвращает конфликт таймеров при быстрой смене сообщений
+let statusTimeoutId = null;
+
 /**
  * Показывает сообщение в строке состояния
  * @param {string} message - Текст сообщения
@@ -12,12 +16,19 @@ function showStatus(message, type = 'info', duration = 3000) {
     const statusBar = document.getElementById('status-bar');
     const statusIcon = document.getElementById('status-icon');
     const statusMessage = document.getElementById('status-message');
-    
+
     if (!statusBar || !statusIcon || !statusMessage) {
         console.error('Status bar elements not found');
         return;
     }
-    
+
+    // Очищаем предыдущий таймер, если он есть
+    // Это предотвращает преждевременное скрытие нового сообщения старым таймером
+    if (statusTimeoutId !== null) {
+        clearTimeout(statusTimeoutId);
+        statusTimeoutId = null;
+    }
+
     // Устанавливаем иконку в зависимости от типа
     const icons = {
         success: '✅',
@@ -25,23 +36,21 @@ function showStatus(message, type = 'info', duration = 3000) {
         warning: '⚠️',
         info: 'ℹ️'
     };
-    
+
     statusIcon.textContent = icons[type] || icons.info;
-    
+
     // Устанавливаем класс для стилизации
     statusMessage.className = `status-message ${type}`;
     statusMessage.textContent = message;
-    
+
     // Показываем строку состояния
     statusBar.style.display = 'flex';
-    
+
     // Автоматическое скрытие для success и info (если duration > 0)
     if ((type === 'success' || type === 'info') && duration > 0) {
-        setTimeout(() => {
-            // Проверяем, что сообщение не изменилось
-            if (statusMessage.classList.contains(type)) {
-                hideStatus();
-            }
+        statusTimeoutId = setTimeout(() => {
+            hideStatus();
+            statusTimeoutId = null;
         }, duration);
     }
 }

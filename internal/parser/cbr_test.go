@@ -20,12 +20,10 @@ func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func setTestHTTPClientFactory(t *testing.T, rt http.RoundTripper) {
 	t.Helper()
-	originalFactory := httpClientFactory
-	httpClientFactory = func() *http.Client {
-		return &http.Client{Transport: rt}
-	}
+	originalClient := defaultHTTPClient
+	defaultHTTPClient = &http.Client{Transport: rt}
 	t.Cleanup(func() {
-		httpClientFactory = originalFactory
+		defaultHTTPClient = originalClient
 	})
 }
 
