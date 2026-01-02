@@ -45,6 +45,44 @@ jobs:
       - name: Build
         run: wails build -clean -ldflags "-s -w"
 
+      - name: Install UPX
+        shell: pwsh
+        run: |
+          Write-Host "Installing UPX..."
+          winget install --id UPX.UPX --silent --accept-source-agreements --accept-package-agreements
+
+          # Wait for installation to complete
+          Start-Sleep -Seconds 5
+
+          # Verify UPX is available
+          $upxPath = (Get-Command upx -ErrorAction SilentlyContinue).Source
+          if ($upxPath) {
+            Write-Host "UPX installed successfully at: $upxPath"
+            upx --version
+          } else {
+            Write-Error "UPX installation failed"
+            exit 1
+          }
+
+      - name: Compress with UPX
+        shell: pwsh
+        run: |
+          Write-Host "Compressing CurRate.exe with UPX..."
+          $exePath = "build\bin\CurRate.exe"
+
+          # Get original size
+          $originalSize = (Get-Item $exePath).Length
+          Write-Host "Original size: $([math]::Round($originalSize / 1MB, 2)) MB"
+
+          # Apply UPX compression
+          upx --best --lzma $exePath
+
+          # Get compressed size
+          $compressedSize = (Get-Item $exePath).Length
+          $ratio = [math]::Round(($compressedSize / $originalSize) * 100, 2)
+          Write-Host "Compressed size: $([math]::Round($compressedSize / 1MB, 2)) MB"
+          Write-Host "Compression ratio: $ratio%"
+
       - name: Prepare Release Notes
         id: release-notes
         shell: pwsh

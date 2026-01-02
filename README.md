@@ -197,7 +197,6 @@ wails build
 - **Wails Team** за отличный фреймворк для Go desktop приложений
 - **Go Team** за великолепный язык и стандартную библиотеку
 - Сообщество **Go** за вдохновение и best practices
-- **Vector4Free** за иконку приложения ["Exchange Dollar Money"](https://icon-icons.com/icon/exchange-dollar-money/53141) (CC BY 4.0)
 
 ---
 
