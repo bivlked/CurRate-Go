@@ -8,11 +8,13 @@ import (
 
 	"github.com/bivlked/currate-go/internal/converter"
 	"github.com/bivlked/currate-go/internal/models"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App - основной backend для GUI приложения
 // Предоставляет методы для взаимодействия с frontend через Wails bindings
 type App struct {
+	ctx       context.Context
 	converter *converter.Converter
 }
 
@@ -24,9 +26,8 @@ func NewApp(conv *converter.Converter) *App {
 }
 
 // Startup вызывается при запуске приложения
-// ctx не используется, но параметр обязателен для интерфейса Wails
 func (a *App) Startup(ctx context.Context) {
-	_ = ctx // Игнорируем неиспользуемый параметр
+	a.ctx = ctx
 }
 
 // ConvertRequest - запрос на конвертацию из JavaScript
@@ -187,5 +188,14 @@ func translateError(err error) string {
 		}
 		return errStr
 	}
+}
+
+// ShowAbout показывает информацию о программе
+func (a *App) ShowAbout() {
+	_, _ = runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+		Type:    runtime.InfoDialog,
+		Title:   "О программе",
+		Message: "Конвертер валют\n\nВерсия: 1.0.0\n\nКонвертирует доллары и евро в рубли по курсу ЦБ РФ на выбранную дату.\n\n© 2025 BiV\n\nРазработано с использованием:\n• Wails v2\n• Go 1.21+\n• WebView2",
+	})
 }
 

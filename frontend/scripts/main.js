@@ -22,6 +22,7 @@ function initApp() {
             initAmountInput();
             initConvertButton();
             initCopyButton();
+            initAboutButton();
             
             // Показываем начальное сообщение
             showInfo('Готов к работе', 2000);
@@ -253,19 +254,35 @@ function initConvertButton() {
 function initCopyButton() {
     const copyBtn = document.getElementById('copy-btn');
     if (!copyBtn) return;
-    
+
     copyBtn.addEventListener('click', async () => {
         const resultText = document.getElementById('result-text');
         if (!resultText || !resultText.textContent) {
             showWarning('Нет результата для копирования');
             return;
         }
-        
+
         const success = await copyToClipboard(resultText.textContent);
         if (success) {
             showSuccess('Результат скопирован в буфер обмена', 2000);
         } else {
             showError('Не удалось скопировать в буфер обмена');
+        }
+    });
+}
+
+/**
+ * Инициализация кнопки "О программе"
+ */
+function initAboutButton() {
+    const aboutBtn = document.getElementById('about-btn');
+    if (!aboutBtn) return;
+
+    aboutBtn.addEventListener('click', async () => {
+        if (appInstance && typeof appInstance.ShowAbout === 'function') {
+            await appInstance.ShowAbout();
+        } else {
+            console.error('ShowAbout method not available');
         }
     });
 }

@@ -103,8 +103,8 @@ body {
 .container {
   max-width: var(--app-width);
   margin: 0 auto;
-  padding: var(--spacing-lg);
-  padding-bottom: 24px; /* Место для status bar (уменьшено) */
+  padding: var(--spacing-xs) var(--spacing-sm); /* Компактные отступы: 4px сверху/снизу, 8px слева/справа */
+  padding-bottom: 24px; /* Место для status bar */
 }
 
 /* Карточки */
@@ -148,8 +148,8 @@ body {
 
 .date-input {
   flex: 0 0 auto; /* Автоматическая ширина по содержимому */
-  width: 112px; /* 10 символов + запас под шрифт */
-  padding: 10px var(--spacing-sm);
+  width: 85px; /* Уменьшена ширина - убрано лишнее место справа */
+  padding: 3px var(--spacing-sm); /* Финальный компактный padding */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
@@ -191,8 +191,8 @@ body {
 
 /* Live Preview курса */
 .rate-preview {
-  flex: 1;
-  padding: 8px 10px;
+  flex: 0 0 auto; /* Фиксированная ширина по содержимому */
+  padding: 2px 6px; /* Компактный padding для соответствия полю ввода даты */
   background: var(--surface-2);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -201,9 +201,38 @@ body {
   align-items: center;
   gap: var(--spacing-xs);
   min-width: 0; /* Позволяет flex элементу сжиматься */
+  max-width: 110px; /* Уменьшено - убрано лишнее место справа от ₽ */
   white-space: nowrap; /* Предотвращает перенос текста */
   overflow: hidden; /* Предотвращает выход за пределы */
   text-overflow: ellipsis; /* Обрезает текст если не помещается */
+}
+
+/* Кнопка "О программе" */
+.about-btn {
+  flex: 1; /* Занимает всё оставшееся место */
+  height: 26px; /* Высота соответствует полю ввода даты */
+  padding: 0;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.about-btn:active {
+  background: var(--primary-active);
+  transform: translateY(0);
 }
 
 .rate-preview-label {
@@ -236,7 +265,7 @@ body {
   cursor: pointer;
   font-size: var(--font-size-base);
   border-radius: calc(var(--radius-lg) - 4px);
-  min-height: 40px;
+  min-height: 31px; /* Уменьшена высота на 22.5% от исходного */
 }
 
 .radio-label input[type="radio"] {
@@ -252,7 +281,7 @@ body {
   user-select: none;
   width: 100%;
   text-align: center;
-  padding: 10px 12px;
+  padding: 7px 9px; /* Уменьшен padding на 22% от исходного */
   border-radius: calc(var(--radius-lg) - 6px);
   color: var(--text-primary);
   font-weight: var(--font-weight-medium);
@@ -272,7 +301,7 @@ body {
 /* Поле ввода суммы */
 .amount-input {
   width: 100%;
-  padding: 10px var(--spacing-sm);
+  padding: 3px var(--spacing-sm); /* Финальный компактный padding */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
@@ -298,11 +327,11 @@ body {
   max-width: var(--app-width);
   margin-left: auto;
   margin-right: auto;
-  padding: 12px var(--spacing-sm);
+  padding: 9px var(--spacing-sm); /* Уменьшен padding на 25% от исходного */
   background: var(--primary-color);
   color: white;
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -374,11 +403,11 @@ body {
 }
 
 .copy-btn {
-  padding: 10px 12px;
+  padding: 7px 9px; /* Уменьшен padding на 22% от исходного */
   background: #ffffff;
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  border: 1px solid #333333; /* Тонкая тёмная рамка для контраста на светло-зелёном фоне */
+  border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;

@@ -10,6 +10,10 @@ export function GetRate(arg1, arg2) {
   return window['go']['app']['App']['GetRate'](arg1, arg2);
 }
 
+export function ShowAbout() {
+  return window['go']['app']['App']['ShowAbout']();
+}
+
 export function Startup(arg1) {
   return window['go']['app']['App']['Startup'](arg1);
 }

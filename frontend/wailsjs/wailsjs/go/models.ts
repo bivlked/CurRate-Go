@@ -20,6 +20,13 @@ export namespace app {
 	    success: boolean;
 	    result: string;
 	    error: string;
+	    sourceAmount: number;
+	    targetAmountRUB: number;
+	    rate: number;
+	    currency: string;
+	    currencySymbol: string;
+	    requestedDate: string;
+	    actualDate: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConvertResponse(source);
@@ -30,6 +37,13 @@ export namespace app {
 	        this.success = source["success"];
 	        this.result = source["result"];
 	        this.error = source["error"];
+	        this.sourceAmount = source["sourceAmount"];
+	        this.targetAmountRUB = source["targetAmountRUB"];
+	        this.rate = source["rate"];
+	        this.currency = source["currency"];
+	        this.currencySymbol = source["currencySymbol"];
+	        this.requestedDate = source["requestedDate"];
+	        this.actualDate = source["actualDate"];
 	    }
 	}
 	export class RateResponse {

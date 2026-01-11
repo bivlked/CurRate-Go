@@ -43,14 +43,13 @@ func main() {
 
 	// Запускаем Wails приложение
 		err := wails.Run(&options.App{
-	//	Title:  "Конвертер валют (c) BiV",
 		Title:  "Конвертер валют (c) BiV",
 		Width:  360,
-		Height: 700,
+		Height: 745,
 		MinWidth:  360,
 		MaxWidth:  360,
-		MinHeight: 700,
-		MaxHeight: 700,
+		MinHeight: 745,
+		MaxHeight: 745,
 		DisableResize: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
