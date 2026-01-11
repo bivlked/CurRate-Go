@@ -103,7 +103,7 @@ body {
 .container {
   max-width: var(--app-width);
   margin: 0 auto;
-  padding: var(--spacing-xs) var(--spacing-sm); /* Компактные отступы: 4px сверху/снизу, 8px слева/справа */
+  padding: var(--spacing-sm); /* 8px отступы - равны боковым зазорам карточек */
   padding-bottom: 24px; /* Место для status bar */
 }
 
@@ -113,11 +113,11 @@ body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm); /* 8px между карточками */
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease;
   width: 100%;
-  max-width: calc(var(--app-width) - 2 * var(--spacing-lg));
+  max-width: calc(var(--app-width) - 2 * var(--spacing-sm)); /* 344px = 8px боковые зазоры */
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
@@ -144,6 +144,7 @@ body {
   max-width: var(--app-width);
   margin-left: auto;
   margin-right: auto;
+  margin-bottom: var(--spacing-sm); /* 8px зазор перед календарём */
 }
 
 .date-input {
@@ -214,7 +215,7 @@ body {
   padding: 0;
   background: var(--primary-color);
   color: white;
-  border: none;
+  border: 1px solid #333333; /* Тонкая тёмная рамка */
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
@@ -330,7 +331,7 @@ body {
   padding: 9px var(--spacing-sm); /* Уменьшен padding на 25% от исходного */
   background: var(--primary-color);
   color: white;
-  border: none;
+  border: 1px solid #333333; /* Тонкая тёмная рамка */
   border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
