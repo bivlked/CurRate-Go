@@ -8,7 +8,11 @@ import (
 
 	"github.com/bivlked/currate-go/internal/converter"
 	"github.com/bivlked/currate-go/internal/models"
+	"github.com/bivlked/currate-go/internal/telegram"
 )
+
+// AppVersion - версия приложения
+const AppVersion = "1.1.0"
 
 // App - основной backend для GUI приложения
 // Предоставляет методы для взаимодействия с frontend через Wails bindings
@@ -196,12 +200,28 @@ type SendStarResponse struct {
 }
 
 // SendStar отправляет звезду в Telegram бот автора
-// TODO: реализовать отправку в Telegram бот
 func (a *App) SendStar() SendStarResponse {
-	// Заглушка - функционал будет реализован позже
+	// Получаем или создаем уникальный ID пользователя
+	userID, err := telegram.GetOrCreateUserID()
+	if err != nil {
+		return SendStarResponse{
+			Success: false,
+			Error:   "Не удалось получить ID пользователя",
+		}
+	}
+
+	// Создаем клиент Telegram и отправляем уведомление
+	client := telegram.NewClient()
+	err = client.SendStar(userID, AppVersion)
+	if err != nil {
+		return SendStarResponse{
+			Success: false,
+			Error:   "Не удалось отправить звезду. Проверьте подключение к интернету.",
+		}
+	}
+
 	return SendStarResponse{
-		Success: false,
-		Error:   "Функция будет доступна в следующей версии",
+		Success: true,
 	}
 }
 
