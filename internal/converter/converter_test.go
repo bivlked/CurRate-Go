@@ -614,7 +614,7 @@ func TestConverter_Convert_Success(t *testing.T) {
 	}
 
 	// Проверяем что курс сохранен в кэше
-		cachedRate, _, found := cache.Get(models.USD, date)
+	cachedRate, _, found := cache.Get(models.USD, date)
 	if !found {
 		t.Error("Курс должен быть сохранен в кэше")
 	}
@@ -633,7 +633,7 @@ func TestConverter_Convert_CacheHit(t *testing.T) {
 
 	cache := NewMockCache()
 	// Предварительно заполняем кэш
-		cache.Set(models.USD, date, 85.0, date) // requestedDate и actualDate одинаковы
+	cache.Set(models.USD, date, 85.0, date) // requestedDate и actualDate одинаковы
 
 	converter := NewConverter(mockProvider, cache)
 
@@ -866,7 +866,7 @@ func TestConverter_Convert_NormalizesNominalRate(t *testing.T) {
 		t.Errorf("TargetAmount: ожидалось 100.0, получено %v", result.TargetAmount)
 	}
 
-		cachedRate, _, found := cache.Get(models.USD, date)
+	cachedRate, _, found := cache.Get(models.USD, date)
 	if !found {
 		t.Fatal("Ожидался сохраненный курс в кэше")
 	}

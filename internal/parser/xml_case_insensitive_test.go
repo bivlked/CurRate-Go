@@ -86,4 +86,3 @@ func TestParseXML_Windows1251CaseInsensitive(t *testing.T) {
 		})
 	}
 }
-

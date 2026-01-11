@@ -66,7 +66,10 @@ func (c *LRUCache) Get(currency models.Currency, date time.Time) (float64, time.
 		return 0, time.Time{}, false
 	}
 
-	entry := elem.Value.(*Entry)
+	entry, ok := elem.Value.(*Entry)
+	if !ok {
+		return 0, time.Time{}, false
+	}
 
 	// Проверка TTL
 	if sinceFunc(entry.timestamp) > c.ttl {
@@ -96,12 +99,13 @@ func (c *LRUCache) Set(currency models.Currency, requestedDate time.Time, rate f
 
 	// Если уже существует - обновить
 	if elem, exists := c.cache[key]; exists {
-		entry := elem.Value.(*Entry)
-		entry.rate = rate
-		entry.timestamp = nowFunc()
-		entry.actualDate = actualDate // Обновляем фактическую дату
-		c.lru.MoveToBack(elem)
-		return
+		if entry, ok := elem.Value.(*Entry); ok {
+			entry.rate = rate
+			entry.timestamp = nowFunc()
+			entry.actualDate = actualDate // Обновляем фактическую дату
+			c.lru.MoveToBack(elem)
+			return
+		}
 	}
 
 	// Вытеснение если переполнен
@@ -109,7 +113,9 @@ func (c *LRUCache) Set(currency models.Currency, requestedDate time.Time, rate f
 		oldest := c.lru.Front()
 		if oldest != nil {
 			c.lru.Remove(oldest)
-			delete(c.cache, oldest.Value.(*Entry).key)
+			if entry, ok := oldest.Value.(*Entry); ok {
+				delete(c.cache, entry.key)
+			}
 		}
 	}
 

@@ -183,4 +183,3 @@ func TestConverter_GetRate_UsesCache(t *testing.T) {
 		t.Errorf("Курсы не совпадают: rate1 = %v, rate2 = %v", rate1, rate2)
 	}
 }
-

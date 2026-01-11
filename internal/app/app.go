@@ -95,7 +95,7 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 	}
 
 	return ConvertResponse{
-		Success: true,
+		Success:         true,
 		Result:          result.FormattedStr,
 		SourceAmount:    result.SourceAmount,
 		TargetAmountRUB: result.TargetAmount,
@@ -224,4 +224,3 @@ func (a *App) SendStar() SendStarResponse {
 		Success: true,
 	}
 }
-

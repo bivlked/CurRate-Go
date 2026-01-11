@@ -154,4 +154,3 @@ func TestParseXML_RateDataHelpersIntegration(t *testing.T) {
 		t.Errorf("GetRate() USD date = %v, want %v", usdRate.Date, expectedDate)
 	}
 }
-

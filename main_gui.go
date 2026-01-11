@@ -42,14 +42,14 @@ func main() {
 	appInstance := app.NewApp(conv)
 
 	// Запускаем Wails приложение
-		err := wails.Run(&options.App{
-		Title:  "Конвертер валют (c) BiV",
-		Width:  360,
-		Height: 748,
-		MinWidth:  360,
-		MaxWidth:  360,
-		MinHeight: 748,
-		MaxHeight: 748,
+	err := wails.Run(&options.App{
+		Title:         "Конвертер валют (c) BiV",
+		Width:         360,
+		Height:        748,
+		MinWidth:      360,
+		MaxWidth:      360,
+		MinHeight:     748,
+		MaxHeight:     748,
 		DisableResize: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
@@ -72,4 +72,3 @@ func main() {
 		log.Fatal("Ошибка запуска приложения:", err)
 	}
 }
-

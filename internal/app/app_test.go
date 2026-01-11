@@ -169,7 +169,7 @@ func TestApp_Convert_Success(t *testing.T) {
 func TestApp_Convert_InvalidCurrency(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{
-		Date: date,
+		Date:  date,
 		Rates: map[models.Currency]models.ExchangeRate{},
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
@@ -199,7 +199,7 @@ func TestApp_Convert_InvalidCurrency(t *testing.T) {
 func TestApp_Convert_InvalidDate(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{
-		Date: date,
+		Date:  date,
 		Rates: map[models.Currency]models.ExchangeRate{},
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
@@ -298,7 +298,7 @@ func TestApp_GetRate_Success(t *testing.T) {
 func TestApp_GetRate_RUB(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{
-		Date: date,
+		Date:  date,
 		Rates: map[models.Currency]models.ExchangeRate{},
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
@@ -322,7 +322,7 @@ func TestApp_GetRate_RUB(t *testing.T) {
 func TestApp_GetRate_InvalidCurrency(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{
-		Date: date,
+		Date:  date,
 		Rates: map[models.Currency]models.ExchangeRate{},
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
@@ -346,7 +346,7 @@ func TestApp_GetRate_InvalidCurrency(t *testing.T) {
 func TestApp_GetRate_InvalidDate(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{
-		Date: date,
+		Date:  date,
 		Rates: map[models.Currency]models.ExchangeRate{},
 	}
 	conv := createTestConverter(rateData, nil, 0, false)

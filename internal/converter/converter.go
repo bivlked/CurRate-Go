@@ -194,7 +194,7 @@ func (c *Converter) getRateInternal(currency models.Currency, normalizedDate tim
 
 		return rate, actualDate, nil
 	}
-	
+
 	// Курс найден в кэше - возвращаем с фактической датой из кэша
 	return rate, actualDate, nil
 }
@@ -230,6 +230,7 @@ func (noopCache) Get(currency models.Currency, date time.Time) (float64, time.Ti
 	return 0, time.Time{}, false
 }
 
-func (noopCache) Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time) {}
+func (noopCache) Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time) {
+}
 
 func (noopCache) Clear() {}
