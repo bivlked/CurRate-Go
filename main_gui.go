@@ -43,8 +43,9 @@ func main() {
 
 	// Запускаем Wails приложение
 	err := wails.Run(&options.App{
-		Title:  "💱 Конвертер валют (c) BiV",
-		Width:  340, // Слегка расширено для размещения сокращенного заголовка
+	//	Title:  "Конвертер валют (c) BiV",
+		Title:  "КУРсы ВАлют (КУРВА) (c) BiV",
+		Width:  340,
 		Height: 700,
 		MinWidth:  340,
 		MaxWidth:  340,
@@ -64,7 +65,7 @@ func main() {
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
-			DisableWindowIcon:    true, // Убираем иконку окна (Word icon)
+			DisableWindowIcon:    false, // Включаем иконку окна
 		},
 	})
 
