@@ -7,6 +7,6 @@ export function Convert(arg1:app.ConvertRequest):Promise<app.ConvertResponse>;
 
 export function GetRate(arg1:string,arg2:string):Promise<app.RateResponse>;
 
-export function ShowAbout():Promise<void>;
+export function SendStar():Promise<app.SendStarResponse>;
 
 export function Startup(arg1:context.Context):Promise<void>;

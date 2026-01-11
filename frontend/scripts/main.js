@@ -272,19 +272,64 @@ function initCopyButton() {
 }
 
 /**
- * Инициализация кнопки "О программе"
+ * Инициализация кнопки "О программе" и модального окна
  */
 function initAboutButton() {
     const aboutBtn = document.getElementById('about-btn');
-    if (!aboutBtn) return;
+    const aboutModal = document.getElementById('about-modal');
+    const closeBtn = aboutModal?.querySelector('.about-modal-close');
+    const sendStarBtn = document.getElementById('send-star-btn');
 
-    aboutBtn.addEventListener('click', async () => {
-        if (appInstance && typeof appInstance.ShowAbout === 'function') {
-            await appInstance.ShowAbout();
-        } else {
-            console.error('ShowAbout method not available');
+    if (!aboutBtn || !aboutModal) return;
+
+    // Открытие модального окна
+    aboutBtn.addEventListener('click', () => {
+        aboutModal.showModal();
+    });
+
+    // Закрытие по кнопке ×
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            aboutModal.close();
+        });
+    }
+
+    // Закрытие по клику на backdrop
+    aboutModal.addEventListener('click', (e) => {
+        if (e.target === aboutModal) {
+            aboutModal.close();
         }
     });
+
+    // Закрытие по Escape (встроено в dialog, но добавим для надёжности)
+    aboutModal.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            aboutModal.close();
+        }
+    });
+
+    // Кнопка "Отправить звезду"
+    if (sendStarBtn) {
+        sendStarBtn.addEventListener('click', async () => {
+            if (appInstance && typeof appInstance.SendStar === 'function') {
+                try {
+                    const response = await appInstance.SendStar();
+                    if (response.success) {
+                        showSuccess('Спасибо за звезду! ⭐', 3000);
+                        aboutModal.close();
+                    } else {
+                        showError(response.error || 'Не удалось отправить звезду');
+                    }
+                } catch (error) {
+                    console.error('SendStar error:', error);
+                    showError('Произошла ошибка при отправке');
+                }
+            } else {
+                // Заглушка, пока функционал не реализован
+                showInfo('Функция будет доступна в следующей версии', 3000);
+            }
+        });
+    }
 }
 
 /**

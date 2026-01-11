@@ -8,7 +8,6 @@ import (
 
 	"github.com/bivlked/currate-go/internal/converter"
 	"github.com/bivlked/currate-go/internal/models"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App - основной backend для GUI приложения
@@ -190,12 +189,19 @@ func translateError(err error) string {
 	}
 }
 
-// ShowAbout показывает информацию о программе
-func (a *App) ShowAbout() {
-	_, _ = runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.InfoDialog,
-		Title:   "О программе",
-		Message: "Конвертер валют\n\nВерсия: 1.0.0\n\nКонвертирует доллары и евро в рубли по курсу ЦБ РФ на выбранную дату.\n\n© 2025 BiV\n\nРазработано с использованием:\n• Wails v2\n• Go 1.21+\n• WebView2",
-	})
+// SendStarResponse - ответ на отправку звезды
+type SendStarResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error"`
+}
+
+// SendStar отправляет звезду в Telegram бот автора
+// TODO: реализовать отправку в Telegram бот
+func (a *App) SendStar() SendStarResponse {
+	// Заглушка - функционал будет реализован позже
+	return SendStarResponse{
+		Success: false,
+		Error:   "Функция будет доступна в следующей версии",
+	}
 }
 
