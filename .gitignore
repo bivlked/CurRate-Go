@@ -89,3 +89,6 @@ memory-bank/
 .cache/
 # Exclude cache/ at root, but allow internal/cache/ (code)
 /cache/
+
+# SignPath request forms (contain personal data)
+OSSRequestForm*.xlsx

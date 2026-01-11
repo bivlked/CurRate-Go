@@ -760,6 +760,37 @@ wails build -debug
 wails build -platform windows/amd64
 ```
 
+### Сборка с Telegram интеграцией
+
+Для работы функции "Послать звезду" необходимо внедрить токен Telegram бота при сборке.
+
+**Важно:** Токен Telegram бота **НЕ хранится в коде** из соображений безопасности. Он внедряется при сборке через ldflags.
+
+#### Использование PowerShell скрипта (рекомендуется)
+
+```powershell
+# Установить переменные окружения
+$env:TELEGRAM_BOT_TOKEN = "ваш_токен_бота"
+$env:TELEGRAM_CHAT_ID = "ваш_chat_id"
+
+# Запустить сборку
+.\build-with-telegram.ps1
+
+# Или с UPX сжатием
+.\build-with-telegram.ps1 -UPX
+
+# Или передать параметры напрямую
+.\build-with-telegram.ps1 -BotToken "токен" -ChatID "id"
+```
+
+#### Ручная сборка с Telegram
+
+```bash
+wails build -clean -ldflags "-s -w -X 'github.com/bivlked/CurRate-Go/internal/telegram.botToken=ТОКЕН' -X 'github.com/bivlked/CurRate-Go/internal/telegram.chatID=CHAT_ID'"
+```
+
+**Примечание:** При сборке без токена приложение будет работать, но кнопка "Послать звезду" вернёт ошибку "Telegram интеграция не настроена".
+
 ### Параметры сборки
 
 | Флаг | Описание | Пример |

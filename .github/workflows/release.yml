@@ -43,7 +43,8 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Build
-        run: wails build -clean -ldflags "-s -w"
+        run: |
+          wails build -clean -ldflags "-s -w -X 'github.com/bivlked/CurRate-Go/internal/telegram.botToken=${{ secrets.TELEGRAM_BOT_TOKEN }}' -X 'github.com/bivlked/CurRate-Go/internal/telegram.chatID=${{ secrets.TELEGRAM_CHAT_ID }}'"
 
       - name: Install UPX
         shell: pwsh
