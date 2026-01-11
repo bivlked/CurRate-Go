@@ -5,14 +5,13 @@ run:
   tests: true
 
 linters:
+  default: none
   enable:
     - errcheck      # Проверка неиспользованных ошибок
     - govet         # Стандартный vet
-    - staticcheck   # Дополнительные проверки
-    - gosimple      # Упрощения кода
+    - staticcheck   # Дополнительные проверки (включает gosimple, stylecheck)
     - ineffassign   # Неиспользуемые присваивания
     - unused        # Неиспользуемый код
-    - gofmt         # Форматирование
     - misspell      # Опечатки в комментариях
     - revive        # Замена golint
 
@@ -31,17 +30,21 @@ linters:
         - name: package-comments
           severity: warning
 
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      # Исключить некоторые линтеры для тестов
+      - path: _test\.go
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt         # Форматирование
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-
-exclusions:
-  generated: lax
-  presets:
-    - comments
-    - std-error-handling
-  rules:
-    # Исключить некоторые линтеры для тестов
-    - path: _test\.go
-      linters:
-        - errcheck
