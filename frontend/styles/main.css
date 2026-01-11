@@ -2,6 +2,9 @@
 /* Основано на memory-bank/style-guide.md */
 
 :root {
+  /* Размеры приложения */
+  --app-width: 360px; /* целевая ширина окна/контейнера */
+
   /* Основные цвета */
   --primary-color: #0078d4;
   --primary-hover: #106ebe;
@@ -24,6 +27,14 @@
   --bg-primary: #ffffff;
   --bg-secondary: #f5f5f5;
   --bg-tertiary: #e8e8e8;
+
+  /* Поверхности (карточный UI) */
+  --surface-0: #ffffff;
+  --surface-1: #fafafa;
+  --surface-2: #f3f3f3;
+
+  /* Инпуты */
+  --input-bg: #ffffff;
 
   /* Текст */
   --text-primary: #1f1f1f;
@@ -71,6 +82,7 @@
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 * {
@@ -89,23 +101,23 @@ body {
 }
 
 .container {
-  max-width: 340px; /* Соответствует ширине окна */
+  max-width: var(--app-width);
   margin: 0 auto;
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   padding-bottom: 24px; /* Место для status bar (уменьшено) */
 }
 
 /* Карточки */
 .card {
-  background: var(--bg-secondary);
+  background: var(--surface-1);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
   margin-bottom: var(--spacing-sm);
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease;
   width: 100%;
-  max-width: 320px; /* Соответствует ширине календаря */
+  max-width: calc(var(--app-width) - 2 * var(--spacing-lg));
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
@@ -129,19 +141,20 @@ body {
   gap: var(--spacing-xs); /* Уменьшен gap для компактности */
   align-items: center;
   width: 100%;
-  max-width: 340px; /* Ограничиваем ширину группы */
+  max-width: var(--app-width);
   margin-left: auto;
   margin-right: auto;
 }
 
 .date-input {
   flex: 0 0 auto; /* Автоматическая ширина по содержимому */
-  width: 85px; /* Уменьшена ширина на 2 символа для формата ДД.ММ.ГГГГ */
-  padding: var(--spacing-sm);
+  width: 112px; /* 10 символов + запас под шрифт */
+  padding: 10px var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
   font-family: var(--font-family);
+  background: var(--input-bg);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -179,9 +192,10 @@ body {
 /* Live Preview курса */
 .rate-preview {
   flex: 1;
-  padding: var(--spacing-xs);
-  background: transparent; /* Убран голубой фон */
-  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   display: flex;
   align-items: center;
@@ -205,40 +219,65 @@ body {
 
 /* Группа выбора валюты */
 .currency-group {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
   width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 4px;
 }
 
 .radio-label {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  justify-content: center;
   cursor: pointer;
   font-size: var(--font-size-base);
+  border-radius: calc(var(--radius-lg) - 4px);
+  min-height: 40px;
 }
 
 .radio-label input[type="radio"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--primary-color);
+  /* прячем нативный radio, оставляем доступность через label */
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .radio-text {
   user-select: none;
+  width: 100%;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: calc(var(--radius-lg) - 6px);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.radio-label input[type="radio"]:focus-visible + .radio-text {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.radio-label input[type="radio"]:checked + .radio-text {
+  background: var(--primary-color);
+  color: #ffffff;
 }
 
 /* Поле ввода суммы */
 .amount-input {
   width: 100%;
-  padding: var(--spacing-sm);
+  padding: 10px var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-base);
   font-family: var(--font-family);
+  background: var(--input-bg);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -248,17 +287,22 @@ body {
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
+.amount-input.error {
+  border-color: var(--border-error);
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
+}
+
 /* Кнопка конвертации */
 .convert-btn {
   width: 100%;
-  max-width: 340px; /* Соответствует ширине окна */
+  max-width: var(--app-width);
   margin-left: auto;
   margin-right: auto;
-  padding: var(--spacing-sm);
+  padding: 12px var(--spacing-sm);
   background: var(--primary-color);
   color: white;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -288,7 +332,7 @@ body {
 /* Карточка результата */
 .result-card {
   background: var(--success-bg);
-  border-color: var(--success-color);
+  border-color: rgba(16, 124, 16, 0.35);
 }
 
 .result-content {
@@ -297,34 +341,60 @@ body {
   gap: var(--spacing-md);
 }
 
+.result-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.result-amount {
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.2px;
+}
+
+.result-meta {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.result-actions {
+  display: flex;
+}
+
 .result-text {
   font-size: var(--font-size-base); /* Размер как USD/EUR и цифры дат (14px) */
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
   line-height: var(--line-height-normal);
+  overflow-wrap: anywhere;
 }
 
 .copy-btn {
-  padding: var(--spacing-sm); /* Как у кнопки Конвертировать */
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md); /* Как у кнопки Конвертировать */
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold); /* Как у кнопки Конвертировать */
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease; /* Как у кнопки Конвертировать */
-  align-self: flex-start;
+  transition: background-color 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
+  width: 100%;
 }
 
 .copy-btn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px); /* Как у кнопки Конвертировать */
+  background: var(--surface-2);
+  border-color: rgba(0, 120, 212, 0.35);
+  transform: translateY(-1px);
 }
 
 .copy-btn:active {
-  background: var(--primary-active);
-  transform: translateY(0); /* Как у кнопки Конвертировать */
+  background: var(--bg-tertiary);
+  transform: translateY(0);
 }
 
 /* Строка состояния */
@@ -377,7 +447,7 @@ body {
 .calendar {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
-  background: white;
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);

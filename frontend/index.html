@@ -67,15 +67,23 @@
         <div class="card result-card" id="result-card" style="display: none;">
             <label class="card-label">Результат</label>
             <div class="result-content">
-                <div id="result-text" class="result-text"></div>
-                <button 
-                    type="button" 
-                    id="copy-btn" 
-                    class="copy-btn"
-                    aria-label="Копировать результат"
-                >
-                    📋 Копировать
-                </button>
+                <div class="result-summary" aria-live="polite">
+                    <div id="result-amount" class="result-amount">—</div>
+                    <div id="result-meta" class="result-meta"></div>
+                    <!-- Полная строка результата хранится для копирования и совместимости -->
+                    <div id="result-text" class="result-text" style="display: none;"></div>
+                </div>
+
+                <div class="result-actions">
+                    <button
+                        type="button"
+                        id="copy-btn"
+                        class="copy-btn"
+                        aria-label="Копировать результат"
+                    >
+                        📋 Копировать
+                    </button>
+                </div>
             </div>
         </div>
 

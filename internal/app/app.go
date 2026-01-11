@@ -39,8 +39,17 @@ type ConvertRequest struct {
 // ConvertResponse - ответ на конвертацию для JavaScript
 type ConvertResponse struct {
 	Success bool   `json:"success"` // Успешность операции
-	Result  string `json:"result"`  // Отформатированный результат (если success=true)
+	Result  string `json:"result"`  // Отформатированный результат (совместимость)
 	Error   string `json:"error"`   // Сообщение об ошибке (если success=false)
+
+	// Дополнительные поля для более богатого UI
+	SourceAmount    float64 `json:"sourceAmount"`
+	TargetAmountRUB float64 `json:"targetAmountRUB"`
+	Rate            float64 `json:"rate"`
+	Currency        string  `json:"currency"`
+	CurrencySymbol  string  `json:"currencySymbol"`
+	RequestedDate   string  `json:"requestedDate"`
+	ActualDate      string  `json:"actualDate"`
 }
 
 // RateResponse - ответ для получения курса (live preview)
@@ -83,7 +92,14 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 
 	return ConvertResponse{
 		Success: true,
-		Result:  result.FormattedStr,
+		Result:          result.FormattedStr,
+		SourceAmount:    result.SourceAmount,
+		TargetAmountRUB: result.TargetAmount,
+		Rate:            result.Rate,
+		Currency:        string(result.SourceCurrency),
+		CurrencySymbol:  result.SourceCurrency.Symbol(),
+		RequestedDate:   req.Date,
+		ActualDate:      result.Date.Format("02.01.2006"),
 	}
 }
 

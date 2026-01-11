@@ -326,8 +326,32 @@ async function performConvert() {
         });
         
         if (response.success) {
-            // Показываем результат
+            // Храним полную строку результата для копирования
             resultText.textContent = response.result;
+
+            // Заполняем улучшенный UI результата (если элементы доступны)
+            const resultAmountEl = document.getElementById('result-amount');
+            const resultMetaEl = document.getElementById('result-meta');
+
+            if (resultAmountEl && resultMetaEl) {
+                const amountRub = typeof response.targetAmountRUB === 'number'
+                    ? response.targetAmountRUB
+                    : NaN;
+                const rate = typeof response.rate === 'number' ? response.rate : NaN;
+                const srcAmount = typeof response.sourceAmount === 'number' ? response.sourceAmount : NaN;
+                const symbol = response.currencySymbol || '';
+                const requestedDate = response.requestedDate || '';
+                const actualDate = response.actualDate || '';
+
+                resultAmountEl.textContent = `${formatNumber(amountRub, 2)} ₽`;
+
+                const dateLine = (actualDate && requestedDate && actualDate !== requestedDate)
+                    ? `Курс фактически за ${actualDate} (запрошено ${requestedDate})`
+                    : (actualDate ? `Курс за ${actualDate}` : '');
+
+                resultMetaEl.textContent = `${dateLine}${dateLine ? ' · ' : ''}${symbol}${formatNumber(srcAmount, 2)} по курсу ${formatNumber(rate, 4)} ₽`;
+            }
+
             resultCard.style.display = 'block';
             showSuccess('Конвертация выполнена успешно', 2000);
         } else {
