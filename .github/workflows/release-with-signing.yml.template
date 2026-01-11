@@ -1,0 +1,128 @@
+name: Release with Code Signing
+
+# ШАБЛОН: Активировать после одобрения заявки в SignPath Foundation
+# Переименуйте этот файл в release.yml после настройки SignPath
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.5'
+          cache-dependency-path: go.sum
+
+      - name: Get Go bin path
+        id: go-bin-path
+        shell: pwsh
+        run: |
+          $goBinPath = (go env GOPATH) + "\bin"
+          echo "path=$goBinPath" >> $env:GITHUB_OUTPUT
+
+      - name: Cache Wails CLI
+        uses: actions/cache@v5
+        id: cache-wails
+        with:
+          path: ${{ steps.go-bin-path.outputs.path }}
+          key: ${{ runner.os }}-wails-${{ hashFiles('go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-wails-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Install Wails
+        if: steps.cache-wails.outputs.cache-hit != 'true'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build
+        run: wails build -clean -ldflags "-s -w"
+
+      # Примечание: UPX сжатие убрано, так как SignPath требует оригинальный PE файл
+      # UPX-сжатые файлы могут вызывать проблемы с подписью
+
+      - name: Upload unsigned artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-exe
+          path: build/bin/CurRate.exe
+          retention-days: 1
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download unsigned artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-exe
+          path: ./unsigned
+
+      - name: Submit signing request
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: currate-go
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: exe
+          github-artifact-id: ${{ needs.build.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: ./signed
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-exe
+          path: ./signed/CurRate.exe
+
+  release:
+    needs: sign
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download signed artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-exe
+          path: ./release
+
+      - name: Prepare Release Notes
+        id: release-notes
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          RELEASE_FILE="release-notes-${TAG_NAME}.md"
+          if [ -f "$RELEASE_FILE" ]; then
+            cp "$RELEASE_FILE" release-notes.md
+          else
+            echo "# ${TAG_NAME} Release" > release-notes.md
+            echo "" >> release-notes.md
+            echo "See CHANGELOG.md for details." >> release-notes.md
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/CurRate.exe
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
