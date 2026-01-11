@@ -21,7 +21,12 @@ linters:
       check-type-assertions: true
 
     govet:
-      enable-all: true
+      disable:
+        - fieldalignment  # Отключаем проверку выравнивания полей структур
+
+    misspell:
+      ignore-rules:
+        - currate  # Намеренное название проекта (Currency Rate)
 
     revive:
       rules:
@@ -29,6 +34,11 @@ linters:
           severity: warning
         - name: package-comments
           severity: warning
+
+    staticcheck:
+      checks:
+        - all
+        - -ST1005  # Отключаем проверку капитализации ошибок (у нас русские сообщения)
 
   exclusions:
     generated: lax

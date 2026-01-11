@@ -231,13 +231,14 @@ func TestHTTPClientRedirects(t *testing.T) {
 		requestCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestCount++
-			if r.URL.Path == "/" {
+			switch r.URL.Path {
+			case "/":
 				// Первый запрос - редирект
 				http.Redirect(w, r, "/final", http.StatusFound)
-			} else if r.URL.Path == "/final" {
+			case "/final":
 				// Финальный запрос после редиректа
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
+				_, _ = w.Write([]byte("OK"))
 			}
 		}))
 		defer server.Close()

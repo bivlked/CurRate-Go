@@ -528,7 +528,7 @@ func TestNewConverter_NilCacheUsesNoop(t *testing.T) {
 	converter.cache.Set(models.USD, date, 80.0, date)
 
 	// После Set Get все равно должен возвращать false (noop cache)
-	rate, actualDate, found = converter.cache.Get(models.USD, date)
+	_, _, found = converter.cache.Get(models.USD, date)
 	if found {
 		t.Error("noopCache.Get() после Set должен все равно возвращать false")
 	}
