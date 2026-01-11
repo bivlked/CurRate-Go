@@ -24,6 +24,7 @@ jobs:
         run: go mod download
 
       - name: Run tests
+        shell: bash
         run: go test -v -p 4 -coverprofile=coverage.out ./...
 
       - name: Upload coverage report
