@@ -32,7 +32,7 @@ if ([string]::IsNullOrEmpty($ChatID)) {
 # Формируем ldflags
 $ldflags = "-s -w"
 if (-not [string]::IsNullOrEmpty($BotToken) -and -not [string]::IsNullOrEmpty($ChatID)) {
-    $ldflags = "-s -w -X 'github.com/bivlked/CurRate-Go/internal/telegram.botToken=$BotToken' -X 'github.com/bivlked/CurRate-Go/internal/telegram.chatID=$ChatID'"
+    $ldflags = "-s -w -X 'github.com/bivlked/currate-go/internal/telegram.botToken=$BotToken' -X 'github.com/bivlked/currate-go/internal/telegram.chatID=$ChatID'"
     Write-Host "Telegram интеграция: ВКЛЮЧЕНА" -ForegroundColor Green
 } else {
     Write-Host "Telegram интеграция: ОТКЛЮЧЕНА" -ForegroundColor Yellow

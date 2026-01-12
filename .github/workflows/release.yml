@@ -44,7 +44,7 @@ jobs:
 
       - name: Build
         run: |
-          wails build -clean -ldflags "-s -w -X 'github.com/bivlked/CurRate-Go/internal/telegram.botToken=${{ secrets.TELEGRAM_BOT_TOKEN }}' -X 'github.com/bivlked/CurRate-Go/internal/telegram.chatID=${{ secrets.TELEGRAM_CHAT_ID }}'"
+          wails build -clean -ldflags "-s -w -X 'github.com/bivlked/currate-go/internal/telegram.botToken=${{ secrets.TELEGRAM_BOT_TOKEN }}' -X 'github.com/bivlked/currate-go/internal/telegram.chatID=${{ secrets.TELEGRAM_CHAT_ID }}'"
 
       - name: Install UPX
         shell: pwsh
