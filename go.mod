@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/wailsapp/wails/v2 v2.11.0
-	golang.org/x/text v0.32.0
+	golang.org/x/text v0.33.0
 )
 
 require (
