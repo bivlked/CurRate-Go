@@ -13,9 +13,8 @@ import (
 
 // Ошибки парсинга
 var (
-	ErrInvalidRate         = errors.New("invalid rate format")
-	ErrInvalidNominal      = errors.New("invalid nominal format")
-	ErrUnsupportedCurrency = errors.New("unsupported currency code")
+	ErrInvalidRate    = errors.New("invalid rate format")
+	ErrInvalidNominal = errors.New("invalid nominal format")
 )
 
 // parseRate парсит строку курса в формате "80,7220" (с запятой как десятичным разделителем)
@@ -71,7 +70,7 @@ func parseCurrency(code string) (models.Currency, error) {
 
 	currency := models.Currency(code)
 	if err := currency.Validate(); err != nil {
-		return "", fmt.Errorf("%w: %s", ErrUnsupportedCurrency, code)
+		return "", fmt.Errorf("%w: %s", models.ErrUnsupportedCurrency, code)
 	}
 
 	return currency, nil

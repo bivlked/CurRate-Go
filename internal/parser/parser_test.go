@@ -234,19 +234,19 @@ func TestParseCurrency(t *testing.T) {
 			name:    "Неподдерживаемая валюта",
 			input:   "XDR",
 			want:    "",
-			wantErr: ErrUnsupportedCurrency,
+			wantErr: models.ErrUnsupportedCurrency,
 		},
 		{
 			name:    "Пустая строка",
 			input:   "",
 			want:    "",
-			wantErr: ErrUnsupportedCurrency,
+			wantErr: models.ErrUnsupportedCurrency,
 		},
 		{
 			name:    "Некорректный код",
 			input:   "INVALID",
 			want:    "",
-			wantErr: ErrUnsupportedCurrency,
+			wantErr: models.ErrUnsupportedCurrency,
 		},
 	}
 
