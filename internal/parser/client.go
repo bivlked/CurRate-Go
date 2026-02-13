@@ -24,7 +24,7 @@ const (
 	BaseRetryDelay = 1 * time.Second
 
 	// UserAgent - User-Agent для HTTP запросов
-	UserAgent = "CurRate-Go/2.0 (Windows; Go; XML)"
+	UserAgent = "CurRate-Go/1.2 (Windows; Go; XML)"
 )
 
 // Ошибки HTTP клиента

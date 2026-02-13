@@ -27,27 +27,6 @@ function initCalendar() {
 }
 
 /**
- * Показывает календарь
- */
-function showCalendar() {
-    const calendar = document.getElementById('calendar');
-    if (calendar) {
-        calendar.classList.remove('hidden');
-        renderCalendar();
-    }
-}
-
-/**
- * Скрывает календарь
- */
-function hideCalendar() {
-    const calendar = document.getElementById('calendar');
-    if (calendar) {
-        calendar.classList.add('hidden');
-    }
-}
-
-/**
  * Рендерит календарь
  */
 function renderCalendar() {
