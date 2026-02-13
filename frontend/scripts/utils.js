@@ -228,37 +228,23 @@ function parseAmount(str) {
             normalized = cleaned.replace(/\./g, '').replace(',', '.');
         }
     } else if (hasComma) {
-        // Только запятая - может быть европейский формат или дробная часть
+        // Только запятая
         const commaCount = (cleaned.match(/,/g) || []).length;
         if (commaCount === 1) {
-            // Одна запятая - проверяем количество цифр после нее
-            const parts = cleaned.split(',');
-            if (parts.length === 2 && parts[1].length === 3) {
-                // Ровно 3 цифры после запятой - это разделитель тысяч
-                normalized = cleaned.replace(/,/g, '');
-            } else {
-                // Иначе это дробная часть
-                normalized = cleaned.replace(',', '.');
-            }
+            // Одна запятая — всегда десятичный разделитель
+            normalized = cleaned.replace(',', '.');
         } else {
-            // Несколько запятых - это разделители тысяч
+            // Несколько запятых — разделители тысяч
             normalized = cleaned.replace(/,/g, '');
         }
     } else if (hasDot) {
-        // Только точка - американский формат или дробная часть
+        // Только точка
         const dotCount = (cleaned.match(/\./g) || []).length;
         if (dotCount === 1) {
-            // Одна точка - проверяем количество цифр после нее
-            const parts = cleaned.split('.');
-            if (parts.length === 2 && parts[1].length === 3) {
-                // Ровно 3 цифры после точки - это разделитель тысяч
-                normalized = cleaned.replace(/\./g, '');
-            } else {
-                // Иначе это дробная часть - оставляем как есть
-                normalized = cleaned;
-            }
+            // Одна точка — всегда десятичный разделитель
+            normalized = cleaned;
         } else {
-            // Несколько точек - это разделители тысяч
+            // Несколько точек — разделители тысяч
             normalized = cleaned.replace(/\./g, '');
         }
     } else {
