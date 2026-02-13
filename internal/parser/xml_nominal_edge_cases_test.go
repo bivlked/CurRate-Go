@@ -11,8 +11,8 @@ import (
 // TestParseXML_InvalidNominalValues проверяет обработку различных некорректных значений номинала
 // Проблема 7: XML Nominal - обработка некорректных значений
 func TestParseXML_InvalidNominalValues(t *testing.T) {
-	date := testPastDateUTCHelper()
-	dateStr := formatCBRDateHelper(date)
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
 
 	tests := []struct {
 		name          string
@@ -113,8 +113,8 @@ func TestParseXML_InvalidNominalValues(t *testing.T) {
 // TestParseXML_MixedValidAndInvalidNominals проверяет, что валидные валюты обрабатываются,
 // а невалидные пропускаются
 func TestParseXML_MixedValidAndInvalidNominals(t *testing.T) {
-	date := testPastDateUTCHelper()
-	dateStr := formatCBRDateHelper(date)
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
 
 	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="%s" name="Foreign Currency Market">
@@ -177,8 +177,8 @@ func TestParseXML_MixedValidAndInvalidNominals(t *testing.T) {
 
 // TestParseXML_NominalWithWhitespace проверяет обработку номинала с пробелами
 func TestParseXML_NominalWithWhitespace(t *testing.T) {
-	date := testPastDateUTCHelper()
-	dateStr := formatCBRDateHelper(date)
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
 
 	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="%s" name="Foreign Currency Market">

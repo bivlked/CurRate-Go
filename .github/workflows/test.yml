@@ -11,7 +11,15 @@ permissions:
 
 jobs:
   test:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            race: ""
+          - os: ubuntu-latest
+            race: "-race"
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -28,11 +36,11 @@ jobs:
 
       - name: Run tests
         shell: bash
-        run: go test -v -p 4 -coverprofile=coverage.out ./...
+        run: go test -v -p 4 ${{ matrix.race }} -coverprofile=coverage.out ./...
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
         with:
-          name: coverage-report
+          name: coverage-report-${{ matrix.os }}
           path: coverage.out
           retention-days: 7

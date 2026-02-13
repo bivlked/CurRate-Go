@@ -177,17 +177,6 @@ func TestFetchRates_ParseError(t *testing.T) {
 	}
 }
 
-func TestFetchLatestRates(t *testing.T) {
-	// Этот тест сложно тестировать без мок-сервера
-	// Проверяем только что функция вызывается без паники
-	t.Run("Проверка существования функции", func(t *testing.T) {
-		// Просто проверяем, что функция компилируется и может быть вызвана
-		// Реальный вызов требует доступа к интернету и реальному сайту ЦБ РФ
-		// Такой тест помечается как интеграционный и запускается отдельно
-		t.Skip("Интеграционный тест, требует доступа к реальному API ЦБ РФ")
-	})
-}
-
 func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
 	mockXML := `<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="20.12.2025" name="Foreign Currency Market">
@@ -294,73 +283,3 @@ func TestFetchLatestRates_UsesCurrentDateAndParsesXMLDate(t *testing.T) {
 		t.Fatal("EUR курс не найден")
 	}
 }
-
-// Интеграционные тесты (требуют доступа к реальному сайту ЦБ РФ)
-// Запускаются с флагом: go test -tags=integration
-// Для обычных тестов пропускаются
-
-// Эти тесты закомментированы, так как требуют доступа к интернету
-// Раскомментируйте для ручного тестирования
-
-/*
-func TestFetchRatesIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Пропускаем интеграционный тест в кратком режиме")
-	}
-
-	t.Run("Реальный запрос к ЦБ РФ", func(t *testing.T) {
-		date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
-		data, err := FetchRates(date)
-
-		if err != nil {
-			t.Fatalf("Ошибка получения курсов: %v", err)
-		}
-
-		if data == nil {
-			t.Fatal("Data не должна быть nil")
-		}
-
-		if len(data.Rates) == 0 {
-			t.Error("Ожидались валюты в результате")
-		}
-
-		// Проверяем наличие основных валют
-		if _, ok := data.Rates[models.USD]; !ok {
-			t.Error("USD должен присутствовать в результатах")
-		}
-
-		if _, ok := data.Rates[models.EUR]; !ok {
-			t.Error("EUR должен присутствовать в результатах")
-		}
-
-		t.Logf("Получено валют: %d", len(data.Rates))
-		t.Logf("USD курс: %.4f", data.Rates[models.USD].Rate)
-		t.Logf("EUR курс: %.4f", data.Rates[models.EUR].Rate)
-	})
-}
-
-func TestFetchLatestRatesIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Пропускаем интеграционный тест в кратком режиме")
-	}
-
-	t.Run("Реальный запрос последних курсов", func(t *testing.T) {
-		data, err := FetchLatestRates()
-
-		if err != nil {
-			t.Fatalf("Ошибка получения последних курсов: %v", err)
-		}
-
-		if data == nil {
-			t.Fatal("Data не должна быть nil")
-		}
-
-		if len(data.Rates) == 0 {
-			t.Error("Ожидались валюты в результате")
-		}
-
-		t.Logf("Дата курсов: %v", data.Date)
-		t.Logf("Получено валют: %d", len(data.Rates))
-	})
-}
-*/

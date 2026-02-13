@@ -8,20 +8,10 @@ import (
 	"github.com/bivlked/currate-go/internal/models"
 )
 
-// testPastDateUTCHelper возвращает дату 30 дней назад в UTC (локальная версия для этого файла)
-func testPastDateUTCHelper() time.Time {
-	return time.Now().UTC().AddDate(0, 0, -30)
-}
-
-// formatCBRDateHelper форматирует дату в формат ЦБ РФ (DD.MM.YYYY) (локальная версия для этого файла)
-func formatCBRDateHelper(date time.Time) string {
-	return date.Format("02.01.2006")
-}
-
 // TestParseXML_UsesNewRateData проверяет, что ParseXML использует NewRateData в runtime
 func TestParseXML_UsesNewRateData(t *testing.T) {
-	date := testPastDateUTCHelper()
-	dateStr := formatCBRDateHelper(date)
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
 	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="` + dateStr + `" name="Foreign Currency Market">
     <Valute ID="R01235">
@@ -58,8 +48,8 @@ func TestParseXML_UsesNewRateData(t *testing.T) {
 
 // TestParseXML_UsesAddRate проверяет, что ParseXML использует AddRate в runtime
 func TestParseXML_UsesAddRate(t *testing.T) {
-	date := testPastDateUTCHelper()
-	dateStr := formatCBRDateHelper(date)
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
 	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="` + dateStr + `" name="Foreign Currency Market">
     <Valute ID="R01235">
@@ -114,8 +104,8 @@ func TestParseXML_UsesAddRate(t *testing.T) {
 
 // TestParseXML_RateDataHelpersIntegration проверяет интеграцию NewRateData и AddRate в runtime
 func TestParseXML_RateDataHelpersIntegration(t *testing.T) {
-	date := testPastDateUTCHelper()
-	dateStr := formatCBRDateHelper(date)
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
 	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="` + dateStr + `" name="Foreign Currency Market">
     <Valute ID="R01235">

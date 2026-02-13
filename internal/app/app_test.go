@@ -458,10 +458,9 @@ func TestParseDate_InvalidFormat(t *testing.T) {
 
 func TestTranslateError(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      error
-		want     string
-		wantWrap bool // Нужно ли обернуть ошибку для теста
+		name string
+		err  error
+		want string
 	}{
 		{
 			name: "ErrNilRateProvider - прямая ошибка",
@@ -469,21 +468,9 @@ func TestTranslateError(t *testing.T) {
 			want: "Ошибка конфигурации: источник курсов не настроен",
 		},
 		{
-			name:     "ErrNilRateProvider - обёрнутая ошибка",
-			err:      fmt.Errorf("wrapped: %w", converter.ErrNilRateProvider),
-			wantWrap: false, // Уже обёрнута правильно
-			want:     "Ошибка конфигурации: источник курсов не настроен",
-		},
-		{
 			name: "ErrInvalidAmount - прямая ошибка",
 			err:  converter.ErrInvalidAmount,
 			want: "Сумма должна быть положительным числом",
-		},
-		{
-			name:     "ErrInvalidAmount - обёрнутая ошибка",
-			err:      fmt.Errorf("validation failed: %w", converter.ErrInvalidAmount),
-			wantWrap: false, // Уже обёрнута правильно
-			want:     "Сумма должна быть положительным числом",
 		},
 		{
 			name: "ErrDateInFuture - прямая ошибка",
@@ -491,21 +478,9 @@ func TestTranslateError(t *testing.T) {
 			want: "Дата не может быть в будущем",
 		},
 		{
-			name:     "ErrDateInFuture - обёрнутая ошибка",
-			err:      fmt.Errorf("date validation: %w", converter.ErrDateInFuture),
-			wantWrap: false, // Уже обёрнута правильно
-			want:     "Дата не может быть в будущем",
-		},
-		{
 			name: "ErrUnsupportedCurrency - прямая ошибка",
 			err:  models.ErrUnsupportedCurrency,
 			want: "Неподдерживаемая валюта. Поддерживаются только USD, EUR и RUB",
-		},
-		{
-			name:     "ErrUnsupportedCurrency - обёрнутая ошибка",
-			err:      fmt.Errorf("currency error: %w", models.ErrUnsupportedCurrency),
-			wantWrap: false, // Уже обёрнута правильно
-			want:     "Неподдерживаемая валюта. Поддерживаются только USD, EUR и RUB",
 		},
 		{
 			name: "Неизвестная ошибка - короткое сообщение",
@@ -521,12 +496,6 @@ func TestTranslateError(t *testing.T) {
 			name: "nil ошибка",
 			err:  nil,
 			want: "",
-		},
-		{
-			name:     "Множественные обёртки",
-			err:      fmt.Errorf("outer: %w", fmt.Errorf("middle: %w", converter.ErrInvalidAmount)),
-			wantWrap: false, // Уже обёрнута правильно
-			want:     "Сумма должна быть положительным числом",
 		},
 	}
 
@@ -566,6 +535,11 @@ func TestTranslateError_WrappedErrors(t *testing.T) {
 			name: "fmt.Errorf обёртывает ErrUnsupportedCurrency",
 			err:  fmt.Errorf("currency check: %w", models.ErrUnsupportedCurrency),
 			want: "Неподдерживаемая валюта. Поддерживаются только USD, EUR и RUB",
+		},
+		{
+			name: "Множественные обёртки",
+			err:  fmt.Errorf("outer: %w", fmt.Errorf("middle: %w", converter.ErrInvalidAmount)),
+			want: "Сумма должна быть положительным числом",
 		},
 	}
 
