@@ -37,7 +37,7 @@ CurRate-Go - это конвертер валют на Go с desktop GUI на Wa
 
 ### Требования
 
-- **Go 1.25.5** - [Скачать](https://go.dev/dl/)
+- **Go 1.26** - [Скачать](https://go.dev/dl/)
 - **Git 2.30+** - [Скачать](https://git-scm.com/)
 - **Windows 10 (22H2+) / Windows 11** - для тестирования GUI
 - **(Опционально) Wails CLI** - для разработки GUI - [Установка](https://wails.io/docs/gettingstarted/installation)
@@ -58,7 +58,7 @@ CurRate-Go - это конвертер валют на Go с desktop GUI на Wa
 3. **Проверить установку:**
    ```bash
    go version
-   # Ожидается: go version go1.25.5
+   # Ожидается: go version go1.26
    
    go test ./...
    # Все тесты должны пройти успешно

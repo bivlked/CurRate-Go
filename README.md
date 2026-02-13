@@ -3,7 +3,7 @@
 > **Конвертер валют на основе официальных курсов ЦБ РФ**  
 > Go реализация проекта [CurRate](https://github.com/bivlked/CurRate) с современной архитектурой, XML API и desktop UI
 
-[![Go Version](https://img.shields.io/badge/Go-1.25.5-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bivlked/CurRate-Go)](https://goreportcard.com/report/github.com/bivlked/CurRate-Go)
@@ -33,7 +33,7 @@
 
 ### Требования
 
-- **Go 1.25.5** - [Скачать](https://go.dev/dl/)
+- **Go 1.26** - [Скачать](https://go.dev/dl/)
 - **Git** - [Скачать](https://git-scm.com/)
 - (Опционально) **Wails CLI** для сборки desktop UI - [Установка](https://wails.io/docs/gettingstarted/installation)
 

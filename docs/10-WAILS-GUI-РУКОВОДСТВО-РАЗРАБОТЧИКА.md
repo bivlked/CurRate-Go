@@ -64,7 +64,7 @@
 | Компонент | Технология | Версия |
 |-----------|------------|--------|
 | **Framework** | Wails | v2.11.0 |
-| **Backend** | Go | 1.25.5 |
+| **Backend** | Go | 1.26 |
 | **Frontend** | Vanilla JS | ES6+ |
 | **UI Rendering** | WebView2 | Latest (Windows) |
 | **Build Tool** | Wails CLI | v2.11.0 |
@@ -78,7 +78,7 @@
 
 | Компонент | Требование |
 |-----------|------------|
-| **Go** | 1.25.5 |
+| **Go** | 1.26 |
 | **OS** | Windows 10 (22H2+) / Windows 11 |
 | **IDE** | VS Code / GoLand / любой с Go поддержкой |
 | **Git** | 2.30+ |
@@ -100,7 +100,7 @@
 ```bash
 # Проверить версию Go
 go version
-# Ожидается: go version go1.25.5
+# Ожидается: go version go1.26
 
 # Проверить Git
 git --version
@@ -165,7 +165,7 @@ Scanning system - Please wait (this may take a long time)...
 OS:           Windows 11 x64
 Version:      22H2 (Build: 22621)
 ID:           windows
-Go Version:   go1.25.5
+Go Version:   go1.26
 Platform:     windows
 Architecture: amd64
 
@@ -1640,7 +1640,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.25.5'
+          go-version: '1.26'
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -1683,7 +1683,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.25.5'
+          go-version: '1.26'
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -1720,7 +1720,7 @@ git push origin v1.0.0
 
 ### Быстрый старт для нового разработчика
 
-1. **Установить инструменты:** Go 1.25.5, Wails CLI
+1. **Установить инструменты:** Go 1.26, Wails CLI
    - **Примечание:** Node.js и npm не требуются, так как фронтенд - статический vanilla JavaScript
 2. **Клонировать репозиторий:** `git clone ...`
 3. **Запустить в dev режиме:** `wails dev`

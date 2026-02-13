@@ -43,7 +43,7 @@
 | **Frontend** | HTML/CSS/Vanilla JS | Пользовательский интерфейс |
 | **UI Rendering** | WebView2 (Chromium) | Рендеринг HTML |
 | **Bridge** | Wails v2 Runtime | Связь Go ↔ JavaScript |
-| **Backend** | Go 1.25.5 | Бизнес-логика |
+| **Backend** | Go 1.26 | Бизнес-логика |
 | **Data Layer** | Go (parser, cache) | Работа с данными |
 | **External API** | CBR RF XML API | Источник курсов валют |
 
