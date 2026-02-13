@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Конвертер валют</title>
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/calendar.css">
 </head>
@@ -66,14 +65,14 @@
         </button>
 
         <!-- Карточка результата -->
-        <div class="card result-card" id="result-card" style="display: none;">
+        <div class="card result-card hidden" id="result-card">
             <label class="card-label">Результат</label>
             <div class="result-content">
                 <div class="result-summary" aria-live="polite">
                     <div id="result-amount" class="result-amount">—</div>
                     <div id="result-meta" class="result-meta"></div>
                     <!-- Полная строка результата хранится для копирования и совместимости -->
-                    <div id="result-text" class="result-text" style="display: none;"></div>
+                    <div id="result-text" class="result-text hidden"></div>
                 </div>
 
                 <div class="result-actions">
@@ -90,7 +89,7 @@
         </div>
 
         <!-- Строка состояния -->
-        <div id="status-bar" class="status-bar" style="display: none;">
+        <div id="status-bar" class="status-bar hidden">
             <span id="status-icon" class="status-icon"></span>
             <span id="status-message" class="status-message"></span>
         </div>
@@ -110,7 +109,7 @@
 
             <!-- Название и версия -->
             <h2 class="about-title">Конвертер валют</h2>
-            <p class="about-version">Версия 1.1.0</p>
+            <p class="about-version">Версия 1.2.0</p>
 
             <hr class="about-divider">
 

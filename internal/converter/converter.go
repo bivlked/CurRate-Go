@@ -16,6 +16,14 @@ type RateProvider interface {
 	FetchRates(date time.Time) (*models.RateData, error)
 }
 
+// FetchRatesFunc адаптирует функцию к интерфейсу RateProvider (аналог http.HandlerFunc)
+type FetchRatesFunc func(date time.Time) (*models.RateData, error)
+
+// FetchRates реализует интерфейс RateProvider
+func (f FetchRatesFunc) FetchRates(date time.Time) (*models.RateData, error) {
+	return f(date)
+}
+
 // CacheStorage - интерфейс для кэширования курсов
 // Позволяет использовать моки для тестирования
 type CacheStorage interface {

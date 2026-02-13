@@ -31,11 +31,6 @@
   color: var(--text-primary);
 }
 
-.calendar-nav {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
 .calendar-nav-btn {
   padding: 0;
   background: var(--bg-secondary);

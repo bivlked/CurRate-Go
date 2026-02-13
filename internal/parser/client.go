@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -68,14 +69,14 @@ func fetchXML(url string) (io.ReadCloser, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("%w after %d attempts: %v", ErrMaxRetries, MaxRetries, lastErr)
+	return nil, fmt.Errorf("%w after %d attempts: %w", ErrMaxRetries, MaxRetries, lastErr)
 }
 
 // doRequest выполняет одиночный HTTP запрос
 // client - HTTP клиент
 // url - URL для запроса
 func doRequest(client *http.Client, url string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -85,7 +86,7 @@ func doRequest(client *http.Client, url string) (*http.Response, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrHTTPFailed, err)
+		return nil, fmt.Errorf("%w: %w", ErrHTTPFailed, err)
 	}
 
 	// Проверяем статус код

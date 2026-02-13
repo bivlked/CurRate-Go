@@ -8,6 +8,7 @@ linters:
   default: none
   enable:
     - errcheck      # Проверка неиспользованных ошибок
+    - errorlint     # Проверка правильности оборачивания ошибок (%w, errors.Is)
     - govet         # Стандартный vet
     - staticcheck   # Дополнительные проверки (включает gosimple, stylecheck)
     - ineffassign   # Неиспользуемые присваивания
@@ -50,10 +51,16 @@ linters:
       - path: _test\.go
         linters:
           - errcheck
+      # Имя пакета parser конфликтует с go/parser, но переименование нецелесообразно
+      - path: internal/parser/
+        linters:
+          - revive
+        text: "avoid package names that conflict"
 
 formatters:
   enable:
     - gofmt         # Форматирование
+    - goimports     # Автоформатирование импортов
 
 issues:
   max-issues-per-linter: 0

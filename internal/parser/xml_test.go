@@ -496,7 +496,7 @@ func TestParseXMLValue_NonErrInvalidRateError(t *testing.T) {
 	if err == nil {
 		t.Fatal("parseXMLValue() error = nil, want sentinel error")
 	}
-	if err != sentinelErr {
+	if !errors.Is(err, sentinelErr) {
 		t.Fatalf("parseXMLValue() error = %v, want %v", err, sentinelErr)
 	}
 }

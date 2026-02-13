@@ -248,7 +248,7 @@ func TestValidateAmount(t *testing.T) {
 				t.Errorf("ValidateAmount() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if tt.wantErr && err != ErrInvalidAmount {
+			if tt.wantErr && !errors.Is(err, ErrInvalidAmount) {
 				t.Errorf("ValidateAmount() ожидалась ошибка ErrInvalidAmount, получена %v", err)
 			}
 		})
@@ -297,7 +297,7 @@ func TestValidateDate(t *testing.T) {
 				t.Errorf("ValidateDate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if tt.wantErr && err != ErrDateInFuture {
+			if tt.wantErr && !errors.Is(err, ErrDateInFuture) {
 				t.Errorf("ValidateDate() ожидалась ошибка ErrDateInFuture, получена %v", err)
 			}
 		})

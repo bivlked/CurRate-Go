@@ -44,7 +44,7 @@ function showStatus(message, type = 'info', duration = 3000) {
     statusMessage.textContent = message;
 
     // Показываем строку состояния
-    statusBar.style.display = 'flex';
+    statusBar.classList.remove('hidden');
 
     // Автоматическое скрытие для success и info (если duration > 0)
     if ((type === 'success' || type === 'info') && duration > 0) {
@@ -96,7 +96,7 @@ function showWarning(message, duration = 5000) {
 function hideStatus() {
     const statusBar = document.getElementById('status-bar');
     if (statusBar) {
-        statusBar.style.display = 'none';
+        statusBar.classList.add('hidden');
     }
 }
 

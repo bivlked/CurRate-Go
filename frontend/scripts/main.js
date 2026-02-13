@@ -119,24 +119,22 @@ function initDateInput() {
         }
     });
     
-    // Обработчик input для автоформатирования
+    // Обработчик input: автоформатирование + валидация + preview курса
     dateInput.addEventListener('input', (e) => {
         const value = e.target.value;
         const cursorPos = e.target.selectionStart || 0;
-        
-        // Если ввод сплошняком (без точек), форматируем автоматически
+
+        // Автоформатирование даты
         if (!value.includes('.')) {
             const formatted = autoFormatDate(value);
             if (formatted !== value) {
                 e.target.value = formatted;
-                // Восстанавливаем позицию курсора
                 const newCursorPos = Math.min(cursorPos + (formatted.length - value.length), formatted.length);
                 setTimeout(() => {
                     e.target.setSelectionRange(newCursorPos, newCursorPos);
                 }, 0);
             }
         } else {
-            // Если есть точки, проверяем формат и исправляем при необходимости
             const digits = value.replace(/\D/g, '');
             if (digits.length > 0 && digits.length <= 8) {
                 const formatted = autoFormatDate(digits);
@@ -149,11 +147,8 @@ function initDateInput() {
                 }
             }
         }
-    });
-    
-    // Обработчик ввода даты (валидация и обновление)
-    // Debounce убран отсюда - он уже есть внутри updateRatePreview
-    dateInput.addEventListener('input', () => {
+
+        // Валидация и обновление preview курса
         const dateStr = dateInput.value.trim();
 
         if (!dateStr) {
@@ -162,7 +157,6 @@ function initDateInput() {
         }
 
         if (!isValidDateFormat(dateStr)) {
-            // Не показываем ошибку сразу, ждем завершения ввода
             if (dateStr.length === 10) {
                 showError('Неверный формат даты. Используйте формат ДД.ММ.ГГГГ');
                 hideRatePreview();
@@ -185,7 +179,6 @@ function initDateInput() {
             return;
         }
 
-        // Обновляем календарь (если он инициализирован)
         if (typeof setCalendarDate === 'function') {
             setCalendarDate(date);
         }
@@ -414,16 +407,16 @@ async function performConvert() {
                 resultMetaEl.textContent = `${dateLine}${dateLine ? ' · ' : ''}${symbol}${formatNumber(srcAmount, 2)} по курсу ${formatNumber(rate, 4)} ₽`;
             }
 
-            resultCard.style.display = 'block';
+            resultCard.classList.remove('hidden');
             showSuccess('Конвертация выполнена успешно', 2000);
         } else {
             showError(response.error || 'Ошибка конвертации');
-            resultCard.style.display = 'none';
+            resultCard.classList.add('hidden');
         }
     } catch (error) {
         console.error('Convert error:', error);
         showError(error.message || 'Произошла ошибка при конвертации');
-        resultCard.style.display = 'none';
+        resultCard.classList.add('hidden');
     } finally {
         // Разблокируем кнопку
         convertBtn.disabled = false;

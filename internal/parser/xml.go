@@ -80,7 +80,7 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 	// Декодируем XML в структуру
 	var valCurs ValCurs
 	if err := xml.Unmarshal(xmlData, &valCurs); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidXML, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidXML, err)
 	}
 
 	// Проверяем, что есть данные о валютах

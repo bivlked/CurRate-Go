@@ -12,7 +12,7 @@ import (
 )
 
 // AppVersion - версия приложения
-const AppVersion = "1.1.0"
+const AppVersion = "1.2.0"
 
 // App - основной backend для GUI приложения
 // Предоставляет методы для взаимодействия с frontend через Wails bindings
@@ -201,12 +201,20 @@ type SendStarResponse struct {
 
 // SendStar отправляет звезду в Telegram бот автора
 func (a *App) SendStar() SendStarResponse {
+	// Проверяем наличие Telegram-токенов (внедряются через ldflags при release-сборке)
+	if !telegram.IsConfigured() {
+		return SendStarResponse{
+			Success: false,
+			Error:   "Функция доступна только в release-версии приложения.",
+		}
+	}
+
 	// Получаем или создаем уникальный ID пользователя
 	userID, err := telegram.GetOrCreateUserID()
 	if err != nil {
 		return SendStarResponse{
 			Success: false,
-			Error:   "Не удалось получить ID пользователя",
+			Error:   "Не удалось получить ID пользователя.",
 		}
 	}
 

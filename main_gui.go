@@ -14,29 +14,18 @@ import (
 	"github.com/bivlked/currate-go/internal/app"
 	"github.com/bivlked/currate-go/internal/cache"
 	"github.com/bivlked/currate-go/internal/converter"
-	"github.com/bivlked/currate-go/internal/models"
 	"github.com/bivlked/currate-go/internal/parser"
 )
 
 //go:embed all:frontend
 var assets embed.FS
 
-// rateProviderAdapter адаптирует функцию parser.FetchRates к интерфейсу converter.RateProvider
-type rateProviderAdapter struct{}
-
-func (r *rateProviderAdapter) FetchRates(date time.Time) (*models.RateData, error) {
-	return parser.FetchRates(date)
-}
-
 func main() {
 	// Создаем кэш для курсов валют
 	cacheStorage := cache.NewLRUCache(100, 24*time.Hour)
 
-	// Создаем адаптер для parser.FetchRates
-	rateProvider := &rateProviderAdapter{}
-
 	// Создаем конвертер с парсером ЦБ РФ и кэшем
-	conv := converter.NewConverter(rateProvider, cacheStorage)
+	conv := converter.NewConverter(converter.FetchRatesFunc(parser.FetchRates), cacheStorage)
 
 	// Создаем App instance для GUI
 	appInstance := app.NewApp(conv)

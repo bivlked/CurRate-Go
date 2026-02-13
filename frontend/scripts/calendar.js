@@ -32,7 +32,7 @@ function initCalendar() {
 function showCalendar() {
     const calendar = document.getElementById('calendar');
     if (calendar) {
-        calendar.style.display = 'block';
+        calendar.classList.remove('hidden');
         renderCalendar();
     }
 }
@@ -43,7 +43,7 @@ function showCalendar() {
 function hideCalendar() {
     const calendar = document.getElementById('calendar');
     if (calendar) {
-        calendar.style.display = 'none';
+        calendar.classList.add('hidden');
     }
 }
 

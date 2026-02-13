@@ -43,6 +43,7 @@
 
   /* Границы */
   --border-color: #e1dfdd;
+  --border-dark: #333333;
   --border-focus: #0078d4;
   --border-error: #d32f2f;
 
@@ -89,6 +90,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+.hidden {
+  display: none;
 }
 
 body {
@@ -169,27 +174,6 @@ body {
   border-color: var(--border-error);
 }
 
-.calendar-btn {
-  padding: var(--spacing-md);
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--font-size-lg);
-  transition: background-color 0.2s ease;
-  min-width: 44px;
-  height: 44px;
-}
-
-.calendar-btn:hover {
-  background: var(--primary-hover);
-}
-
-.calendar-btn:active {
-  background: var(--primary-active);
-}
-
 /* Live Preview курса */
 .rate-preview {
   flex: 0 0 auto; /* Фиксированная ширина по содержимому */
@@ -215,7 +199,7 @@ body {
   padding: 0;
   background: var(--primary-color);
   color: white;
-  border: 1px solid #333333; /* Тонкая тёмная рамка */
+  border: 1px solid var(--border-dark); /* Тонкая тёмная рамка */
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
@@ -331,7 +315,7 @@ body {
   padding: 9px var(--spacing-sm); /* Уменьшен padding на 25% от исходного */
   background: var(--primary-color);
   color: white;
-  border: 1px solid #333333; /* Тонкая тёмная рамка */
+  border: 1px solid var(--border-dark); /* Тонкая тёмная рамка */
   border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
@@ -407,7 +391,7 @@ body {
   padding: 7px 9px; /* Уменьшен padding на 22% от исходного */
   background: #ffffff;
   color: var(--text-primary);
-  border: 1px solid #333333; /* Тонкая тёмная рамка для контраста на светло-зелёном фоне */
+  border: 1px solid var(--border-dark); /* Тонкая тёмная рамка для контраста на светло-зелёном фоне */
   border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
@@ -471,16 +455,6 @@ body {
 
 .status-message.info {
   color: var(--primary-color);
-}
-
-/* Календарь (базовые стили, будет расширено в calendar.css) */
-.calendar {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
 }
 
 /* Адаптивность */
@@ -639,7 +613,7 @@ body {
   padding: var(--spacing-sm) var(--spacing-lg);
   background: var(--primary-color);
   color: white;
-  border: 1px solid #333333;
+  border: 1px solid var(--border-dark);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
