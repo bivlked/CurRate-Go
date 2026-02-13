@@ -526,6 +526,34 @@ func (e *errorReader) Read(p []byte) (n int, err error) {
 	return 0, e.err
 }
 
+// TestParseXML_OversizedResponse проверяет, что XML больше maxXMLSize усекается и не парсится
+func TestParseXML_OversizedResponse(t *testing.T) {
+	date := testPastDateUTC()
+	dateStr := formatCBRDate(date)
+
+	// Создаём валидный XML-заголовок
+	header := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<ValCurs Date="%s" name="Foreign Currency Market">
+    <Valute ID="R01235">
+        <NumCode>840</NumCode>
+        <CharCode>USD</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Доллар США</Name>
+        <Value>80,7220</Value>
+    </Valute>`, dateStr)
+
+	// Добавляем padding чтобы превысить maxXMLSize (4 MB)
+	padding := strings.Repeat(" ", maxXMLSize)
+	footer := `</ValCurs>`
+	xmlData := header + padding + footer
+
+	reader := strings.NewReader(xmlData)
+	_, err := ParseXML(reader, date)
+	if err == nil {
+		t.Fatal("ParseXML() error = nil, want error for oversized XML")
+	}
+}
+
 // TestParseXML_Windows1251DecodeError проверяет обработку ошибки декодирования windows-1251
 func TestParseXML_Windows1251DecodeError(t *testing.T) {
 	// Создаем XML с декларацией windows-1251, но с невалидными байтами

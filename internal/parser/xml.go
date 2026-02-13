@@ -25,6 +25,9 @@ var (
 	ErrInvalidXMLRate = errors.New("invalid rate format in XML")
 )
 
+// maxXMLSize ограничивает максимальный размер XML ответа от ЦБ РФ (4 MB)
+const maxXMLSize = 4 << 20
+
 // ValCurs представляет корневой элемент XML ответа ЦБ РФ
 // Пример: <ValCurs Date="20.12.2025" name="Foreign Currency Market">
 type ValCurs struct {
@@ -57,7 +60,8 @@ type Valute struct {
 // r - io.Reader с XML контентом (может быть в кодировке windows-1251)
 // date - дата курсов (используется для установки даты в ExchangeRate)
 func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
-	// Читаем весь XML в память
+	// Читаем весь XML в память с ограничением размера
+	r = io.LimitReader(r, maxXMLSize)
 	xmlData, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read XML: %w", err)
