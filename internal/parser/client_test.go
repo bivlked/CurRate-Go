@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,8 @@ import (
 )
 
 func TestFetchXML(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("Успешный HTTP запрос", func(t *testing.T) {
 		// Создаем мок сервер
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +29,7 @@ func TestFetchXML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchXML(server.URL)
+		body, err := fetchXML(ctx, server.URL)
 		if err != nil {
 			t.Fatalf("Неожиданная ошибка: %v", err)
 		}
@@ -51,7 +54,7 @@ func TestFetchXML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchXML(server.URL)
+		body, err := fetchXML(ctx, server.URL)
 		if err == nil {
 			body.Close()
 			t.Fatal("Ожидалась ошибка для статуса 404")
@@ -80,10 +83,10 @@ func TestFetchXML(t *testing.T) {
 	})
 
 	t.Run("Сервер возвращает 500 (с retry)", func(t *testing.T) {
-		originalSleep := sleepFunc
-		sleepFunc = func(time.Duration) {}
+		originalSleep := sleepWithContext
+		sleepWithContext = func(context.Context, time.Duration) error { return nil }
 		t.Cleanup(func() {
-			sleepFunc = originalSleep
+			sleepWithContext = originalSleep
 		})
 
 		attemptCount := 0
@@ -93,7 +96,7 @@ func TestFetchXML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchXML(server.URL)
+		body, err := fetchXML(ctx, server.URL)
 		if err == nil {
 			body.Close()
 			t.Fatal("Ожидалась ошибка для статуса 500")
@@ -111,14 +114,14 @@ func TestFetchXML(t *testing.T) {
 	})
 
 	t.Run("Сервер недоступен (retry logic)", func(t *testing.T) {
-		originalSleep := sleepFunc
-		sleepFunc = func(time.Duration) {}
+		originalSleep := sleepWithContext
+		sleepWithContext = func(context.Context, time.Duration) error { return nil }
 		t.Cleanup(func() {
-			sleepFunc = originalSleep
+			sleepWithContext = originalSleep
 		})
 
 		// Используем невалидный URL
-		body, err := fetchXML("http://localhost:99999")
+		body, err := fetchXML(ctx, "http://localhost:99999")
 		if err == nil {
 			body.Close()
 			t.Fatal("Ожидалась ошибка для недоступного сервера")
@@ -130,10 +133,10 @@ func TestFetchXML(t *testing.T) {
 	})
 
 	t.Run("Сервер восстанавливается после нескольких попыток", func(t *testing.T) {
-		originalSleep := sleepFunc
-		sleepFunc = func(time.Duration) {}
+		originalSleep := sleepWithContext
+		sleepWithContext = func(context.Context, time.Duration) error { return nil }
 		t.Cleanup(func() {
-			sleepFunc = originalSleep
+			sleepWithContext = originalSleep
 		})
 
 		attemptCount := 0
@@ -150,7 +153,7 @@ func TestFetchXML(t *testing.T) {
 		}))
 		defer server.Close()
 
-		body, err := fetchXML(server.URL)
+		body, err := fetchXML(ctx, server.URL)
 		if err != nil {
 			t.Fatalf("Неожиданная ошибка: %v", err)
 		}
@@ -160,9 +163,45 @@ func TestFetchXML(t *testing.T) {
 			t.Errorf("Ожидалось 3 попытки, выполнено: %d", attemptCount)
 		}
 	})
+
+	t.Run("Контекст отменен во время retry backoff", func(t *testing.T) {
+		originalSleep := sleepWithContext
+		sleepWithContext = func(ctx context.Context, d time.Duration) error {
+			// Симулируем отмену контекста во время backoff
+			return context.Canceled
+		}
+		t.Cleanup(func() {
+			sleepWithContext = originalSleep
+		})
+
+		attemptCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attemptCount++
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
+
+		body, err := fetchXML(ctx, server.URL)
+		if err == nil {
+			body.Close()
+			t.Fatal("Ожидалась ошибка при отмене контекста")
+		}
+
+		// Должна быть 1 попытка (после первой ошибки backoff отменяется контекстом)
+		if attemptCount != 1 {
+			t.Errorf("Ожидалась 1 попытка, выполнено: %d", attemptCount)
+		}
+
+		// Ошибка должна быть context.Canceled
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Ожидалась ошибка context.Canceled, получена: %v", err)
+		}
+	})
 }
 
 func TestDoRequest(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("Успешный запрос", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -171,7 +210,7 @@ func TestDoRequest(t *testing.T) {
 		defer server.Close()
 
 		client := newHTTPClient()
-		resp, err := doRequest(client, server.URL)
+		resp, err := doRequest(ctx, client, server.URL)
 		if err != nil {
 			t.Fatalf("Неожиданная ошибка: %v", err)
 		}
@@ -184,7 +223,7 @@ func TestDoRequest(t *testing.T) {
 
 	t.Run("Невалидный URL", func(t *testing.T) {
 		client := newHTTPClient()
-		resp, err := doRequest(client, "://invalid-url")
+		resp, err := doRequest(ctx, client, "://invalid-url")
 		if err == nil {
 			resp.Body.Close()
 			t.Fatal("Ожидалась ошибка для невалидного URL")
@@ -200,7 +239,7 @@ func TestDoRequest(t *testing.T) {
 		defer server.Close()
 
 		client := newHTTPClient()
-		resp, err := doRequest(client, server.URL)
+		resp, err := doRequest(ctx, client, server.URL)
 		if err != nil {
 			t.Fatalf("Неожиданная ошибка: %v", err)
 		}
@@ -264,6 +303,8 @@ func TestBuildURL(t *testing.T) {
 
 // Тест redirect логики
 func TestHTTPClientRedirects(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("Автоматическая обработка редиректов", func(t *testing.T) {
 		requestCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -281,7 +322,7 @@ func TestHTTPClientRedirects(t *testing.T) {
 		defer server.Close()
 
 		client := newHTTPClient()
-		resp, err := doRequest(client, server.URL)
+		resp, err := doRequest(ctx, client, server.URL)
 		if err != nil {
 			t.Fatalf("Не ожидалась ошибка для редиректа: %v", err)
 		}
@@ -338,6 +379,7 @@ func TestHTTPClientRedirects(t *testing.T) {
 
 // Бенчмарк для doRequest
 func BenchmarkDoRequest(b *testing.B) {
+	ctx := context.Background()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -348,7 +390,7 @@ func BenchmarkDoRequest(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		resp, err := doRequest(client, server.URL)
+		resp, err := doRequest(ctx, client, server.URL)
 		if err != nil {
 			b.Fatal(err)
 		}

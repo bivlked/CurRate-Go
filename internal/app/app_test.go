@@ -18,7 +18,7 @@ type mockRateProvider struct {
 	err      error
 }
 
-func (m *mockRateProvider) FetchRates(date time.Time) (*models.RateData, error) {
+func (m *mockRateProvider) FetchRates(_ context.Context, date time.Time) (*models.RateData, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -144,6 +144,7 @@ func TestApp_Convert_Success(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	req := ConvertRequest{
 		Amount:   100,
@@ -174,6 +175,7 @@ func TestApp_Convert_InvalidCurrency(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	req := ConvertRequest{
 		Amount:   100,
@@ -204,6 +206,7 @@ func TestApp_Convert_InvalidDate(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	req := ConvertRequest{
 		Amount:   100,
@@ -242,6 +245,7 @@ func TestApp_Convert_ConverterError(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	req := ConvertRequest{
 		Amount:   -100, // Отрицательная сумма должна вызвать ошибку
@@ -279,6 +283,7 @@ func TestApp_GetRate_Success(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	result := app.GetRate("USD", "15.01.2024")
 
@@ -303,6 +308,7 @@ func TestApp_GetRate_RUB(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	result := app.GetRate("RUB", "15.01.2024")
 
@@ -327,6 +333,7 @@ func TestApp_GetRate_InvalidCurrency(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	result := app.GetRate("GBP", "15.01.2024")
 
@@ -351,6 +358,7 @@ func TestApp_GetRate_InvalidDate(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	result := app.GetRate("USD", "invalid-date")
 
@@ -383,6 +391,7 @@ func TestApp_GetRate_ConverterError(t *testing.T) {
 	}
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
+	app.Startup(context.Background())
 
 	// Используем дату в будущем
 	futureDateStr := date.Format("02.01.2006")

@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -67,7 +68,7 @@ func TestConverter_GetRate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := converter.GetRate(tt.currency, tt.date)
+			got, err := converter.GetRate(context.Background(), tt.currency, tt.date)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -123,7 +124,7 @@ func TestConverter_GetRate_ValidationErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := converter.GetRate(tt.currency, tt.date)
+			_, err := converter.GetRate(context.Background(), tt.currency, tt.date)
 			if err == nil {
 				t.Fatal("Ожидалась ошибка, но её нет")
 			}
@@ -156,7 +157,7 @@ func TestConverter_GetRate_UsesCache(t *testing.T) {
 	converter := NewConverter(mockProvider, cache)
 
 	// Первый вызов - должен запросить у provider
-	rate1, err := converter.GetRate(models.USD, date)
+	rate1, err := converter.GetRate(context.Background(), models.USD, date)
 	if err != nil {
 		t.Fatalf("GetRate() error = %v", err)
 	}
@@ -168,7 +169,7 @@ func TestConverter_GetRate_UsesCache(t *testing.T) {
 
 	// Второй вызов - должен использовать кэш
 	initialCallCount := mockProvider.callCount
-	rate2, err := converter.GetRate(models.USD, date)
+	rate2, err := converter.GetRate(context.Background(), models.USD, date)
 	if err != nil {
 		t.Fatalf("GetRate() error = %v", err)
 	}

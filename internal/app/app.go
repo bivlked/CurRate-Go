@@ -85,7 +85,7 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 	}
 
 	// Выполняем конвертацию
-	result, err := a.converter.Convert(req.Amount, currency, date)
+	result, err := a.converter.Convert(a.ctx, req.Amount, currency, date)
 	if err != nil {
 		// Преобразуем ошибку в понятное сообщение на русском
 		return ConvertResponse{
@@ -138,7 +138,7 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 
 	// Используем оптимизированный метод GetRate для получения курса без форматирования
 	// Это избегает лишних вычислений и аллокаций для live preview
-	rate, err := a.converter.GetRate(currency, date)
+	rate, err := a.converter.GetRate(a.ctx, currency, date)
 	if err != nil {
 		return RateResponse{
 			Success: false,

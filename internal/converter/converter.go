@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -13,15 +14,15 @@ import (
 type RateProvider interface {
 	// FetchRates получает курсы валют на указанную дату
 	// Возвращает RateData с картой курсов или ошибку
-	FetchRates(date time.Time) (*models.RateData, error)
+	FetchRates(ctx context.Context, date time.Time) (*models.RateData, error)
 }
 
 // FetchRatesFunc адаптирует функцию к интерфейсу RateProvider (аналог http.HandlerFunc)
-type FetchRatesFunc func(date time.Time) (*models.RateData, error)
+type FetchRatesFunc func(ctx context.Context, date time.Time) (*models.RateData, error)
 
 // FetchRates реализует интерфейс RateProvider
-func (f FetchRatesFunc) FetchRates(date time.Time) (*models.RateData, error) {
-	return f(date)
+func (f FetchRatesFunc) FetchRates(ctx context.Context, date time.Time) (*models.RateData, error) {
+	return f(ctx, date)
 }
 
 // CacheStorage - интерфейс для кэширования курсов
@@ -72,6 +73,7 @@ func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
 }
 
 // Convert конвертирует сумму в указанной валюте в рубли на заданную дату
+// ctx - контекст для отмены сетевых запросов
 // amount - сумма для конвертации
 // currency - валюта (USD, EUR)
 // date - дата курса
@@ -87,13 +89,13 @@ func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
 // Пример использования:
 //
 //	date := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
-//	result, err := converter.Convert(1000, models.USD, date)
+//	result, err := converter.Convert(ctx, 1000, models.USD, date)
 //	if err != nil {
 //	    return err
 //	}
 //	fmt.Println(result.FormattedStr)
 //	// Вывод: "80 722,00 руб. ($1 000,00 по курсу 80,7220)"
-func (c *Converter) Convert(amount float64, currency models.Currency, date time.Time) (*models.ConversionResult, error) {
+func (c *Converter) Convert(ctx context.Context, amount float64, currency models.Currency, date time.Time) (*models.ConversionResult, error) {
 	if c.provider == nil {
 		return nil, ErrNilRateProvider
 	}
@@ -114,7 +116,7 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 	}
 
 	// Получаем курс через внутренний метод (использует кэш и provider)
-	rate, actualDate, err := c.getRateInternal(currency, normalizedDate)
+	rate, actualDate, err := c.getRateInternal(ctx, currency, normalizedDate)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +157,7 @@ func (c *Converter) Convert(amount float64, currency models.Currency, date time.
 // Возвращает (rate, actualDate, error), где actualDate - фактическая дата из XML
 // Это внутренний метод, который используется как в Convert, так и в GetRate
 // для избежания дублирования кода
-func (c *Converter) getRateInternal(currency models.Currency, normalizedDate time.Time) (float64, time.Time, error) {
+func (c *Converter) getRateInternal(ctx context.Context, currency models.Currency, normalizedDate time.Time) (float64, time.Time, error) {
 	if c.provider == nil {
 		return 0, time.Time{}, ErrNilRateProvider
 	}
@@ -170,7 +172,7 @@ func (c *Converter) getRateInternal(currency models.Currency, normalizedDate tim
 	rate, actualDate, found := c.cache.Get(currency, normalizedDate)
 	if !found {
 		// Курса нет в кэше - получаем через provider
-		rateData, err := c.provider.FetchRates(normalizedDate)
+		rateData, err := c.provider.FetchRates(ctx, normalizedDate)
 		if err != nil {
 			return 0, time.Time{}, fmt.Errorf("failed to fetch rates: %w", err)
 		}
@@ -210,7 +212,7 @@ func (c *Converter) getRateInternal(currency models.Currency, normalizedDate tim
 // GetRate получает курс валюты на указанную дату без форматирования
 // Используется для live preview в GUI, где не нужна полная конвертация
 // Возвращает только числовой курс без создания ConversionResult
-func (c *Converter) GetRate(currency models.Currency, date time.Time) (float64, error) {
+func (c *Converter) GetRate(ctx context.Context, currency models.Currency, date time.Time) (float64, error) {
 	if c.provider == nil {
 		return 0, ErrNilRateProvider
 	}
@@ -228,7 +230,7 @@ func (c *Converter) GetRate(currency models.Currency, date time.Time) (float64, 
 
 	// Используем внутренний метод для получения курса
 	// Для live preview фактическая дата не нужна, поэтому игнорируем её
-	rate, _, err := c.getRateInternal(currency, normalizedDate)
+	rate, _, err := c.getRateInternal(ctx, currency, normalizedDate)
 	return rate, err
 }
 

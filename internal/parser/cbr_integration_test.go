@@ -4,6 +4,7 @@
 package parser
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -19,10 +20,12 @@ func TestFetchRatesIntegration(t *testing.T) {
 		t.Skip("Пропускаем интеграционный тест в кратком режиме")
 	}
 
+	ctx := context.Background()
+
 	t.Run("Реальный запрос к XML API ЦБ РФ", func(t *testing.T) {
 		// Используем недавнюю дату (не сегодняшнюю, так как данные могут обновляться)
 		date := testPastDateUTC()
-		data, err := FetchRates(date)
+		data, err := FetchRates(ctx, date)
 
 		if err != nil {
 			t.Fatalf("Ошибка получения курсов: %v", err)
@@ -84,7 +87,7 @@ func TestFetchRatesIntegration(t *testing.T) {
 	t.Run("Запрос с устаревшей датой", func(t *testing.T) {
 		// Проверяем, что API работает и с более старыми датами
 		date := testPastDateUTC().AddDate(0, 0, -90)
-		data, err := FetchRates(date)
+		data, err := FetchRates(ctx, date)
 
 		if err != nil {
 			t.Fatalf("Ошибка получения курсов для старой даты: %v", err)
@@ -107,8 +110,10 @@ func TestFetchLatestRatesIntegration(t *testing.T) {
 		t.Skip("Пропускаем интеграционный тест в кратком режиме")
 	}
 
+	ctx := context.Background()
+
 	t.Run("Реальный запрос последних курсов", func(t *testing.T) {
-		data, err := FetchLatestRates()
+		data, err := FetchLatestRates(ctx)
 
 		if err != nil {
 			t.Fatalf("Ошибка получения последних курсов: %v", err)
@@ -147,6 +152,8 @@ func TestXMLAPIResponseFormat(t *testing.T) {
 		t.Skip("Пропускаем интеграционный тест в кратком режиме")
 	}
 
+	ctx := context.Background()
+
 	t.Run("Проверка формата XML ответа", func(t *testing.T) {
 		date := testPastDateUTC()
 
@@ -154,7 +161,7 @@ func TestXMLAPIResponseFormat(t *testing.T) {
 		url := buildURL(date)
 		t.Logf("URL запроса: %s", url)
 
-		body, err := fetchXML(url)
+		body, err := fetchXML(ctx, url)
 		if err != nil {
 			t.Fatalf("Ошибка получения XML: %v", err)
 		}

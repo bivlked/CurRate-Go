@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -45,6 +46,7 @@ func newResponse(req *http.Request, statusCode int, body string) *http.Response 
 
 // Unit тесты с мок-сервером
 func TestFetchRates(t *testing.T) {
+	ctx := context.Background()
 	testDate := testPastDateUTC()
 	dateStr := formatCBRDate(testDate)
 	// Мок XML с реального API ЦБ РФ (упрощенная версия)
@@ -71,7 +73,7 @@ func TestFetchRates(t *testing.T) {
 			return newResponse(req, http.StatusOK, mockXML), nil
 		}))
 
-		data, err := fetchRatesFromURL("http://example.test", testDate)
+		data, err := fetchRatesFromURL(ctx, "http://example.test", testDate)
 		if err != nil {
 			t.Fatalf("Ошибка fetchRatesFromURL: %v", err)
 		}
@@ -109,7 +111,7 @@ func TestFetchRates(t *testing.T) {
 			return newResponse(req, http.StatusInternalServerError, ""), nil
 		}))
 
-		data, err := fetchRatesFromURL("http://example.test", testDate)
+		data, err := fetchRatesFromURL(ctx, "http://example.test", testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для статуса 500")
 		}
@@ -124,7 +126,7 @@ func TestFetchRates(t *testing.T) {
 			return newResponse(req, http.StatusOK, "<html><body>Not XML response</body></html>"), nil
 		}))
 
-		data, err := fetchRatesFromURL("http://example.test", testDate)
+		data, err := fetchRatesFromURL(ctx, "http://example.test", testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для невалидного XML")
 		}
@@ -141,7 +143,7 @@ func TestFetchRates(t *testing.T) {
 </ValCurs>`, dateStr)), nil
 		}))
 
-		data, err := fetchRatesFromURL("http://example.test", testDate)
+		data, err := fetchRatesFromURL(ctx, "http://example.test", testDate)
 		if err == nil {
 			t.Fatal("Ожидалась ошибка для XML без валют")
 		}
@@ -154,6 +156,7 @@ func TestFetchRates(t *testing.T) {
 
 // TestFetchRates_WithBuildURL проверяет обработку ошибки парсинга XML
 func TestFetchRates_ParseError(t *testing.T) {
+	ctx := context.Background()
 	testDate := testPastDateUTC()
 	dateStr := formatCBRDate(testDate)
 	setTestHTTPClientFactory(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -162,7 +165,7 @@ func TestFetchRates_ParseError(t *testing.T) {
 </ValCurs>`, dateStr)), nil
 	}))
 
-	data, err := fetchRatesFromURL("http://example.test", testDate)
+	data, err := fetchRatesFromURL(ctx, "http://example.test", testDate)
 	if err == nil {
 		t.Fatal("Ожидалась ошибка для XML без валют")
 	}
@@ -178,6 +181,7 @@ func TestFetchRates_ParseError(t *testing.T) {
 }
 
 func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
+	ctx := context.Background()
 	mockXML := `<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="20.12.2025" name="Foreign Currency Market">
     <Valute ID="R01235">
@@ -210,7 +214,7 @@ func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
 	})
 
 	requestDate := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
-	data, err := FetchRates(requestDate)
+	data, err := FetchRates(ctx, requestDate)
 	if err != nil {
 		t.Fatalf("FetchRates() error = %v", err)
 	}
@@ -233,6 +237,7 @@ func TestFetchRates_UsesBuildURLAndParsesResponse(t *testing.T) {
 }
 
 func TestFetchLatestRates_UsesCurrentDateAndParsesXMLDate(t *testing.T) {
+	ctx := context.Background()
 	mockXML := `<?xml version="1.0" encoding="UTF-8"?>
 <ValCurs Date="19.12.2025" name="Foreign Currency Market">
     <Valute ID="R01239">
@@ -259,7 +264,7 @@ func TestFetchLatestRates_UsesCurrentDateAndParsesXMLDate(t *testing.T) {
 		}, nil
 	})
 
-	data, err := FetchLatestRates()
+	data, err := FetchLatestRates(ctx)
 	if err != nil {
 		t.Fatalf("FetchLatestRates() error = %v", err)
 	}

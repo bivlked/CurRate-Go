@@ -34,7 +34,17 @@ var (
 	ErrMaxRetries    = errors.New("max retries exceeded")
 )
 
-var sleepFunc = time.Sleep
+// sleepWithContext ожидает указанную длительность с поддержкой отмены через контекст
+var sleepWithContext = defaultSleepWithContext
+
+func defaultSleepWithContext(ctx context.Context, d time.Duration) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(d):
+		return nil
+	}
+}
 
 // Глобальный HTTP-клиент для переиспользования соединений (HTTP keep-alive)
 // Создается один раз при инициализации пакета и используется для всех запросов
@@ -45,9 +55,10 @@ var sleepFunc = time.Sleep
 var defaultHTTPClient = newHTTPClient()
 
 // fetchXML выполняет HTTP GET запрос с retry логикой и exponential backoff
+// ctx - контекст для отмены запросов и backoff ожидания
 // url - URL для запроса
 // Возвращает io.ReadCloser с XML контентом (caller должен закрыть его)
-func fetchXML(url string) (io.ReadCloser, error) {
+func fetchXML(ctx context.Context, url string) (io.ReadCloser, error) {
 	// Используем глобальный HTTP-клиент для переиспользования соединений
 	// Это значительно улучшает производительность при частых запросах
 	client := defaultHTTPClient
@@ -56,12 +67,17 @@ func fetchXML(url string) (io.ReadCloser, error) {
 	var attempts int
 	for attempt := 1; attempt <= MaxRetries; attempt++ {
 		attempts = attempt
-		resp, err := doRequest(client, url)
+		resp, err := doRequest(ctx, client, url)
 		if err == nil {
 			return resp.Body, nil
 		}
 
 		lastErr = err
+
+		// Если контекст отменён — выходим немедленно
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 
 		// Не повторяем запрос при ошибках клиента (4xx) — повторный запрос вернет тот же результат
 		// Возвращаем оригинальную ошибку без обёртки ErrMaxRetries
@@ -73,7 +89,9 @@ func fetchXML(url string) (io.ReadCloser, error) {
 		// Attempt 1: 1s, Attempt 2: 2s, Attempt 3: 4s (как в Python версии)
 		if attempt < MaxRetries {
 			delay := BaseRetryDelay * time.Duration(1<<uint(attempt-1))
-			sleepFunc(delay)
+			if err := sleepWithContext(ctx, delay); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -81,10 +99,11 @@ func fetchXML(url string) (io.ReadCloser, error) {
 }
 
 // doRequest выполняет одиночный HTTP запрос
+// ctx - контекст для отмены запроса
 // client - HTTP клиент
 // url - URL для запроса
-func doRequest(client *http.Client, url string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
+func doRequest(ctx context.Context, client *http.Client, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

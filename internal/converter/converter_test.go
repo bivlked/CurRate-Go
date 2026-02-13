@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"context"
 	"errors"
 	"math"
 	"testing"
@@ -18,7 +19,7 @@ type MockRateProvider struct {
 	callCount int
 }
 
-func (m *MockRateProvider) FetchRates(date time.Time) (*models.RateData, error) {
+func (m *MockRateProvider) FetchRates(_ context.Context, date time.Time) (*models.RateData, error) {
 	m.callCount++
 	if m.err != nil {
 		return nil, m.err
@@ -97,7 +98,7 @@ func TestConverter_Convert_UsesActualDateFromXML(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(mockProvider, cache)
 
-	result, err := converter.Convert(100, models.USD, requestedDate)
+	result, err := converter.Convert(context.Background(), 100, models.USD, requestedDate)
 	if err != nil {
 		t.Fatalf("Convert() error = %v, want nil", err)
 	}
@@ -139,7 +140,7 @@ func TestConverter_Convert_UsesActualDateFromCache(t *testing.T) {
 	converter := NewConverter(mockProvider, cache)
 
 	// Первый вызов - получаем из provider и кэшируем
-	result1, err := converter.Convert(100, models.USD, requestedDate)
+	result1, err := converter.Convert(context.Background(), 100, models.USD, requestedDate)
 	if err != nil {
 		t.Fatalf("First Convert() error = %v, want nil", err)
 	}
@@ -149,7 +150,7 @@ func TestConverter_Convert_UsesActualDateFromCache(t *testing.T) {
 	}
 
 	// Второй вызов - должен использовать кэш с фактической датой
-	result2, err := converter.Convert(200, models.USD, requestedDate)
+	result2, err := converter.Convert(context.Background(), 200, models.USD, requestedDate)
 	if err != nil {
 		t.Fatalf("Second Convert() error = %v, want nil", err)
 	}
@@ -191,7 +192,7 @@ func TestConverter_GetRateInternal_UsesActualDate(t *testing.T) {
 	// Но getRateInternal - приватный метод, поэтому тестируем через Convert
 	// и проверяем, что actualDate используется корректно
 
-	result, err := converter.Convert(100, models.USD, requestedDate)
+	result, err := converter.Convert(context.Background(), 100, models.USD, requestedDate)
 	if err != nil {
 		t.Fatalf("Convert() error = %v, want nil", err)
 	}
@@ -557,7 +558,7 @@ func TestConverter_Convert_NilProvider(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(nil, cache)
 
-	_, err := converter.Convert(100, models.USD, time.Now())
+	_, err := converter.Convert(context.Background(), 100, models.USD, time.Now())
 	if err == nil {
 		t.Fatal("Ожидалась ошибка при отсутствии источника курсов")
 	}
@@ -595,7 +596,7 @@ func TestConverter_Convert_Success(t *testing.T) {
 	converter := NewConverter(mockProvider, cache)
 
 	// Тест USD
-	result, err := converter.Convert(1000, models.USD, date)
+	result, err := converter.Convert(context.Background(), 1000, models.USD, date)
 	if err != nil {
 		t.Fatalf("Неожиданная ошибка: %v", err)
 	}
@@ -653,7 +654,7 @@ func TestConverter_Convert_CacheHit(t *testing.T) {
 
 	converter := NewConverter(mockProvider, cache)
 
-	result, err := converter.Convert(1000, models.USD, date)
+	result, err := converter.Convert(context.Background(), 1000, models.USD, date)
 	if err != nil {
 		t.Fatalf("Неожиданная ошибка: %v", err)
 	}
@@ -678,7 +679,7 @@ func TestConverter_Convert_RUB(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(mockProvider, cache)
 
-	result, err := converter.Convert(1000, models.RUB, date)
+	result, err := converter.Convert(context.Background(), 1000, models.RUB, date)
 	if err != nil {
 		t.Fatalf("Неожиданная ошибка: %v", err)
 	}
@@ -744,7 +745,7 @@ func TestConverter_Convert_ValidationErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := converter.Convert(tt.amount, tt.currency, tt.date)
+			_, err := converter.Convert(context.Background(), tt.amount, tt.currency, tt.date)
 			if err == nil {
 				t.Fatal("Ожидалась ошибка, но её нет")
 			}
@@ -767,7 +768,7 @@ func TestConverter_Convert_ProviderError(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(mockProvider, cache)
 
-	_, err := converter.Convert(1000, models.USD, date)
+	_, err := converter.Convert(context.Background(), 1000, models.USD, date)
 	if err == nil {
 		t.Fatal("Ожидалась ошибка от provider")
 	}
@@ -799,7 +800,7 @@ func TestConverter_Convert_CurrencyNotFound(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(mockProvider, cache)
 
-	_, err := converter.Convert(1000, models.USD, date)
+	_, err := converter.Convert(context.Background(), 1000, models.USD, date)
 	if err == nil {
 		t.Fatal("Ожидалась ошибка 'currency not found'")
 	}
@@ -822,7 +823,7 @@ func TestConverter_Convert_MultipleConversions(t *testing.T) {
 	converter := NewConverter(mockProvider, cache)
 
 	// Первая конвертация USD
-	result1, err := converter.Convert(1000, models.USD, date)
+	result1, err := converter.Convert(context.Background(), 1000, models.USD, date)
 	if err != nil {
 		t.Fatalf("Ошибка первой конвертации: %v", err)
 	}
@@ -831,7 +832,7 @@ func TestConverter_Convert_MultipleConversions(t *testing.T) {
 	}
 
 	// Вторая конвертация EUR
-	result2, err := converter.Convert(500, models.EUR, date)
+	result2, err := converter.Convert(context.Background(), 500, models.EUR, date)
 	if err != nil {
 		t.Fatalf("Ошибка второй конвертации: %v", err)
 	}
@@ -840,7 +841,7 @@ func TestConverter_Convert_MultipleConversions(t *testing.T) {
 	}
 
 	// Третья конвертация USD (должна использовать кэш)
-	result3, err := converter.Convert(2000, models.USD, date)
+	result3, err := converter.Convert(context.Background(), 2000, models.USD, date)
 	if err != nil {
 		t.Fatalf("Ошибка третьей конвертации: %v", err)
 	}
@@ -869,7 +870,7 @@ func TestConverter_Convert_NormalizesNominalRate(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(mockProvider, cache)
 
-	result, err := converter.Convert(10, models.USD, date)
+	result, err := converter.Convert(context.Background(), 10, models.USD, date)
 	if err != nil {
 		t.Fatalf("Неожиданная ошибка: %v", err)
 	}
@@ -913,12 +914,12 @@ func TestConverter_Convert_NormalizesDateForCache(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(mockProvider, cache)
 
-	_, err := converter.Convert(100, models.USD, date)
+	_, err := converter.Convert(context.Background(), 100, models.USD, date)
 	if err != nil {
 		t.Fatalf("Неожиданная ошибка первой конвертации: %v", err)
 	}
 
-	_, err = converter.Convert(200, models.USD, sameDayLater)
+	_, err = converter.Convert(context.Background(), 200, models.USD, sameDayLater)
 	if err != nil {
 		t.Fatalf("Неожиданная ошибка второй конвертации: %v", err)
 	}
@@ -932,7 +933,7 @@ func TestConverter_GetRate_NilProvider(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(nil, cache)
 
-	_, err := converter.GetRate(models.USD, time.Now())
+	_, err := converter.GetRate(context.Background(), models.USD, time.Now())
 	if err == nil {
 		t.Fatal("Ожидалась ошибка при отсутствии источника курсов")
 	}
