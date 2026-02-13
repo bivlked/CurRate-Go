@@ -23,6 +23,9 @@ type App struct {
 
 // NewApp создает новый экземпляр App
 func NewApp(conv *converter.Converter) *App {
+	if conv == nil {
+		panic("NewApp: converter must not be nil")
+	}
 	return &App{
 		converter: conv,
 	}
@@ -66,6 +69,13 @@ type RateResponse struct {
 // Convert конвертирует валюту
 // Вызывается из JavaScript для выполнения конвертации
 func (a *App) Convert(req ConvertRequest) ConvertResponse {
+	if a.ctx == nil {
+		return ConvertResponse{
+			Success: false,
+			Error:   "Приложение не инициализировано",
+		}
+	}
+
 	// Парсим валюту
 	currency, err := models.ParseCurrency(req.Currency)
 	if err != nil {
@@ -110,6 +120,13 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 // GetRate получает курс валюты на указанную дату (для live preview)
 // Вызывается из JavaScript при изменении даты для автоматического отображения курса
 func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
+	if a.ctx == nil {
+		return RateResponse{
+			Success: false,
+			Error:   "Приложение не инициализировано",
+		}
+	}
+
 	// Парсим валюту
 	currency, err := models.ParseCurrency(currencyStr)
 	if err != nil {

@@ -96,10 +96,6 @@ func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
 //	fmt.Println(result.FormattedStr)
 //	// Вывод: "80 722,00 руб. ($1 000,00 по курсу 80,7220)"
 func (c *Converter) Convert(ctx context.Context, amount float64, currency models.Currency, date time.Time) (*models.ConversionResult, error) {
-	if c.provider == nil {
-		return nil, ErrNilRateProvider
-	}
-
 	normalizedDate := normalizeDate(date)
 
 	// Валидация входных данных
@@ -158,13 +154,13 @@ func (c *Converter) Convert(ctx context.Context, amount float64, currency models
 // Это внутренний метод, который используется как в Convert, так и в GetRate
 // для избежания дублирования кода
 func (c *Converter) getRateInternal(ctx context.Context, currency models.Currency, normalizedDate time.Time) (float64, time.Time, error) {
-	if c.provider == nil {
-		return 0, time.Time{}, ErrNilRateProvider
-	}
-
-	// Для RUB всегда возвращаем 1.0
+	// Для RUB всегда возвращаем 1.0 (provider не нужен)
 	if currency == models.RUB {
 		return 1.0, normalizedDate, nil
+	}
+
+	if c.provider == nil {
+		return 0, time.Time{}, ErrNilRateProvider
 	}
 
 	// Получение курса (сначала проверяем кэш по запрошенной дате)
@@ -213,10 +209,6 @@ func (c *Converter) getRateInternal(ctx context.Context, currency models.Currenc
 // Используется для live preview в GUI, где не нужна полная конвертация
 // Возвращает только числовой курс без создания ConversionResult
 func (c *Converter) GetRate(ctx context.Context, currency models.Currency, date time.Time) (float64, error) {
-	if c.provider == nil {
-		return 0, ErrNilRateProvider
-	}
-
 	normalizedDate := normalizeDate(date)
 
 	// Валидация входных данных

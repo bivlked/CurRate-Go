@@ -83,6 +83,62 @@ func createTestConverter(rateData *models.RateData, rateError error, cacheRate f
 	return converter.NewConverter(mockProvider, mockCache)
 }
 
+func TestNewApp_NilConverter(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("NewApp(nil) should panic")
+		}
+		msg, ok := r.(string)
+		if !ok || !strings.Contains(msg, "converter must not be nil") {
+			t.Errorf("unexpected panic message: %v", r)
+		}
+	}()
+	NewApp(nil)
+}
+
+func TestConvert_BeforeStartup(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {Currency: models.USD, Rate: 80.0, Nominal: 1, Date: date},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+	// Не вызываем Startup — a.ctx == nil
+
+	result := app.Convert(ConvertRequest{Amount: 100, Currency: "USD", Date: "15.01.2024"})
+	if result.Success {
+		t.Fatal("Convert() before Startup should return Success=false")
+	}
+	if !strings.Contains(result.Error, "не инициализировано") {
+		t.Errorf("Convert() Error = %q, want to contain 'не инициализировано'", result.Error)
+	}
+}
+
+func TestGetRate_BeforeStartup(t *testing.T) {
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	rateData := &models.RateData{
+		Date: date,
+		Rates: map[models.Currency]models.ExchangeRate{
+			models.USD: {Currency: models.USD, Rate: 80.0, Nominal: 1, Date: date},
+		},
+	}
+	conv := createTestConverter(rateData, nil, 0, false)
+	app := NewApp(conv)
+	// Не вызываем Startup — a.ctx == nil
+
+	result := app.GetRate("USD", "15.01.2024")
+	if result.Success {
+		t.Fatal("GetRate() before Startup should return Success=false")
+	}
+	if !strings.Contains(result.Error, "не инициализировано") {
+		t.Errorf("GetRate() Error = %q, want to contain 'не инициализировано'", result.Error)
+	}
+}
+
 func TestNewApp(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{

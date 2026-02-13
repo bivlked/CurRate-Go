@@ -942,3 +942,62 @@ func TestConverter_GetRate_NilProvider(t *testing.T) {
 		t.Fatalf("Ожидалась ошибка ErrNilRateProvider, получено: %v", err)
 	}
 }
+
+func TestConvert_NilProvider_RUB(t *testing.T) {
+	cache := NewMockCache()
+	converter := NewConverter(nil, cache)
+	date := testPastDateUTC()
+
+	result, err := converter.Convert(context.Background(), 1000, models.RUB, date)
+	if err != nil {
+		t.Fatalf("Convert(RUB) with nil provider should succeed, got error: %v", err)
+	}
+	if result.Rate != 1 {
+		t.Errorf("Rate = %v, want 1", result.Rate)
+	}
+	if result.TargetAmount != 1000 {
+		t.Errorf("TargetAmount = %v, want 1000", result.TargetAmount)
+	}
+}
+
+func TestGetRate_NilProvider_RUB(t *testing.T) {
+	cache := NewMockCache()
+	converter := NewConverter(nil, cache)
+	date := testPastDateUTC()
+
+	rate, err := converter.GetRate(context.Background(), models.RUB, date)
+	if err != nil {
+		t.Fatalf("GetRate(RUB) with nil provider should succeed, got error: %v", err)
+	}
+	if rate != 1.0 {
+		t.Errorf("Rate = %v, want 1.0", rate)
+	}
+}
+
+func TestConvert_NilProvider_USD(t *testing.T) {
+	cache := NewMockCache()
+	converter := NewConverter(nil, cache)
+	date := testPastDateUTC()
+
+	_, err := converter.Convert(context.Background(), 1000, models.USD, date)
+	if err == nil {
+		t.Fatal("Convert(USD) with nil provider should return error")
+	}
+	if !errors.Is(err, ErrNilRateProvider) {
+		t.Errorf("expected ErrNilRateProvider, got: %v", err)
+	}
+}
+
+func TestGetRate_NilProvider_USD(t *testing.T) {
+	cache := NewMockCache()
+	converter := NewConverter(nil, cache)
+	date := testPastDateUTC()
+
+	_, err := converter.GetRate(context.Background(), models.USD, date)
+	if err == nil {
+		t.Fatal("GetRate(USD) with nil provider should return error")
+	}
+	if !errors.Is(err, ErrNilRateProvider) {
+		t.Errorf("expected ErrNilRateProvider, got: %v", err)
+	}
+}
