@@ -3,6 +3,7 @@ package telegram
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -135,7 +136,8 @@ func TestSendStar_HTTPError(t *testing.T) {
 	transport := &mockTransport{
 		handler: func(req *http.Request) (*http.Response, error) {
 			recorder := httptest.NewRecorder()
-			recorder.WriteHeader(http.StatusInternalServerError)
+			recorder.WriteHeader(http.StatusForbidden)
+			recorder.WriteString(`{"ok":false,"description":"Forbidden: bot was blocked"}`)
 			return recorder.Result(), nil
 		},
 	}
@@ -146,7 +148,13 @@ func TestSendStar_HTTPError(t *testing.T) {
 
 	err := client.SendStar("user-123", "1.0.0")
 	if err == nil {
-		t.Fatal("expected error on HTTP 500")
+		t.Fatal("expected error on HTTP 403")
+	}
+	if !strings.Contains(err.Error(), "403") {
+		t.Errorf("error should contain status code 403, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "Forbidden") {
+		t.Errorf("error should contain response body text, got: %v", err)
 	}
 }
 

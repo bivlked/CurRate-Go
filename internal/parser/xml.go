@@ -23,6 +23,7 @@ var (
 	ErrInvalidXML     = errors.New("invalid XML structure")
 	ErrNoXMLRates     = errors.New("no exchange rates found in XML")
 	ErrInvalidXMLRate = errors.New("invalid rate format in XML")
+	ErrXMLTooLarge    = errors.New("XML response exceeds size limit")
 )
 
 // maxXMLSize ограничивает максимальный размер XML ответа от ЦБ РФ (4 MB)
@@ -61,10 +62,14 @@ type Valute struct {
 // date - дата курсов (используется для установки даты в ExchangeRate)
 func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 	// Читаем весь XML в память с ограничением размера
-	r = io.LimitReader(r, maxXMLSize)
+	// Читаем maxXMLSize+1 байт: если прочитано больше лимита — явная ошибка
+	r = io.LimitReader(r, maxXMLSize+1)
 	xmlData, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read XML: %w", err)
+	}
+	if int64(len(xmlData)) > maxXMLSize {
+		return nil, fmt.Errorf("%w: received %d bytes (limit %d)", ErrXMLTooLarge, len(xmlData), maxXMLSize)
 	}
 
 	// Если XML содержит декларацию windows-1251 (case-insensitive), конвертируем в UTF-8

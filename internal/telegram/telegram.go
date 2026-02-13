@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -85,7 +86,8 @@ func (c *Client) SendStar(userID string, appVersion string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Telegram API вернул статус: %d", resp.StatusCode)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return fmt.Errorf("Telegram API вернул статус %d: %s", resp.StatusCode, string(body))
 	}
 
 	return nil

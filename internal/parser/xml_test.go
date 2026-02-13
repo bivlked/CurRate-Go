@@ -526,7 +526,7 @@ func (e *errorReader) Read(p []byte) (n int, err error) {
 	return 0, e.err
 }
 
-// TestParseXML_OversizedResponse проверяет, что XML больше maxXMLSize усекается и не парсится
+// TestParseXML_OversizedResponse проверяет, что XML больше maxXMLSize возвращает ErrXMLTooLarge
 func TestParseXML_OversizedResponse(t *testing.T) {
 	date := testPastDateUTC()
 	dateStr := formatCBRDate(date)
@@ -551,6 +551,9 @@ func TestParseXML_OversizedResponse(t *testing.T) {
 	_, err := ParseXML(reader, date)
 	if err == nil {
 		t.Fatal("ParseXML() error = nil, want error for oversized XML")
+	}
+	if !errors.Is(err, ErrXMLTooLarge) {
+		t.Errorf("ParseXML() error = %v, want ErrXMLTooLarge", err)
 	}
 }
 
