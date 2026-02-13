@@ -3,6 +3,7 @@ package converter
 
 import (
 	"errors"
+	"math"
 	"time"
 )
 
@@ -21,7 +22,7 @@ var (
 //	    return err
 //	}
 func ValidateAmount(amount float64) error {
-	if amount <= 0 {
+	if math.IsNaN(amount) || math.IsInf(amount, 0) || amount <= 0 {
 		return ErrInvalidAmount
 	}
 	return nil

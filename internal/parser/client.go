@@ -61,6 +61,11 @@ func fetchXML(url string) (io.ReadCloser, error) {
 
 		lastErr = err
 
+		// Не повторяем запрос при ошибках клиента (4xx) — повторный запрос вернет тот же результат
+		if errors.Is(err, ErrInvalidStatus) {
+			break
+		}
+
 		// Если это не последняя попытка, ждем с exponential backoff
 		// Attempt 1: 1s, Attempt 2: 2s, Attempt 3: 4s (как в Python версии)
 		if attempt < MaxRetries {
@@ -92,7 +97,13 @@ func doRequest(client *http.Client, url string) (*http.Response, error) {
 	// Проверяем статус код
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
-		return nil, fmt.Errorf("%w: %d %s", ErrInvalidStatus, resp.StatusCode, resp.Status)
+		// Разделяем клиентские (4xx) и серверные (5xx) ошибки:
+		// 4xx — не ретраим (проблема в запросе, повторный вызов не поможет)
+		// 5xx и прочие — ретраим (временная проблема сервера)
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return nil, fmt.Errorf("%w: %d %s", ErrInvalidStatus, resp.StatusCode, resp.Status)
+		}
+		return nil, fmt.Errorf("%w: %d %s", ErrHTTPFailed, resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil

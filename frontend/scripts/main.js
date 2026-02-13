@@ -425,6 +425,13 @@ async function performConvert() {
 }
 
 /**
+ * Счётчик запросов для защиты от race condition в live preview.
+ * Каждый новый вызов увеличивает счётчик; если к моменту ответа
+ * счётчик изменился — ответ устарел и отбрасывается.
+ */
+let ratePreviewRequestId = 0;
+
+/**
  * Обновляет live preview курса
  */
 const updateRatePreview = debounce(async () => {
@@ -432,28 +439,34 @@ const updateRatePreview = debounce(async () => {
     const currencyInput = document.querySelector('input[name="currency"]:checked');
     const ratePreview = document.getElementById('rate-preview');
     const rateValue = document.getElementById('rate-value');
-    
+
     if (!dateInput || !currencyInput || !ratePreview || !rateValue) {
         return;
     }
-    
+
     const dateStr = dateInput.value.trim();
     if (!dateStr || !isValidDateFormat(dateStr)) {
         hideRatePreview();
         return;
     }
-    
+
     const date = parseDate(dateStr);
     if (!date || isFutureDate(date)) {
         hideRatePreview();
         return;
     }
-    
+
     const currency = currencyInput.value;
-    
+    const currentRequestId = ++ratePreviewRequestId;
+
     try {
         const response = await appInstance.GetRate(currency, dateStr);
-        
+
+        // Отбрасываем устаревший ответ, если за время ожидания был отправлен новый запрос
+        if (currentRequestId !== ratePreviewRequestId) {
+            return;
+        }
+
         if (response.success) {
             rateValue.textContent = `${formatNumber(response.rate, 4)} ₽`;
             // ratePreview всегда видим (display: flex в CSS), не нужно менять display
@@ -465,6 +478,9 @@ const updateRatePreview = debounce(async () => {
             }
         }
     } catch (error) {
+        if (currentRequestId !== ratePreviewRequestId) {
+            return;
+        }
         hideRatePreview();
         console.warn('Rate preview error:', error);
     }

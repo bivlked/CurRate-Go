@@ -266,14 +266,20 @@ function parseAmount(str) {
         normalized = cleaned;
     }
     
-    // Парсим результат
-    const num = parseFloat(normalized);
-    
-    // Отклоняем 0 и отрицательные числа (согласуется с бэкендом: amount > 0)
-    if (isNaN(num) || num <= 0) {
+    // Проверяем, что нормализованная строка содержит только допустимые символы:
+    // цифры, одна точка (дробная часть), опциональный ведущий минус
+    if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
         return null;
     }
-    
+
+    // Парсим результат
+    const num = parseFloat(normalized);
+
+    // Отклоняем NaN, Infinity, 0 и отрицательные числа (согласуется с бэкендом: amount > 0)
+    if (!isFinite(num) || num <= 0) {
+        return null;
+    }
+
     return num;
 }
 

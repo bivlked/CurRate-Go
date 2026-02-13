@@ -4,6 +4,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -33,8 +34,8 @@ func parseRate(s string) (float64, error) {
 		return 0, fmt.Errorf("%w: %s", ErrInvalidRate, s)
 	}
 
-	if rate <= 0 {
-		return 0, fmt.Errorf("%w: rate must be positive", ErrInvalidRate)
+	if math.IsNaN(rate) || math.IsInf(rate, 0) || rate <= 0 {
+		return 0, fmt.Errorf("%w: rate must be a finite positive number", ErrInvalidRate)
 	}
 
 	return rate, nil

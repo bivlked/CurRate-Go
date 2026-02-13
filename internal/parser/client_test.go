@@ -43,14 +43,10 @@ func TestFetchXML(t *testing.T) {
 		}
 	})
 
-	t.Run("Сервер возвращает 404", func(t *testing.T) {
-		originalSleep := sleepFunc
-		sleepFunc = func(time.Duration) {}
-		t.Cleanup(func() {
-			sleepFunc = originalSleep
-		})
-
+	t.Run("Сервер возвращает 404 (без retry)", func(t *testing.T) {
+		attemptCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attemptCount++
 			w.WriteHeader(http.StatusNotFound)
 		}))
 		defer server.Close()
@@ -61,15 +57,51 @@ func TestFetchXML(t *testing.T) {
 			t.Fatal("Ожидалась ошибка для статуса 404")
 		}
 
-		// После retry получаем ErrMaxRetries (внешняя ошибка)
-		if !errors.Is(err, ErrMaxRetries) {
-			t.Errorf("Ожидалась ошибка ErrMaxRetries, получена: %v", err)
+		// 4xx ошибки не ретраятся — должна быть ровно 1 попытка
+		if attemptCount != 1 {
+			t.Errorf("Ожидалась 1 попытка (без retry для 4xx), выполнено: %d", attemptCount)
+		}
+
+		// 4xx оборачивается в ErrInvalidStatus (не ErrMaxRetries)
+		if !errors.Is(err, ErrInvalidStatus) {
+			t.Errorf("Ожидалась ошибка ErrInvalidStatus, получена: %v", err)
 		}
 
 		// Проверяем, что в сообщении есть упоминание статуса
 		errMsg := err.Error()
 		if !strings.Contains(errMsg, "404") {
 			t.Errorf("Ожидалось упоминание статуса 404 в ошибке: %s", errMsg)
+		}
+	})
+
+	t.Run("Сервер возвращает 500 (с retry)", func(t *testing.T) {
+		originalSleep := sleepFunc
+		sleepFunc = func(time.Duration) {}
+		t.Cleanup(func() {
+			sleepFunc = originalSleep
+		})
+
+		attemptCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attemptCount++
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
+
+		body, err := fetchXML(server.URL)
+		if err == nil {
+			body.Close()
+			t.Fatal("Ожидалась ошибка для статуса 500")
+		}
+
+		// 5xx ошибки ретраятся — должно быть MaxRetries попыток
+		if attemptCount != MaxRetries {
+			t.Errorf("Ожидалось %d попыток (retry для 5xx), выполнено: %d", MaxRetries, attemptCount)
+		}
+
+		// 5xx после всех retry оборачивается в ErrMaxRetries
+		if !errors.Is(err, ErrMaxRetries) {
+			t.Errorf("Ожидалась ошибка ErrMaxRetries, получена: %v", err)
 		}
 	})
 

@@ -2,6 +2,7 @@ package converter
 
 import (
 	"errors"
+	"math"
 	"testing"
 	"time"
 
@@ -237,6 +238,21 @@ func TestValidateAmount(t *testing.T) {
 		{
 			name:    "Очень маленькая отрицательная - ошибка",
 			amount:  -0.01,
+			wantErr: true,
+		},
+		{
+			name:    "NaN - ошибка",
+			amount:  math.NaN(),
+			wantErr: true,
+		},
+		{
+			name:    "Положительная бесконечность - ошибка",
+			amount:  math.Inf(1),
+			wantErr: true,
+		},
+		{
+			name:    "Отрицательная бесконечность - ошибка",
+			amount:  math.Inf(-1),
 			wantErr: true,
 		},
 	}

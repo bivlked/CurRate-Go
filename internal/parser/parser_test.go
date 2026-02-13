@@ -64,6 +64,24 @@ func TestParseRate(t *testing.T) {
 			want:    0,
 			wantErr: ErrInvalidRate,
 		},
+		{
+			name:    "Infinity",
+			input:   "Inf",
+			want:    0,
+			wantErr: ErrInvalidRate,
+		},
+		{
+			name:    "Negative Infinity",
+			input:   "-Inf",
+			want:    0,
+			wantErr: ErrInvalidRate,
+		},
+		{
+			name:    "NaN",
+			input:   "NaN",
+			want:    0,
+			wantErr: ErrInvalidRate,
+		},
 	}
 
 	for _, tt := range tests {
