@@ -67,6 +67,11 @@ func TestFetchXML(t *testing.T) {
 			t.Errorf("Ожидалась ошибка ErrInvalidStatus, получена: %v", err)
 		}
 
+		// 4xx НЕ должна содержать ErrMaxRetries — retry не выполнялся
+		if errors.Is(err, ErrMaxRetries) {
+			t.Errorf("Ошибка 4xx не должна содержать ErrMaxRetries, получена: %v", err)
+		}
+
 		// Проверяем, что в сообщении есть упоминание статуса
 		errMsg := err.Error()
 		if !strings.Contains(errMsg, "404") {

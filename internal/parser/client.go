@@ -53,7 +53,9 @@ func fetchXML(url string) (io.ReadCloser, error) {
 	client := defaultHTTPClient
 
 	var lastErr error
+	var attempts int
 	for attempt := 1; attempt <= MaxRetries; attempt++ {
+		attempts = attempt
 		resp, err := doRequest(client, url)
 		if err == nil {
 			return resp.Body, nil
@@ -62,8 +64,9 @@ func fetchXML(url string) (io.ReadCloser, error) {
 		lastErr = err
 
 		// Не повторяем запрос при ошибках клиента (4xx) — повторный запрос вернет тот же результат
+		// Возвращаем оригинальную ошибку без обёртки ErrMaxRetries
 		if errors.Is(err, ErrInvalidStatus) {
-			break
+			return nil, lastErr
 		}
 
 		// Если это не последняя попытка, ждем с exponential backoff
@@ -74,7 +77,7 @@ func fetchXML(url string) (io.ReadCloser, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("%w after %d attempts: %w", ErrMaxRetries, MaxRetries, lastErr)
+	return nil, fmt.Errorf("%w after %d attempts: %w", ErrMaxRetries, attempts, lastErr)
 }
 
 // doRequest выполняет одиночный HTTP запрос
