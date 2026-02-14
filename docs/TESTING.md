@@ -6,7 +6,7 @@
 
 ## Обзор
 
-Проект имеет **comprehensive test coverage ~96%** с unit и интеграционными тестами.
+Проект имеет **test coverage >90%** с unit и интеграционными тестами.
 
 ---
 
@@ -15,12 +15,14 @@
 | Модуль | Покрытие | Тесты | Статус |
 |--------|----------|-------|--------|
 | `internal/models` | 100.0% | ✅ | Полное покрытие |
-| `internal/cache` | 100.0% | ✅ | Полное покрытие |
-| `internal/converter` | 97.6% | ✅ | Почти полное покрытие |
-| `pkg/utils` | 100.0% | ✅ | Полное покрытие |
-| `internal/parser` | 82.7% | ✅ | Хорошее покрытие |
-| `internal/app` | 100.0% | ✅ | Полное покрытие |
-| **Общее** | **~96%** | ✅ | Отличное покрытие |
+| `internal/converter` | 98.8% | ✅ | Почти полное покрытие |
+| `internal/cache` | 97.8% | ✅ | Почти полное покрытие |
+| `internal/parser` | 97.5% | ✅ | Почти полное покрытие |
+| `internal/app` | 82.1% | ✅ | Хорошее покрытие |
+| `internal/telegram` | 78.2% | ✅ | Хорошее покрытие |
+| **Общее** | **>90%** | ✅ | Отличное покрытие |
+
+*Актуально на 2026-02-14. Проверить: `go test -cover ./internal/...`*
 
 ---
 
@@ -59,7 +61,7 @@ go tool cover -func=coverage.out
 go test -v -tags=integration ./internal/parser
 
 # Запустить все тесты включая интеграционные
-go test -v ./...
+go test -v -tags=integration ./internal/parser
 ```
 
 **Примечание:** Интеграционные тесты делают реальные HTTP запросы к API ЦБ РФ. Используйте их осторожно, чтобы не превысить лимиты API.
@@ -89,7 +91,7 @@ go test -bench=. -cpuprofile=cpu.prof -memprofile=mem.prof ./...
 - Тесты моделей данных (`internal/models`)
 - Тесты кэша (`internal/cache`)
 - Тесты конвертера (`internal/converter`)
-- Тесты утилит (`pkg/utils`)
+- Тесты Telegram (`internal/telegram`)
 
 **Особенности:**
 - Быстрые (не требуют внешних зависимостей)
@@ -142,14 +144,33 @@ go test -bench=. -cpuprofile=cpu.prof -memprofile=mem.prof ./...
 
 ```
 internal/
-├── models/
-│   └── models_test.go
+├── app/
+│   └── app_test.go
 ├── cache/
-│   └── cache_test.go
+│   ├── lru_test.go
+│   └── test_helpers_test.go
 ├── converter/
-│   └── converter_test.go
-└── parser/
-    └── parser_test.go
+│   ├── converter_test.go
+│   ├── getrate_test.go
+│   └── test_helpers_test.go
+├── models/
+│   ├── currency_test.go
+│   ├── rate_test.go
+│   └── test_helpers_test.go
+├── parser/
+│   ├── cbr_integration_test.go
+│   ├── cbr_test.go
+│   ├── client_test.go
+│   ├── parser_test.go
+│   ├── test_helpers_test.go
+│   ├── xml_additional_test.go
+│   ├── xml_case_insensitive_test.go
+│   ├── xml_nominal_edge_cases_test.go
+│   ├── xml_ratedata_helpers_test.go
+│   └── xml_test.go
+└── telegram/
+    ├── telegram_test.go
+    └── userid_test.go
 ```
 
 ---
@@ -161,12 +182,12 @@ internal/
 ```go
 func TestConverter_Convert(t *testing.T) {
     // Arrange
-    cache := cache.NewLRUCache(100, 24*time.Hour)
     rateProvider := &mockRateProvider{}
-    conv := converter.NewConverter(rateProvider, cache)
+    conv := converter.NewConverter(rateProvider, nil)
 
     // Act
-    result, err := conv.Convert(1000.0, models.USD, time.Now())
+    ctx := context.Background()
+    result, err := conv.Convert(ctx, 1000.0, models.USD, time.Now())
 
     // Assert
     if err != nil {
@@ -252,9 +273,14 @@ func TestConverter_Convert(t *testing.T) {
 ```go
 type mockRateProvider struct{}
 
-func (m *mockRateProvider) FetchRates(date time.Time) (*models.RateData, error) {
+func (m *mockRateProvider) FetchRates(ctx context.Context, date time.Time) (*models.RateData, error) {
     rateData := models.NewRateData(date)
-    rateData.AddRate(models.USD, 80.0, 840, 1, "Доллар США")
+    rateData.AddRate(models.ExchangeRate{
+        Currency: models.USD,
+        Rate:     80.0,
+        Nominal:  1,
+        Date:     date,
+    })
     return rateData, nil
 }
 ```
@@ -294,7 +320,9 @@ if actual != expected {
 
 - **При каждом push** в main
 - **При каждом Pull Request**
-- **С покрытием** и загрузкой отчетов
+- **Матрица ОС:** Windows (`windows-latest`, без `-race`) + Ubuntu (`ubuntu-latest`, с `-race`)
+- **Параллелизм:** `-p 4` для ускорения тестов
+- **Покрытие:** артефакт `coverage.out` загружается для каждой ОС
 
 См. `.github/workflows/test.yml` для деталей.
 
