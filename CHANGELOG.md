@@ -6,6 +6,33 @@
 
 ---
 
+## [Unreleased] — v1.2.0
+
+### Добавлено (Added)
+- Пропаганция `context.Context` через весь call chain (converter, parser, app)
+- Ограничение размера XML ответа до 4 MB в `ParseXML`
+- Nil-проверки и defensive guards для инициализации `App` и RUB-провайдера
+- Тест для обработки nil `rateData` от провайдера
+- Race detector (`-race`) в CI для Ubuntu
+
+### Изменено (Changed)
+- Go 1.25.5 → 1.26
+- Обновлены зависимости (`golang.org/x/text` v0.32.0 → v0.34.0 и др.)
+- Размер окна 360×748 → 360×758
+- UserAgent обновлён до версии 1.2
+- `AppVersion` обновлён до 1.2.0
+- Консолидация дублирующегося `ErrUnsupportedCurrency` sentinel
+- golangci-lint обновлён до v2
+
+### Исправлено (Fixed)
+- Обработка ошибки `io.ReadAll` в Telegram error diagnostics
+- Эвристика `parseAmount` для одиночного разделителя (десятичный vs тысяч)
+- Корректная семантика ошибок для 4xx ответов в `fetchXML`
+- Улучшенная диагностика ошибок для XML size limit и Telegram API
+- Удаление мёртвого кода календаря и дубликатов тестов
+
+---
+
 ## [1.1.0] - 2026-01-11
 
 ### Добавлено (Added)
@@ -79,23 +106,6 @@
   - `actions/upload-artifact@v4` → `@v6`
   - `golangci/golangci-lint-action@v4` → `@v9`
   - Все обновления совместимы и не требуют изменений параметров
-
----
-
-## [Unreleased]
-
-### Изменено (Changed)
-- **Обновление Go до версии 1.26** (с 1.25.5)
-  - Green Tea GC включён по умолчанию
-  - Улучшения производительности cgo (~30%)
-  - Обновлены все GitHub Actions workflows
-  - Обновлена вся документация проекта
-- **Обновление зависимостей**
-  - `golang.org/x/text`: v0.32.0 → v0.34.0 (прямая зависимость)
-  - `golang.org/x/crypto`: v0.46.0 → v0.48.0 (косвенная)
-  - `golang.org/x/net`: v0.48.0 → v0.50.0 (косвенная)
-  - `golang.org/x/sys`: v0.39.0 → v0.41.0 (косвенная)
-  - `github.com/labstack/echo/v4`: v4.14.0 → v4.15.0 (косвенная)
 
 ---
 
