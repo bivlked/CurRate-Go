@@ -151,6 +151,7 @@ internal/
 ├── models/         # Модели данных (Currency, ExchangeRate, RateData)
 ├── parser/         # Парсинг XML API ЦБ РФ
 │   ├── xml.go      # XML парсер (encoding/xml + windows-1251)
+│   ├── parser.go   # Общие функции парсинга
 │   ├── client.go   # HTTP клиент с retry
 │   └── cbr.go      # Публичный API
 ├── cache/          # LRU кэш с TTL
@@ -158,9 +159,10 @@ internal/
 │   ├── converter.go    # Главный конвертер
 │   ├── validator.go    # Валидация входных данных
 │   └── formatter.go    # Форматирование результата
+├── telegram/       # Интеграция с Telegram Bot API
+│   ├── telegram.go     # Отправка уведомлений
+│   └── userid.go       # Генерация анонимного user ID
 └── app/            # Wails backend (App.go)
-pkg/
-└── utils/          # Утилиты (парсинг чисел, форматирование)
 ```
 
 ---
