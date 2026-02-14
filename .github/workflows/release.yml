@@ -90,6 +90,15 @@ jobs:
           Write-Host "Compressed size: $([math]::Round($compressedSize / 1MB, 2)) MB"
           Write-Host "Compression ratio: $ratio%"
 
+      - name: Generate checksums
+        shell: pwsh
+        run: |
+          $exePath = "build\bin\CurRate.exe"
+          $hash = (Get-FileHash -Path $exePath -Algorithm SHA256).Hash.ToLower()
+          $line = "$hash  CurRate.exe"
+          Write-Host "SHA256: $line"
+          $line | Out-File -FilePath "build\bin\checksums.txt" -Encoding ascii -NoNewline
+
       - name: Prepare Release Notes
         id: release-notes
         shell: pwsh
@@ -107,7 +116,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/bin/CurRate.exe
+          files: |
+            build/bin/CurRate.exe
+            build/bin/checksums.txt
           body_path: ${{ steps.release-notes.outputs.notes-path }}
           draft: false
           prerelease: false
