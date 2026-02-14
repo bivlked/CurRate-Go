@@ -17,56 +17,48 @@ func TestParseXML_InvalidNominalValues(t *testing.T) {
 	tests := []struct {
 		name          string
 		nominalValue  string
-		shouldSkip    bool // Должна ли валюта быть пропущена
 		expectedRates int  // Ожидаемое количество валидных курсов
 		expectedError bool // Ожидается ли ошибка (если нет валидных валют)
 	}{
 		{
 			name:          "Номинал = 0 (некорректный)",
 			nominalValue:  "0",
-			shouldSkip:    true,
 			expectedRates: 0,
 			expectedError: true, // Нет валидных валют
 		},
 		{
 			name:          "Номинал = отрицательное число",
 			nominalValue:  "-1",
-			shouldSkip:    true,
 			expectedRates: 0,
 			expectedError: true,
 		},
 		{
 			name:          "Номинал = пустая строка",
 			nominalValue:  "",
-			shouldSkip:    true,
 			expectedRates: 0,
 			expectedError: true,
 		},
 		{
 			name:          "Номинал = не число",
 			nominalValue:  "abc",
-			shouldSkip:    true,
 			expectedRates: 0,
 			expectedError: true,
 		},
 		{
 			name:          "Номинал = дробное число",
 			nominalValue:  "1.5",
-			shouldSkip:    true,
 			expectedRates: 0,
 			expectedError: true,
 		},
 		{
 			name:          "Номинал = валидный (1)",
 			nominalValue:  "1",
-			shouldSkip:    false,
 			expectedRates: 1,
 			expectedError: false,
 		},
 		{
 			name:          "Номинал = валидный (10)",
 			nominalValue:  "10",
-			shouldSkip:    false,
 			expectedRates: 1,
 			expectedError: false,
 		},

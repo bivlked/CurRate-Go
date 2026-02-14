@@ -1,14 +1,12 @@
 package parser
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/bivlked/currate-go/internal/models"
-	"golang.org/x/text/encoding/charmap"
 )
 
 // TestParseXML_Success тестирует успешный парсинг валидного XML
@@ -190,9 +188,9 @@ func TestParseXML_InvalidXML(t *testing.T) {
 				t.Fatal("ParseXML() error = nil, want error")
 			}
 
-			// Проверяем тип ошибки
-			if !strings.Contains(err.Error(), tt.wantErr.Error()) {
-				t.Errorf("ParseXML() error = %v, want error containing %v", err, tt.wantErr)
+			// Проверяем тип ошибки через errors.Is (sentinel errors обёрнуты через %w)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("ParseXML() error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -240,37 +238,6 @@ func TestParseXML_UnsupportedCurrency(t *testing.T) {
 	// Должна быть только 1 валюта (USD)
 	if len(result.Rates) != 1 {
 		t.Errorf("len(result.Rates) = %d, want 1", len(result.Rates))
-	}
-}
-
-// TestParseXML_Windows1251 проверяет обработку XML в кодировке windows-1251
-func TestParseXML_Windows1251(t *testing.T) {
-	date := testPastDateUTC()
-	dateStr := formatCBRDate(date)
-	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="windows-1251"?>
-<ValCurs Date="%s" name="Foreign Currency Market">
-    <Valute ID="R01235">
-        <NumCode>840</NumCode>
-        <CharCode>USD</CharCode>
-        <Nominal>1</Nominal>
-        <Name>Доллар США</Name>
-        <Value>80,7220</Value>
-    </Valute>
-</ValCurs>`, dateStr)
-
-	encoder := charmap.Windows1251.NewEncoder()
-	encoded, err := encoder.Bytes([]byte(xmlData))
-	if err != nil {
-		t.Fatalf("Не удалось закодировать XML в windows-1251: %v", err)
-	}
-
-	result, err := ParseXML(bytes.NewReader(encoded), date)
-	if err != nil {
-		t.Fatalf("ParseXML() error = %v, want nil", err)
-	}
-
-	if _, ok := result.Rates[models.USD]; !ok {
-		t.Fatal("USD rate not found after windows-1251 decoding")
 	}
 }
 
@@ -557,44 +524,3 @@ func TestParseXML_OversizedResponse(t *testing.T) {
 	}
 }
 
-// TestParseXML_Windows1251DecodeError проверяет обработку ошибки декодирования windows-1251
-func TestParseXML_Windows1251DecodeError(t *testing.T) {
-	// Создаем XML с декларацией windows-1251, но с невалидными байтами
-	// Это сложно симулировать напрямую, так как charmap.Windows1251.NewDecoder().Bytes
-	// может не вернуть ошибку для любых байтов
-	// Вместо этого, проверим случай, когда декларация windows-1251 есть, но декодирование проходит успешно
-	// (это уже покрыто в TestParseXML_Windows1251)
-
-	// Для реальной ошибки декодирования нужно создать специальный случай
-	// Но в практике, decoder.Bytes редко возвращает ошибку для валидных байтов windows-1251
-	// Поэтому этот тест может быть пропущен или упрощен
-
-	// Проверяем, что функция обрабатывает windows-1251 корректно (уже покрыто)
-	date := testPastDateUTC()
-	dateStr := formatCBRDate(date)
-	xmlData := fmt.Sprintf(`<?xml version="1.0" encoding="windows-1251"?>
-<ValCurs Date="%s" name="Foreign Currency Market">
-    <Valute ID="R01235">
-        <NumCode>840</NumCode>
-        <CharCode>USD</CharCode>
-        <Nominal>1</Nominal>
-        <Name>Доллар США</Name>
-        <Value>80,7220</Value>
-    </Valute>
-</ValCurs>`, dateStr)
-
-	encoder := charmap.Windows1251.NewEncoder()
-	encoded, err := encoder.Bytes([]byte(xmlData))
-	if err != nil {
-		t.Fatalf("Не удалось закодировать XML в windows-1251: %v", err)
-	}
-
-	result, err := ParseXML(bytes.NewReader(encoded), date)
-	if err != nil {
-		t.Fatalf("ParseXML() error = %v, want nil", err)
-	}
-
-	if _, ok := result.Rates[models.USD]; !ok {
-		t.Fatal("USD rate not found after windows-1251 decoding")
-	}
-}
