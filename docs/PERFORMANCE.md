@@ -32,6 +32,8 @@ BenchmarkLRUCache_Get-8          1000000    1023 ns/op      0 B/op    0 allocs/o
 BenchmarkLRUCache_Concurrent-8    200000    7891 ns/op    672 B/op   10 allocs/op
 ```
 
+*Для актуальных данных: `go test -bench=. -benchmem ./...`*
+
 **Анализ:**
 - **Set операция:** ~2.5 мкс на операцию
 - **Get операция:** ~1 мкс на операцию (без аллокаций)

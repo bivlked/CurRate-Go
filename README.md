@@ -5,7 +5,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
+[![Coverage](https://img.shields.io/badge/coverage->90%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bivlked/CurRate-Go)](https://goreportcard.com/report/github.com/bivlked/CurRate-Go)
 [![CBR API](https://img.shields.io/badge/API-CBR%20XML-blue)](https://www.cbr.ru/scripts/XML_daily.asp)
 [![Wails](https://img.shields.io/badge/UI-Wails%20v2.11.0-red?logo=wails)](https://wails.io/)
@@ -24,7 +24,7 @@
 - 💾 **Умное кэширование**: LRU кэш с TTL для минимизации запросов
 - 🔄 **Retry логика**: Exponential backoff (1s, 2s, 4s) для отказоустойчивости
 - 🌐 **Поддержка кодировок**: Автоматическая конвертация windows-1251 → UTF-8
-- 🧪 **97% покрытие тестами**: Unit + интеграционные тесты
+- 🧪 **>90% покрытие тестами**: Unit + интеграционные тесты
 - 📱 **Современный UI**: Desktop приложение на Wails v2 с карточным дизайном Windows 11
 
 ---
@@ -171,9 +171,9 @@ wails build
 См. [CHANGELOG.md](CHANGELOG.md) для подробной истории изменений.
 
 **Последние обновления:**
+- **v1.2.0** (в разработке) - Аудит кода, улучшенная обработка ошибок, пропаганция context.Context
 - **v1.1.0** (2026-01-11) - Новый UI, модальное окно "О программе", интеграция с Telegram
 - **v1.0.0** (2025-12-25) - Первый стабильный релиз с полным функционалом
-- **v0.5.2** (2025-12-22) - Улучшения и документация
 
 ---
 
