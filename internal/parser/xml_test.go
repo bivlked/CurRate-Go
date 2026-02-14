@@ -523,4 +523,3 @@ func TestParseXML_OversizedResponse(t *testing.T) {
 		t.Errorf("ParseXML() error = %v, want ErrXMLTooLarge", err)
 	}
 }
-

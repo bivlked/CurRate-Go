@@ -6,21 +6,21 @@ changelog:
       - dependabot
       - dependabot[bot]
   categories:
-    - title: "New Features"
+    - title: "Новые возможности"
       labels:
         - enhancement
-    - title: "Bug Fixes"
+    - title: "Исправления ошибок"
       labels:
         - bug
-    - title: "Documentation"
+    - title: "Документация"
       labels:
         - documentation
-    - title: "CI/CD & Infrastructure"
+    - title: "CI/CD и инфраструктура"
       labels:
         - github-actions
-    - title: "Dependencies"
+    - title: "Зависимости"
       labels:
         - dependencies
-    - title: "Other Changes"
+    - title: "Другие изменения"
       labels:
         - "*"
