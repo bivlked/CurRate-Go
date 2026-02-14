@@ -3,13 +3,16 @@
 > **Конвертер валют на основе официальных курсов ЦБ РФ**  
 > Go реализация проекта [CurRate](https://github.com/bivlked/CurRate) с современной архитектурой, XML API и desktop UI
 
+[![Build](https://github.com/bivlked/CurRate-Go/actions/workflows/build.yml/badge.svg)](https://github.com/bivlked/CurRate-Go/actions/workflows/build.yml)
+[![Tests](https://github.com/bivlked/CurRate-Go/actions/workflows/test.yml/badge.svg)](https://github.com/bivlked/CurRate-Go/actions/workflows/test.yml)
+[![Lint](https://github.com/bivlked/CurRate-Go/actions/workflows/lint.yml/badge.svg)](https://github.com/bivlked/CurRate-Go/actions/workflows/lint.yml)
+[![Security](https://github.com/bivlked/CurRate-Go/actions/workflows/security.yml/badge.svg)](https://github.com/bivlked/CurRate-Go/actions/workflows/security.yml)
+[![Release](https://img.shields.io/github/v/release/bivlked/CurRate-Go)](https://github.com/bivlked/CurRate-Go/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/bivlked/CurRate-Go/total)](https://github.com/bivlked/CurRate-Go/releases)
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage->90%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bivlked/CurRate-Go)](https://goreportcard.com/report/github.com/bivlked/CurRate-Go)
-[![CBR API](https://img.shields.io/badge/API-CBR%20XML-blue)](https://www.cbr.ru/scripts/XML_daily.asp)
-[![Wails](https://img.shields.io/badge/UI-Wails%20v2.11.0-red?logo=wails)](https://wails.io/)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%20(22H2%2B)%20%2F%20Windows%2011-blue)](https://www.microsoft.com/windows)
 
 ---
 
