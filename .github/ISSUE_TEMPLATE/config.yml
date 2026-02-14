@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/bivlked/CurRate-Go/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions instead of opening an issue.
+  - name: Security Vulnerability
+    url: https://github.com/bivlked/CurRate-Go/security/policy
+    about: Report security vulnerabilities responsibly via our Security Policy.
