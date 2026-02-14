@@ -231,8 +231,14 @@ function parseAmount(str) {
         // Только запятая
         const commaCount = (cleaned.match(/,/g) || []).length;
         if (commaCount === 1) {
-            // Одна запятая — всегда десятичный разделитель
-            normalized = cleaned.replace(',', '.');
+            const parts = cleaned.split(',');
+            if (parts[1].length === 3 && parts[0].length >= 1) {
+                // Ровно 3 цифры после запятой — тысячный разделитель (1,000 → 1000)
+                normalized = cleaned.replace(',', '');
+            } else {
+                // Иначе — десятичный разделитель (1,5 → 1.5)
+                normalized = cleaned.replace(',', '.');
+            }
         } else {
             // Несколько запятых — разделители тысяч
             normalized = cleaned.replace(/,/g, '');
@@ -241,8 +247,14 @@ function parseAmount(str) {
         // Только точка
         const dotCount = (cleaned.match(/\./g) || []).length;
         if (dotCount === 1) {
-            // Одна точка — всегда десятичный разделитель
-            normalized = cleaned;
+            const parts = cleaned.split('.');
+            if (parts[1].length === 3 && parts[0].length >= 1) {
+                // Ровно 3 цифры после точки — тысячный разделитель (1.000 → 1000)
+                normalized = cleaned.replace('.', '');
+            } else {
+                // Иначе — десятичный разделитель (1.5 → 1.5)
+                normalized = cleaned;
+            }
         } else {
             // Несколько точек — разделители тысяч
             normalized = cleaned.replace(/\./g, '');

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -985,6 +986,25 @@ func TestConvert_NilProvider_USD(t *testing.T) {
 	}
 	if !errors.Is(err, ErrNilRateProvider) {
 		t.Errorf("expected ErrNilRateProvider, got: %v", err)
+	}
+}
+
+func TestConvert_ProviderReturnsNilData(t *testing.T) {
+	// Провайдер возвращает (nil, nil) — нарушение контракта интерфейса
+	mockProvider := &MockRateProvider{
+		rateData: nil,
+		err:      nil,
+	}
+	cache := NewMockCache()
+	converter := NewConverter(mockProvider, cache)
+	date := testPastDateUTC()
+
+	_, err := converter.Convert(context.Background(), 1000, models.USD, date)
+	if err == nil {
+		t.Fatal("expected error when provider returns nil data")
+	}
+	if !strings.Contains(err.Error(), "nil data") {
+		t.Errorf("expected error about nil data, got: %v", err)
 	}
 }
 

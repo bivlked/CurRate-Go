@@ -11,6 +11,8 @@ import (
 
 // RateProvider - интерфейс для получения курсов валют
 // Позволяет использовать моки для тестирования
+//
+// Контракт: при err == nil возвращаемый *RateData не должен быть nil.
 type RateProvider interface {
 	// FetchRates получает курсы валют на указанную дату
 	// Возвращает RateData с картой курсов или ошибку
@@ -171,6 +173,9 @@ func (c *Converter) getRateInternal(ctx context.Context, currency models.Currenc
 		rateData, err := c.provider.FetchRates(ctx, normalizedDate)
 		if err != nil {
 			return 0, time.Time{}, fmt.Errorf("failed to fetch rates: %w", err)
+		}
+		if rateData == nil {
+			return 0, time.Time{}, errors.New("rate provider returned nil data")
 		}
 
 		// Используем фактическую дату из XML

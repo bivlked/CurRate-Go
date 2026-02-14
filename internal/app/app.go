@@ -141,7 +141,7 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 	if err != nil {
 		return RateResponse{
 			Success: false,
-			Error:   fmt.Sprintf("Неверный формат даты: %s", dateStr),
+			Error:   fmt.Sprintf("Неверный формат даты: %s. Используйте формат ДД.ММ.ГГГГ", dateStr),
 		}
 	}
 

@@ -113,6 +113,25 @@ func TestGetOrCreateUserID_EmptyUserID(t *testing.T) {
 	}
 }
 
+func TestGetOrCreateUserID_ReadError(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("APPDATA", tmpDir)
+
+	// Создаём user.json как директорию — ReadFile вернёт ошибку, но не os.IsNotExist
+	appDir := filepath.Join(tmpDir, "CurRate")
+	if err := os.MkdirAll(filepath.Join(appDir, "user.json"), 0700); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := GetOrCreateUserID()
+	if err == nil {
+		t.Fatal("expected error when file cannot be read")
+	}
+	if !strings.Contains(err.Error(), "не удалось прочитать") {
+		t.Errorf("expected read error message, got: %v", err)
+	}
+}
+
 func TestGetOrCreateUserID_Idempotent(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("APPDATA", tmpDir)

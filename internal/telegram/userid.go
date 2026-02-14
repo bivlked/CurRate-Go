@@ -28,9 +28,9 @@ func GetOrCreateUserID() (string, error) {
 		appData = filepath.Join(homeDir, ".config")
 	}
 
-	// Создаем директорию приложения
+	// Создаем директорию приложения (0700 — доступ только владельцу)
 	appDir := filepath.Join(appData, "CurRate")
-	if err := os.MkdirAll(appDir, 0755); err != nil {
+	if err := os.MkdirAll(appDir, 0700); err != nil {
 		return "", fmt.Errorf("не удалось создать директорию: %w", err)
 	}
 
@@ -38,11 +38,19 @@ func GetOrCreateUserID() (string, error) {
 	userFile := filepath.Join(appDir, "user.json")
 
 	// Пробуем прочитать существующий ID
-	if data, err := os.ReadFile(userFile); err == nil {
+	data, readErr := os.ReadFile(userFile)
+	if readErr != nil {
+		if !os.IsNotExist(readErr) {
+			// Файл существует, но не читается (I/O ошибка, нет прав) — не генерируем новый ID молча
+			return "", fmt.Errorf("не удалось прочитать данные пользователя: %w", readErr)
+		}
+		// Файла нет — продолжаем генерацию нового ID
+	} else {
 		var userData UserData
 		if err := json.Unmarshal(data, &userData); err == nil && userData.UserID != "" {
 			return userData.UserID, nil
 		}
+		// JSON повреждён или UserID пуст — регенерируем (controlled recovery)
 	}
 
 	// Генерируем новый UUID
@@ -53,12 +61,12 @@ func GetOrCreateUserID() (string, error) {
 
 	// Сохраняем в файл
 	userData := UserData{UserID: userID}
-	data, err := json.MarshalIndent(userData, "", "  ")
+	jsonData, err := json.MarshalIndent(userData, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("не удалось сериализовать данные: %w", err)
 	}
 
-	if err := os.WriteFile(userFile, data, 0644); err != nil {
+	if err := os.WriteFile(userFile, jsonData, 0600); err != nil {
 		return "", fmt.Errorf("не удалось сохранить данные: %w", err)
 	}
 
