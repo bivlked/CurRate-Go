@@ -19,7 +19,7 @@
     "companyName": "BiV",
     "productName": "CurRate-Go",
     "productVersion": "1.2.0",
-    "copyright": "© 2025 BiV",
+    "copyright": "© 2024-2026 BiV",
     "comments": "Конвертер валют на основе официальных курсов ЦБ РФ"
   },
   "nsisType": "multiple",
