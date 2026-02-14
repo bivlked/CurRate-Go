@@ -14,6 +14,12 @@
 [![Coverage](https://img.shields.io/badge/coverage->90%25-brightgreen)](https://github.com/bivlked/CurRate-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bivlked/CurRate-Go)](https://goreportcard.com/report/github.com/bivlked/CurRate-Go)
 
+<div align="center">
+  <img src="docs/Screenshot01.png" alt="Конвертация USD" width="320">
+  &nbsp;&nbsp;
+  <img src="docs/Screenshot02.png" alt="Конвертация EUR" width="320">
+</div>
+
 ---
 
 ## 📋 О проекте
@@ -174,7 +180,7 @@ wails build
 См. [CHANGELOG.md](CHANGELOG.md) для подробной истории изменений.
 
 **Последние обновления:**
-- **v1.2.0** (2026-02-14) - Аудит кода, укрепление надежности, пропаганция context.Context
+- **v1.2.0** (2026-02-14) - Аудит кода, укрепление надежности, пропагация context.Context
 - **v1.1.0** (2026-01-11) - Новый UI, модальное окно "О программе", интеграция с Telegram
 - **v1.0.0** (2025-12-25) - Первый стабильный релиз с полным функционалом
 
@@ -189,10 +195,10 @@ wails build
 
 ## 👨‍💻 Автор
 
-**Ivan Bondarev** ([@bivlked](https://github.com/bivlked))
+**Иван Бондарев** ([@bivlked](https://github.com/bivlked))
 
-- Company: New Digital Technologies Ltd.
-- Location: Kazakhstan
+- Компания: New Digital Technologies Ltd.
+- Местоположение: Казахстан
 - GitHub: [@bivlked](https://github.com/bivlked)
 
 ---
