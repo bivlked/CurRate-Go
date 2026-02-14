@@ -6,7 +6,11 @@
 
 ---
 
-## [Unreleased] — v1.2.0
+## [Unreleased]
+
+---
+
+## [1.2.0] - 2026-02-14
 
 ### Добавлено (Added)
 - Пропаганция `context.Context` через весь call chain (converter, parser, app)
@@ -23,6 +27,7 @@
 - `AppVersion` обновлён до 1.2.0
 - Консолидация дублирующегося `ErrUnsupportedCurrency` sentinel
 - golangci-lint обновлён до v2
+- Полная актуализация документации (TESTING, ARCHITECTURE, SUMMARY, README, ROADMAP, CONTRIBUTING, PERFORMANCE, CHANGELOG)
 
 ### Исправлено (Fixed)
 - Обработка ошибки `io.ReadAll` в Telegram error diagnostics

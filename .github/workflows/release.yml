@@ -91,11 +91,12 @@ jobs:
         id: release-notes
         shell: pwsh
         run: |
-          $releaseNotesFile = "release-notes-v1.0.0.md"
+          $tag = $env:GITHUB_REF_NAME
+          $releaseNotesFile = "release-notes-$tag.md"
           if (Test-Path $releaseNotesFile) {
             $releaseNotes = Get-Content -Path $releaseNotesFile -Raw -Encoding utf8
           } else {
-            $releaseNotes = "# v1.0.0 - Первый стабильный релиз CurRate-Go`n`nОсновные изменения:`n- Полностью функциональный backend с ~96% покрытием тестами`n- Современный desktop GUI на Wails v2.11.0`n- Оптимизированная production сборка (~10 MB)`n- Полная документация и CI/CD pipeline"
+            $releaseNotes = "# $tag`n`nСм. [CHANGELOG.md](CHANGELOG.md) для подробной информации об изменениях."
           }
           $releaseNotes | Out-File -FilePath "$env:GITHUB_WORKSPACE/release-notes.md" -Encoding utf8
           echo "notes-path=$env:GITHUB_WORKSPACE/release-notes.md" >> $env:GITHUB_OUTPUT
