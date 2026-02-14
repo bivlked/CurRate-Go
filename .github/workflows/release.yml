@@ -55,8 +55,8 @@ jobs:
           Write-Host "Installing UPX..."
           winget install --id UPX.UPX --silent --accept-source-agreements --accept-package-agreements
 
-          # Wait for installation to complete
-          Start-Sleep -Seconds 5
+          # Refresh PATH after winget install (winget modifies system PATH but current session is stale)
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
           # Verify UPX is available
           $upxPath = (Get-Command upx -ErrorAction SilentlyContinue).Source
@@ -71,6 +71,9 @@ jobs:
       - name: Compress with UPX
         shell: pwsh
         run: |
+          # Refresh PATH to pick up winget-installed UPX
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
           Write-Host "Compressing CurRate.exe with UPX..."
           $exePath = "build\bin\CurRate.exe"
 
