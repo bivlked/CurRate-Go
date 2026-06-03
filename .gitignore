@@ -92,3 +92,6 @@ memory-bank/
 
 # SignPath request forms (contain personal data)
 OSSRequestForm*.xlsx
+
+# Serena MCP (local LSP index, do not commit)
+.serena/
