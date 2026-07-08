@@ -9,7 +9,7 @@
 ## [Unreleased]
 
 ### Изменено (Changed)
-- Обновлены зависимости: Wails 2.11.0 → 2.12.0, `golang.org/x/text` 0.34.0 → 0.39.0, `golang.org/x/crypto` 0.48.0 → 0.52.0 (security-фиксы ssh), `golang.org/x/net` 0.50.0 → 0.54.0
+- Обновлены зависимости: Wails 2.11.0 → 2.12.0, `golang.org/x/text` 0.34.0 → 0.39.0, `golang.org/x/crypto` 0.48.0 → 0.52.0 (security-фиксы ssh), `golang.org/x/net` 0.50.0 → 0.55.0 (закрыт Dependabot alert: DoS в html-парсере)
 - CI: `softprops/action-gh-release` v2 → v3 (Node 24 runtime)
 
 ### Исправлено (Fixed)
