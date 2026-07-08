@@ -31,8 +31,13 @@ func NewApp(conv *converter.Converter) *App {
 	}
 }
 
-// Startup вызывается при запуске приложения
+// Startup вызывается при запуске приложения (из OnStartup в main_gui.go)
+// Метод публичный, поэтому Wails биндит его и во frontend - guard ниже
+// не даёт повторному вызову из JS затереть рабочий контекст
 func (a *App) Startup(ctx context.Context) {
+	if a.ctx != nil {
+		return
+	}
 	a.ctx = ctx
 }
 

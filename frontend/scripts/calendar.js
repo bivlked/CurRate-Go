@@ -154,9 +154,11 @@ function setCalendarDate(date) {
     if (!(date instanceof Date) || isNaN(date)) {
         return;
     }
-    
+
     currentDate = new Date(date.getFullYear(), date.getMonth(), 1);
-    selectedDate = date;
+    // Нормализуем до полуночи: сравнение selected-ячейки идёт через getTime(),
+    // дата с ненулевым временем (например new Date()) никогда бы не совпала
+    selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     renderCalendar();
 }
 

@@ -114,24 +114,11 @@ func (c *Converter) Convert(ctx context.Context, amount float64, currency models
 	}
 
 	// Получаем курс через внутренний метод (использует кэш и provider)
+	// Для RUB он возвращает rate=1 и actualDate=normalizedDate, поэтому
+	// отдельная ветка не нужна - общий путь даёт идентичный результат
 	rate, actualDate, err := c.getRateInternal(ctx, currency, normalizedDate)
 	if err != nil {
 		return nil, err
-	}
-
-	if currency == models.RUB {
-		resultRUB := amount
-		formatted := FormatResult(amount, 1, currency, resultRUB)
-
-		return &models.ConversionResult{
-			SourceCurrency: currency,
-			TargetCurrency: models.RUB,
-			SourceAmount:   amount,
-			TargetAmount:   resultRUB,
-			Rate:           1,
-			Date:           normalizedDate, // Для RUB используем запрошенную дату
-			FormattedStr:   formatted,
-		}, nil
 	}
 
 	// Конвертация

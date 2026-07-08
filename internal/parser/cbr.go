@@ -46,21 +46,3 @@ func fetchRatesFromURL(ctx context.Context, url string, date time.Time) (*models
 
 	return data, nil
 }
-
-// FetchLatestRates получает последние актуальные курсы валют с сайта ЦБ РФ
-// ctx - контекст для отмены запроса
-// Использует текущую дату (время.Now()) для запроса
-// Возвращает *models.RateData с курсами валют или ошибку
-//
-// Пример использования:
-//
-//	rates, err := parser.FetchLatestRates(ctx)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	fmt.Printf("EUR курс: %.4f\n", rates.Rates[models.EUR].Rate)
-func FetchLatestRates(ctx context.Context) (*models.RateData, error) {
-	// Используем текущую дату
-	now := time.Now()
-	return FetchRates(ctx, now)
-}

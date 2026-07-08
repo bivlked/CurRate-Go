@@ -6,7 +6,6 @@ package parser
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 )
@@ -102,48 +101,6 @@ func TestFetchRatesIntegration(t *testing.T) {
 		}
 
 		t.Logf("Получено валют для даты %v: %d", date, len(data.Rates))
-	})
-}
-
-func TestFetchLatestRatesIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Пропускаем интеграционный тест в кратком режиме")
-	}
-
-	ctx := context.Background()
-
-	t.Run("Реальный запрос последних курсов", func(t *testing.T) {
-		data, err := FetchLatestRates(ctx)
-
-		if err != nil {
-			t.Fatalf("Ошибка получения последних курсов: %v", err)
-		}
-
-		if data == nil {
-			t.Fatal("Data не должна быть nil")
-		}
-
-		if len(data.Rates) == 0 {
-			t.Error("Ожидались валюты в результате")
-		}
-
-		// Проверяем, что дата не в далеком прошлом
-		now := time.Now()
-		daysDiff := now.Sub(data.Date).Hours() / 24
-		if daysDiff > 7 {
-			t.Logf("Внимание: Дата курсов более 7 дней назад: %v", data.Date)
-		}
-
-		t.Logf("Дата курсов: %v", data.Date)
-		t.Logf("Получено валют: %d", len(data.Rates))
-
-		// Проверяем основные валюты
-		if usd, ok := data.Rates[models.USD]; ok {
-			t.Logf("USD: %.4f", usd.Rate)
-		}
-		if eur, ok := data.Rates[models.EUR]; ok {
-			t.Logf("EUR: %.4f", eur.Rate)
-		}
 	})
 }
 

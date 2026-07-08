@@ -78,18 +78,14 @@ function initDateInput() {
     
     // Обработчик keydown для валидации ввода
     dateInput.addEventListener('keydown', (e) => {
-        // Разрешаем специальные клавиши
-        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' || 
+        // Разрешаем специальные клавиши и любые сочетания с Ctrl/Cmd
+        // (включая вставку Ctrl+V - её форматирует обработчик paste)
+        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' ||
             e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
             e.key === 'Home' || e.key === 'End' || e.ctrlKey || e.metaKey) {
             return;
         }
-        
-        // Разрешаем вставку (Ctrl+V, Cmd+V)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-            return;
-        }
-        
+
         // Для остальных символов проверяем валидность
         if (e.key.length === 1) {
             const cursorPos = dateInput.selectionStart || 0;

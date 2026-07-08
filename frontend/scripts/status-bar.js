@@ -46,8 +46,9 @@ function showStatus(message, type = 'info', duration = 3000) {
     // Показываем строку состояния
     statusBar.classList.remove('hidden');
 
-    // Автоматическое скрытие для success и info (если duration > 0)
-    if ((type === 'success' || type === 'info') && duration > 0) {
+    // Автоматическое скрытие для success, info и warning (если duration > 0)
+    // Ошибки не скрываются автоматически (showError передаёт duration = 0)
+    if ((type === 'success' || type === 'info' || type === 'warning') && duration > 0) {
         statusTimeoutId = setTimeout(() => {
             hideStatus();
             statusTimeoutId = null;

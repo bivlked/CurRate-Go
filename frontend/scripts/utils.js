@@ -232,8 +232,10 @@ function parseAmount(str) {
         const commaCount = (cleaned.match(/,/g) || []).length;
         if (commaCount === 1) {
             const parts = cleaned.split(',');
-            if (parts[1].length === 3 && parts[0].length >= 1) {
-                // Ровно 3 цифры после запятой — тысячный разделитель (1,000 → 1000)
+            // Тысячный разделитель: ровно 3 цифры после запятой И целая часть
+            // без ведущего нуля (1,000 → 1000). Ведущий ноль означает
+            // десятичную дробь: 0,500 → 0.5, а не 500
+            if (parts[1].length === 3 && parts[0].length >= 1 && !parts[0].startsWith('0')) {
                 normalized = cleaned.replace(',', '');
             } else {
                 // Иначе — десятичный разделитель (1,5 → 1.5)
@@ -248,8 +250,10 @@ function parseAmount(str) {
         const dotCount = (cleaned.match(/\./g) || []).length;
         if (dotCount === 1) {
             const parts = cleaned.split('.');
-            if (parts[1].length === 3 && parts[0].length >= 1) {
-                // Ровно 3 цифры после точки — тысячный разделитель (1.000 → 1000)
+            // Тысячный разделитель: ровно 3 цифры после точки И целая часть
+            // без ведущего нуля (1.000 → 1000). Ведущий ноль означает
+            // десятичную дробь: 0.500 → 0.5, а не 500
+            if (parts[1].length === 3 && parts[0].length >= 1 && !parts[0].startsWith('0')) {
                 normalized = cleaned.replace('.', '');
             } else {
                 // Иначе — десятичный разделитель (1.5 → 1.5)
@@ -343,7 +347,7 @@ function addMonths(date, months) {
 /**
  * Копирует текст в буфер обмена
  * @param {string} text - Текст для копирования
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} true при успешном копировании
  */
 async function copyToClipboard(text) {
     try {

@@ -1,8 +1,10 @@
 package telegram
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -155,6 +157,89 @@ func TestSendStar_HTTPError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "Forbidden") {
 		t.Errorf("error should contain response body text, got: %v", err)
+	}
+}
+
+func TestSendStar_TransportErrorDoesNotLeakToken(t *testing.T) {
+	origToken := botToken
+	origChat := chatID
+	defer func() {
+		botToken = origToken
+		chatID = origChat
+	}()
+
+	botToken = "SECRET-BOT-TOKEN-12345"
+	chatID = "12345"
+
+	// Транспорт возвращает ошибку - http.Client оборачивает её в *url.Error,
+	// который содержит полный URL запроса (включая botToken)
+	transport := &mockTransport{
+		handler: func(req *http.Request) (*http.Response, error) {
+			return nil, errors.New("dial tcp: connection refused")
+		},
+	}
+
+	client := &Client{
+		httpClient: &http.Client{Transport: transport},
+	}
+
+	err := client.SendStar("user-123", "1.0.0")
+	if err == nil {
+		t.Fatal("expected error on transport failure")
+	}
+	if strings.Contains(err.Error(), botToken) {
+		t.Errorf("error must not contain botToken, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "connection refused") {
+		t.Errorf("error should preserve underlying cause, got: %v", err)
+	}
+}
+
+func TestSanitizeSendError(t *testing.T) {
+	origToken := botToken
+	defer func() { botToken = origToken }()
+	botToken = "SECRET-TOKEN"
+
+	tests := []struct {
+		name string
+		err  error
+	}{
+		{
+			name: "url.Error с токеном в URL",
+			err: &url.Error{
+				Op:  "Post",
+				URL: telegramAPI + botToken + "/sendMessage",
+				Err: errors.New("dial tcp: timeout"),
+			},
+		},
+		{
+			name: "вложенный url.Error с токеном",
+			err: &url.Error{
+				Op:  "Post",
+				URL: "https://example.com",
+				Err: &url.Error{
+					Op:  "Get",
+					URL: telegramAPI + botToken + "/sendMessage",
+					Err: errors.New("stopped after 10 redirects"),
+				},
+			},
+		},
+		{
+			name: "токен в тексте не-url ошибки",
+			err:  errors.New("request to " + telegramAPI + botToken + " failed"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sanitizeSendError(tt.err)
+			if got == nil {
+				t.Fatal("sanitizeSendError() = nil, want error")
+			}
+			if strings.Contains(got.Error(), botToken) {
+				t.Errorf("sanitized error still contains token: %v", got)
+			}
+		})
 	}
 }
 
