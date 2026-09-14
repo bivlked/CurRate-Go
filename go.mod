@@ -1,10 +1,10 @@
 module github.com/bivlked/currate-go
 
-go 1.26
+go 1.26.0
 
 require (
 	github.com/wailsapp/wails/v2 v2.12.0
-	golang.org/x/text v0.39.0
+	golang.org/x/text v0.42.0
 )
 
 require (
