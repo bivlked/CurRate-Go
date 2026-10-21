@@ -77,8 +77,6 @@ build/bin/
 !build/windows/icon.ico
 
 # Personal notes
-CLAUDE.local.md
-.claude/
 notes.md
 TODO.md
 
