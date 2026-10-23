@@ -54,7 +54,7 @@ func GetOrCreateUserID() (string, error) {
 		if err := json.Unmarshal(data, &userData); err == nil && uuidRegex.MatchString(userData.UserID) {
 			return userData.UserID, nil
 		}
-		// JSON повреждён или UserID не UUID — регенерируем (controlled recovery).
+		// JSON повреждён или UserID не UUID - регенерируем (controlled recovery).
 		// ID уходит в Markdown-сообщение, поэтому произвольный текст из
 		// отредактированного файла принимать нельзя
 	}

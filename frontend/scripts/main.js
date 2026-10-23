@@ -72,7 +72,7 @@ function initDateInput() {
     // Используем setTimeout для гарантии, что appInstance готов и календарь инициализирован
     setTimeout(() => {
         if (appInstance) {
-            updateRatePreview();
+            requestRatePreview();
         }
     }, 200);
     
@@ -89,7 +89,8 @@ function initDateInput() {
         // Для остальных символов проверяем валидность
         if (e.key.length === 1) {
             const cursorPos = dateInput.selectionStart || 0;
-            if (!isValidDateChar(dateInput.value, e.key, cursorPos)) {
+            const selectionEnd = dateInput.selectionEnd ?? cursorPos;
+            if (!isValidDateChar(dateInput.value, e.key, cursorPos, selectionEnd)) {
                 e.preventDefault();
                 return false;
             }
@@ -178,7 +179,7 @@ function initDateInput() {
         if (typeof setCalendarDate === 'function') {
             setCalendarDate(date);
         }
-        updateRatePreview();
+        requestRatePreview();
         clearStatus();
     });
     
@@ -196,7 +197,7 @@ function initCurrencySelection() {
     
     currencyInputs.forEach(input => {
         input.addEventListener('change', () => {
-            updateRatePreview();
+            requestRatePreview();
         });
     });
 }
@@ -300,7 +301,10 @@ function initAboutButton() {
     // Кнопка "Отправить звезду"
     if (sendStarBtn) {
         sendStarBtn.addEventListener('click', async () => {
+            // Повторные клики во время отправки не шлют вторую звезду
+            if (sendStarBtn.disabled) return;
             if (appInstance && typeof appInstance.SendStar === 'function') {
+                sendStarBtn.disabled = true;
                 try {
                     const response = await appInstance.SendStar();
                     if (response.success) {
@@ -312,6 +316,8 @@ function initAboutButton() {
                 } catch (error) {
                     console.error('SendStar error:', error);
                     showError('Произошла ошибка при отправке');
+                } finally {
+                    sendStarBtn.disabled = false;
                 }
             } else {
                 // Заглушка, пока функционал не реализован
@@ -334,6 +340,12 @@ async function performConvert() {
     
     if (!amountInput || !dateInput || !currencyInput || !convertBtn || !resultCard || !resultText) {
         showError('Ошибка: не найдены необходимые элементы интерфейса');
+        return;
+    }
+
+    // Enter в поле суммы вызывает конвертацию в обход заблокированной кнопки:
+    // второй параллельный запрос мог бы перезаписать результат устаревшим
+    if (convertBtn.disabled) {
         return;
     }
     
@@ -428,6 +440,16 @@ async function performConvert() {
 let ratePreviewRequestId = 0;
 
 /**
+ * Запрашивает обновление превью курса. Счётчик увеличивается сразу, а не
+ * после debounce: ответ, который ещё летит для прежней даты или валюты,
+ * становится устаревшим в момент изменения ввода
+ */
+function requestRatePreview() {
+    ratePreviewRequestId++;
+    updateRatePreview();
+}
+
+/**
  * Обновляет live preview курса
  */
 const updateRatePreview = debounce(async () => {
@@ -489,6 +511,9 @@ function hideRatePreview() {
     const ratePreview = document.getElementById('rate-preview');
     const rateValue = document.getElementById('rate-value');
     
+    // Ответ на уже отправленный запрос не должен вернуть курс после прочерка
+    ratePreviewRequestId++;
+
     if (ratePreview && rateValue) {
         // Не скрываем элемент, показываем прочерк
         rateValue.textContent = '—';
@@ -503,5 +528,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Обработчик события изменения даты из календаря
 document.addEventListener('datechanged', (e) => {
-    updateRatePreview();
+    requestRatePreview();
 });

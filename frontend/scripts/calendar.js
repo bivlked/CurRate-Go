@@ -141,7 +141,7 @@ function selectDate(element) {
     renderCalendar();
     
     // Создаем событие для других обработчиков
-    // Обработчик события в main.js вызовет updateRatePreview()
+    // Обработчик события в main.js вызовет requestRatePreview()
     const event = new CustomEvent('datechanged', { detail: { date: dateStr } });
     document.dispatchEvent(event);
 }

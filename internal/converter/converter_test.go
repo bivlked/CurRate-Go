@@ -455,6 +455,12 @@ func TestFormatNumber(t *testing.T) {
 			number:   2.6749,
 			expected: "2,67",
 		},
+		{
+			// кратчайшая запись не половина - округление вниз (так же делает Intl во frontend)
+			name:     "Не половина в кратчайшей записи",
+			number:   1.4649999999999999,
+			expected: "1,46",
+		},
 	}
 
 	for _, tt := range tests {
