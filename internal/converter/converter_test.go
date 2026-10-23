@@ -863,6 +863,26 @@ func TestConverter_Convert_RoundsToKopecks(t *testing.T) {
 	}
 }
 
+// Курс за 10 единиц делится десятично: 70.0025/10 во float64 = 7.000249999999999,
+// и 100 единиц давали 700,02 вместо точных 700,03
+func TestConverter_Convert_NominalExactRounding(t *testing.T) {
+	date := testPastDateUTC()
+	rateData := models.NewRateData(date)
+	rateData.AddRate(models.ExchangeRate{Currency: models.USD, Rate: 70.0025, Nominal: 10, Date: date})
+	converter := NewConverter(&MockRateProvider{rateData: rateData}, NewMockCache())
+
+	result, err := converter.Convert(context.Background(), 100, models.USD, date)
+	if err != nil {
+		t.Fatalf("Convert() error = %v", err)
+	}
+	if result.TargetAmount != 700.03 {
+		t.Errorf("TargetAmount = %v, want 700.03", result.TargetAmount)
+	}
+	if result.Rate != 7.00025 {
+		t.Errorf("Rate = %v, want 7.00025", result.Rate)
+	}
+}
+
 func TestConverter_Convert_ProviderError(t *testing.T) {
 	date := testPastDateUTC()
 

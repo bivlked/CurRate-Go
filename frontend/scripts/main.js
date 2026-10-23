@@ -153,11 +153,13 @@ function initDateInput() {
             return;
         }
 
+        // Неполная или неверная дата гасит превью сразу: иначе ответ на
+        // запрос для прежней даты показал бы курс рядом с недописанной
         if (!isValidDateFormat(dateStr)) {
             if (dateStr.length === 10) {
                 showError('Неверный формат даты. Используйте формат ДД.ММ.ГГГГ');
-                hideRatePreview();
             }
+            hideRatePreview();
             return;
         }
 
@@ -165,8 +167,8 @@ function initDateInput() {
         if (!date) {
             if (dateStr.length === 10) {
                 showError('Неверная дата');
-                hideRatePreview();
             }
+            hideRatePreview();
             return;
         }
 

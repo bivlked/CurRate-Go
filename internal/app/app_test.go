@@ -606,6 +606,12 @@ func TestTranslateError(t *testing.T) {
 			want: "ЦБ РФ вернул некорректный ответ. Попробуйте позже.",
 		},
 		{
+			// ответ без валидной даты курсов - не проблема связи
+			name: "Невалидная дата XML внутри ErrFetchRates",
+			err:  fmt.Errorf("%w: %w", converter.ErrFetchRates, parser.ErrInvalidXMLDate),
+			want: "ЦБ РФ вернул некорректный ответ. Попробуйте позже.",
+		},
+		{
 			name: "Сетевая ошибка внутри ErrFetchRates",
 			err:  fmt.Errorf("%w: %w", converter.ErrFetchRates, parser.ErrMaxRetries),
 			want: "Не удалось получить курсы ЦБ РФ. Проверьте подключение к интернету.",

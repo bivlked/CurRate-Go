@@ -54,6 +54,14 @@ func multiplyKopecks(amount, rate float64) float64 {
 	return result
 }
 
+// divideNominal делит курс за nominal единиц на nominal десятично и
+// возвращает ближайший float64: его кратчайшая запись совпадает с точным
+// частным (7.00025), поэтому decimalRat дальше восстановит его без потерь
+func divideNominal(rate float64, nominal int) float64 {
+	q, _ := new(big.Rat).Quo(decimalRat(rate), big.NewRat(int64(nominal), 1)).Float64()
+	return q
+}
+
 // formatNumber форматирует число с разделителями тысяч (пробел) и запятой
 // Округление до 2 знаков - половина вверх по десятичному значению
 // Примеры:

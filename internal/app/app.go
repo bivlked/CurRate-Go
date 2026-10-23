@@ -203,7 +203,7 @@ func translateError(err error) string {
 		return "ЦБ РФ не публиковал курс этой валюты на выбранную дату"
 	case errors.Is(err, parser.ErrNoXMLRates):
 		return "ЦБ РФ не публиковал курсы на выбранную дату"
-	case errors.Is(err, parser.ErrInvalidXML):
+	case errors.Is(err, parser.ErrInvalidXML), errors.Is(err, parser.ErrInvalidXMLDate):
 		return "ЦБ РФ вернул некорректный ответ. Попробуйте позже."
 	case errors.Is(err, converter.ErrFetchRates):
 		return "Не удалось получить курсы ЦБ РФ. Проверьте подключение к интернету."

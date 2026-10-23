@@ -180,7 +180,9 @@ func (c *Converter) getRateInternal(ctx context.Context, currency models.Currenc
 
 		rate = exchangeRate.Rate
 		if exchangeRate.Nominal > 1 {
-			rate = rate / float64(exchangeRate.Nominal)
+			// Десятично, а не во float64: 70.0025/10 во float64 даёт
+			// 7.000249999999999, и точное умножение потом теряет копейку
+			rate = divideNominal(rate, exchangeRate.Nominal)
 		}
 
 		// Сохраняем в кэш дважды для максимальной эффективности:
