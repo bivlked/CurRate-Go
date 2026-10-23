@@ -682,3 +682,117 @@ func TestTranslateError_WrappedErrors(t *testing.T) {
 		})
 	}
 }
+
+// datedRateProvider отдаёт курс USD в зависимости от запрошенной даты;
+// для дат, которых нет в карте, возвращает курс последней известной даты
+// не позже запрошенной (как ЦБ на выходные)
+type datedRateProvider struct {
+	rates map[string]float64 // "2006-01-02" -> курс
+}
+
+func (p *datedRateProvider) FetchRates(_ context.Context, date time.Time) (*models.RateData, error) {
+	for d := date; d.After(date.AddDate(0, 0, -10)); d = d.AddDate(0, 0, -1) {
+		if rate, ok := p.rates[d.Format("2006-01-02")]; ok {
+			rd := models.NewRateData(d)
+			rd.AddRate(models.ExchangeRate{Currency: models.USD, Rate: rate, Nominal: 1, Date: d})
+			return rd, nil
+		}
+	}
+	return nil, errors.New("no rates")
+}
+
+func newDatedApp(rates map[string]float64) *App {
+	app := NewApp(converter.NewConverter(&datedRateProvider{rates: rates}, nil))
+	app.Startup(context.Background())
+	return app
+}
+
+func TestApp_Convert_WithReference(t *testing.T) {
+	app := newDatedApp(map[string]float64{
+		"2026-10-23": 80.5381,
+		"2026-10-01": 79.9012,
+	})
+
+	resp := app.Convert(ConvertRequest{Amount: 1000, Currency: "USD", Date: "23.10.2026", RefDate: "01.10.2026"})
+
+	if !resp.Success || !resp.HasReference {
+		t.Fatalf("Convert() = %+v, want success with reference", resp)
+	}
+	if resp.TargetAmountRUB != 80538.1 || resp.RefAmountRUB != 79901.2 {
+		t.Errorf("суммы = %v / %v, want 80538.1 / 79901.2", resp.TargetAmountRUB, resp.RefAmountRUB)
+	}
+	// float64: 80538.1 - 79901.2 = 636.8999999999942
+	if resp.RefDiffRUB != 636.9 {
+		t.Errorf("RefDiffRUB = %v, want 636.9", resp.RefDiffRUB)
+	}
+	if resp.RefRate != 79.9012 || resp.RefActualDate != "01.10.2026" || resp.RefRequestedDate != "01.10.2026" {
+		t.Errorf("референс = %v %q %q", resp.RefRate, resp.RefActualDate, resp.RefRequestedDate)
+	}
+	if resp.Result != "80 538,10 руб. ($1 000,00 по курсу 80,5381)" {
+		t.Errorf("Result = %q: строка для буфера обмена не должна меняться", resp.Result)
+	}
+}
+
+func TestApp_Convert_ReferenceOnWeekend(t *testing.T) {
+	// 04.10.2026 - воскресенье: курс референса берётся за пятницу 02.10
+	app := newDatedApp(map[string]float64{
+		"2026-10-23": 80.5381,
+		"2026-10-02": 81.0000,
+	})
+
+	resp := app.Convert(ConvertRequest{Amount: 10, Currency: "USD", Date: "23.10.2026", RefDate: "04.10.2026"})
+
+	if !resp.HasReference || resp.RefActualDate != "02.10.2026" || resp.RefRequestedDate != "04.10.2026" {
+		t.Fatalf("референс = %+v, want фактическая дата 02.10.2026", resp)
+	}
+	if resp.RefDiffRUB != -4.62 { // 805.38 - 810.00
+		t.Errorf("RefDiffRUB = %v, want -4.62", resp.RefDiffRUB)
+	}
+}
+
+// Сбой референса не должен ломать основную конвертацию
+func TestApp_Convert_ReferenceErrors(t *testing.T) {
+	app := newDatedApp(map[string]float64{"2026-10-23": 80.5381})
+	future := time.Now().AddDate(0, 0, 3).Format("02.01.2006")
+
+	tests := []struct {
+		name    string
+		refDate string
+		wantErr string
+	}{
+		{"Неверный формат", "1.10.2026", "Неверный формат референсной даты: 1.10.2026"},
+		{"Будущая дата", future, "Дата не может быть в будущем"},
+		{"Сбой получения курса", "01.01.2000", "Не удалось получить курсы ЦБ РФ. Проверьте подключение к интернету."},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := app.Convert(ConvertRequest{Amount: 1, Currency: "USD", Date: "23.10.2026", RefDate: tt.refDate})
+			if !resp.Success || resp.TargetAmountRUB != 80.54 {
+				t.Fatalf("основная конвертация сломалась: %+v", resp)
+			}
+			if resp.HasReference || resp.RefError != tt.wantErr {
+				t.Errorf("HasReference=%v RefError=%q, want false %q", resp.HasReference, resp.RefError, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestApp_Convert_NoReference(t *testing.T) {
+	app := newDatedApp(map[string]float64{"2026-10-23": 80.5381})
+
+	resp := app.Convert(ConvertRequest{Amount: 1, Currency: "USD", Date: "23.10.2026"})
+
+	if !resp.Success || resp.HasReference || resp.RefError != "" || resp.RefRequestedDate != "" {
+		t.Errorf("без refDate поля референса должны быть пустыми: %+v", resp)
+	}
+}
+
+func TestApp_GetRate_ActualDate(t *testing.T) {
+	app := newDatedApp(map[string]float64{"2026-10-02": 81.0})
+
+	resp := app.GetRate("USD", "04.10.2026") // воскресенье
+
+	if !resp.Success || resp.Rate != 81.0 || resp.ActualDate != "02.10.2026" {
+		t.Errorf("GetRate() = %+v, want 81 за 02.10.2026", resp)
+	}
+}

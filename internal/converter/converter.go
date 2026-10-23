@@ -205,23 +205,21 @@ func (c *Converter) getRateInternal(ctx context.Context, currency models.Currenc
 
 // GetRate получает курс валюты на указанную дату без форматирования
 // Используется для live preview в GUI, где не нужна полная конвертация
-// Возвращает только числовой курс без создания ConversionResult
-func (c *Converter) GetRate(ctx context.Context, currency models.Currency, date time.Time) (float64, error) {
+// Возвращает курс и фактическую дату курса из ответа ЦБ без создания ConversionResult
+func (c *Converter) GetRate(ctx context.Context, currency models.Currency, date time.Time) (float64, time.Time, error) {
 	normalizedDate := normalizeDate(date)
 
 	// Валидация входных данных
 	if err := currency.Validate(); err != nil {
-		return 0, err
+		return 0, time.Time{}, err
 	}
 
 	if err := ValidateDate(normalizedDate); err != nil {
-		return 0, err
+		return 0, time.Time{}, err
 	}
 
-	// Используем внутренний метод для получения курса
-	// Для live preview фактическая дата не нужна, поэтому игнорируем её
-	rate, _, err := c.getRateInternal(ctx, currency, normalizedDate)
-	return rate, err
+	// Фактическая дата нужна превью: на выходные ЦБ отдаёт курс пятницы
+	return c.getRateInternal(ctx, currency, normalizedDate)
 }
 
 type noopCache struct{}
