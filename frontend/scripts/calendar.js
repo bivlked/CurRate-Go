@@ -4,6 +4,7 @@
 
 let currentDate = new Date();
 let selectedDate = null;
+let referenceDate = null; // помечается точкой в календаре
 
 /**
  * Инициализация календаря
@@ -54,9 +55,9 @@ function renderCalendar() {
     
     let html = `
         <div class="calendar-header">
-            <button class="calendar-nav-btn" id="calendar-prev">‹</button>
+            <button type="button" class="calendar-nav-btn" id="calendar-prev" aria-label="Предыдущий месяц" title="Предыдущий месяц"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
             <div class="calendar-month-year">${monthNames[month]} ${year}</div>
-            <button class="calendar-nav-btn" id="calendar-next">›</button>
+            <button type="button" class="calendar-nav-btn" id="calendar-next" aria-label="Следующий месяц" title="Следующий месяц"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6 4.5 9.5"/></svg></button>
         </div>
         <div class="calendar-weekdays">
     `;
@@ -84,15 +85,19 @@ function renderCalendar() {
         const isToday = date.getTime() === today.getTime();
         const isSelected = selectedDate && 
             date.getTime() === selectedDate.getTime();
+        const isReference = referenceDate &&
+            date.getTime() === referenceDate.getTime();
         const isFuture = date > today;
         
         let classes = 'calendar-day';
         if (isWeekendDay) classes += ' weekend';
         if (isToday) classes += ' today';
         if (isSelected) classes += ' selected';
+        if (isReference) classes += ' reference';
         if (isFuture) classes += ' disabled';
-        
-        html += `<div class="${classes}" data-date="${formatDate(date)}" ${isFuture ? '' : 'onclick="selectDate(this)"'}>${day}</div>`;
+
+        const title = isReference ? ' title="Референсная дата"' : '';
+        html += `<div class="${classes}" data-date="${formatDate(date)}"${title} ${isFuture ? '' : 'onclick="selectDate(this)"'}>${day}</div>`;
     }
     
     html += '</div>';
@@ -141,9 +146,20 @@ function selectDate(element) {
     renderCalendar();
     
     // Создаем событие для других обработчиков
-    // Обработчик события в main.js вызовет requestRatePreview()
+    // Обработчик события в main.js запросит курс на новую дату
     const event = new CustomEvent('datechanged', { detail: { date: dateStr } });
     document.dispatchEvent(event);
+}
+
+/**
+ * Помечает референсную дату в календаре (показанный месяц не меняется)
+ * @param {Date|null} date - Референсная дата или null, чтобы снять пометку
+ */
+function setCalendarReference(date) {
+    referenceDate = (date instanceof Date && !isNaN(date))
+        ? new Date(date.getFullYear(), date.getMonth(), date.getDate())
+        : null;
+    renderCalendar();
 }
 
 /**

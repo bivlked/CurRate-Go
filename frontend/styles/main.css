@@ -1,19 +1,29 @@
-/* CurRate-Go - Основные стили */
-/* Основано на memory-bank/style-guide.md */
+/* CurRate-Go - основные стили */
 
 :root {
   /* Размеры приложения */
-  --app-width: 360px; /* целевая ширина окна/контейнера */
+  --app-width: 360px; /* ширина окна Wails */
 
   /* Основные цвета */
   --primary-color: #0078d4;
   --primary-hover: #106ebe;
   --primary-active: #005a9e;
+  --primary-border: #005a9e;
   --primary-light: #e3f2fd;
+  --primary-ring: rgba(0, 120, 212, 0.28);
+
+  /* Референс: курс на референсную дату и её маркер в календаре */
+  --ref-color: #6b4fbb;
+  --ref-bg: #f1edfb;
+
+  /* Сравнение с референсом */
+  --up-color: #c62828;   /* курс выше референса */
+  --down-color: #1565c0; /* курс ниже референса */
 
   /* Success */
   --success-color: #107c10;
   --success-bg: #e8f5e9;
+  --success-border: rgba(16, 124, 16, 0.35);
 
   /* Error */
   --error-color: #d32f2f;
@@ -31,10 +41,7 @@
   /* Поверхности (карточный UI) */
   --surface-0: #ffffff;
   --surface-1: #fafafa;
-  --surface-2: #f3f3f3;
-
-  /* Инпуты */
-  --input-bg: #ffffff;
+  --surface-2: #f2f2f2;
 
   /* Текст */
   --text-primary: #1f1f1f;
@@ -42,32 +49,32 @@
   --text-disabled: #a19f9d;
 
   /* Границы */
-  --border-color: #e1dfdd;
-  --border-dark: #333333;
+  --border-color: #e1dfdd;   /* карточки и разделители */
+  --border-control: #c8c6c4; /* поля, плашки, вторичные кнопки - чётче карточек */
   --border-focus: #0078d4;
   --border-error: #d32f2f;
 
   /* Тени */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.2);
+  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --shadow-btn-active: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 
   /* Типографика */
-  --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
   --font-size-xs: 12px;
   --font-size-sm: 13px;
   --font-size-base: 14px;
   --font-size-lg: 16px;
   --font-size-xl: 18px;
-  --font-size-2xl: 24px;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  --line-height-tight: 1.2;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
 
@@ -77,13 +84,18 @@
   --spacing-md: 12px;
   --spacing-lg: 16px;
   --spacing-xl: 24px;
-  --spacing-2xl: 32px;
 
-  /* Радиусы */
+  /* Размеры контролов: одна высота и один радиус для полей, плашек и кнопок */
+  --control-h: 30px;
+  --control-h-lg: 36px;
+  --radius-control: 6px;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --radius-xl: 16px;
+
+  /* Колонки строк с датами: поле, плашка курса, кнопка */
+  --date-col: 92px;
+  --btn-col: 82px;
 }
 
 * {
@@ -93,7 +105,7 @@
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 body {
@@ -108,153 +120,176 @@ body {
 .container {
   max-width: var(--app-width);
   margin: 0 auto;
-  padding: var(--spacing-sm); /* 8px отступы - равны боковым зазорам карточек */
-  padding-bottom: 24px; /* Место для status bar */
+  padding: var(--spacing-sm);
+  padding-bottom: 24px; /* место под строку состояния (24px) */
 }
 
-/* Карточки */
+/* ===== Карточки ===== */
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm); /* 8px между карточками */
+  margin-bottom: var(--spacing-sm);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease;
-  width: 100%;
-  max-width: calc(var(--app-width) - 2 * var(--spacing-sm)); /* 344px = 8px боковые зазоры */
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
 }
 
-.card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.card-label {
+.field-label {
   display: block;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
   color: var(--text-secondary);
+  line-height: 16px;
   margin-bottom: var(--spacing-xs);
 }
 
-/* Группа ввода даты */
-.date-input-group {
-  display: flex;
-  gap: var(--spacing-xs); /* Уменьшен gap для компактности */
-  align-items: center;
-  width: 100%;
-  max-width: var(--app-width);
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: var(--spacing-sm); /* 8px зазор перед календарём */
-}
-
-.date-input {
-  flex: 0 0 auto; /* Автоматическая ширина по содержимому */
-  width: 85px; /* Уменьшена ширина - убрано лишнее место справа */
-  padding: 3px var(--spacing-sm); /* Финальный компактный padding */
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-base);
+/* ===== Общие контролы: поля и плашки ===== */
+.control {
+  height: var(--control-h);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
   font-family: var(--font-family);
-  background: var(--input-bg);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: var(--font-size-base);
+  background: var(--surface-0);
+  min-width: 0;
 }
 
-.date-input:focus {
+input.control {
+  padding: 0 var(--spacing-sm);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-inset);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input.control::placeholder {
+  color: var(--text-disabled);
+}
+
+input.control:hover {
+  border-color: #a19f9d;
+}
+
+input.control:focus {
   outline: none;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  box-shadow: 0 0 0 3px var(--primary-ring);
 }
 
-.date-input:invalid {
+input.control.error {
   border-color: var(--border-error);
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.18);
 }
 
-/* Live Preview курса */
-.rate-preview {
-  flex: 0 0 auto; /* Фиксированная ширина по содержимому */
-  padding: 2px 6px; /* Компактный padding для соответствия полю ввода даты */
-  background: var(--surface-2);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  min-width: 0; /* Позволяет flex элементу сжиматься */
-  max-width: 110px; /* Уменьшено - убрано лишнее место справа от ₽ */
-  white-space: nowrap; /* Предотвращает перенос текста */
-  overflow: hidden; /* Предотвращает выход за пределы */
-  text-overflow: ellipsis; /* Обрезает текст если не помещается */
-}
-
-/* Кнопка "О программе" */
-.about-btn {
-  flex: 1; /* Занимает всё оставшееся место */
-  height: 26px; /* Высота соответствует полю ввода даты */
-  padding: 0;
-  background: var(--primary-color);
-  color: white;
-  border: 1px solid var(--border-dark); /* Тонкая тёмная рамка */
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  display: flex;
+/* ===== Кнопки ===== */
+.btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.about-btn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-.about-btn:active {
-  background: var(--primary-active);
-  transform: translateY(0);
-}
-
-.rate-preview-label {
-  color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.rate-value {
-  color: var(--primary-color);
+  gap: 6px;
+  height: var(--control-h);
+  padding: 0 var(--spacing-md);
+  border-radius: var(--radius-control);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-base); /* Размер как USD/EUR и цифры дат (14px) */
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Группа выбора валюты */
-.currency-group {
+/* Основная (синяя): рамка того же тона и мягкий градиент. Тёмная рамка #333
+   и сдвиг transform при наведении давали «ступенчатые» края на скруглении */
+.btn-primary {
+  color: #ffffff;
+  background: linear-gradient(180deg, #1585dc 0%, var(--primary-color) 100%);
+  border: 1px solid var(--primary-border);
+  box-shadow: var(--shadow-btn);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, #0f7ad0 0%, var(--primary-hover) 100%);
+}
+
+.btn-primary:active {
+  background: var(--primary-active);
+  box-shadow: var(--shadow-btn-active);
+}
+
+/* Вторичная (белая) */
+.btn-secondary {
+  color: var(--text-primary);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+  border: 1px solid var(--border-control);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background: #f3f3f3;
+  border-color: #a19f9d;
+}
+
+.btn-secondary:active {
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-btn-active);
+}
+
+.btn:focus {
+  outline: none;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.btn:disabled {
+  color: var(--text-disabled);
+  background: var(--bg-tertiary);
+  border-color: var(--border-control);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+.btn-sm {
+  height: 26px;
+  padding: 0 10px;
+  font-size: var(--font-size-xs);
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+
+/* ===== Выбор валюты: сегментный переключатель ===== */
+.segmented {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
-  width: 100%;
+  gap: 3px;
+  padding: 3px;
+  margin-bottom: var(--spacing-md);
   background: var(--surface-2);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 4px;
+  border: 1px solid var(--border-control);
+  border-radius: calc(var(--radius-control) + 3px);
+  box-shadow: var(--shadow-inset);
 }
 
-.radio-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.segmented-option {
+  display: block;
   cursor: pointer;
-  font-size: var(--font-size-base);
-  border-radius: calc(var(--radius-lg) - 4px);
-  min-height: 31px; /* Уменьшена высота на 22.5% от исходного */
 }
 
-.radio-label input[type="radio"] {
-  /* прячем нативный radio, оставляем доступность через label */
+.segmented-option input[type="radio"] {
+  /* прячем нативный radio, доступность остаётся через label */
   position: absolute;
   opacity: 0;
   width: 1px;
@@ -262,103 +297,196 @@ body {
   overflow: hidden;
 }
 
-.radio-text {
-  user-select: none;
-  width: 100%;
-  text-align: center;
-  padding: 7px 9px; /* Уменьшен padding на 22% от исходного */
-  border-radius: calc(var(--radius-lg) - 6px);
+.segmented-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--control-h) - 2px);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
   color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
+  user-select: none;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.radio-label input[type="radio"]:focus-visible + .radio-text {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--primary-light);
+.segmented-option:hover .segmented-text {
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.radio-label input[type="radio"]:checked + .radio-text {
-  background: var(--primary-color);
+.segmented-option input[type="radio"]:checked + .segmented-text {
   color: #ffffff;
+  background: linear-gradient(180deg, #1585dc 0%, var(--primary-color) 100%);
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-btn);
 }
 
-/* Поле ввода суммы */
+.segmented-option input[type="radio"]:focus-visible + .segmented-text {
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+/* ===== Строки дат: поле | плашка курса | кнопка ===== */
+.date-row {
+  display: grid;
+  grid-template-columns: var(--date-col) minmax(0, 1fr) var(--btn-col);
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.date-input {
+  width: 100%;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.rate-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: 0 6px;
+  background: var(--surface-2);
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+}
+
+.rate-box-label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.rate-value {
+  color: var(--primary-color);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.rate-box-ref {
+  background: var(--ref-bg);
+}
+
+.rate-box-ref .rate-value {
+  color: var(--ref-color);
+}
+
+.btn-row {
+  width: 100%;
+  padding: 0 6px;
+}
+
+/* ===== Сравнение с референсом ===== */
+.compare {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+}
+
+.rates-card .compare {
+  margin: -2px 0 var(--spacing-sm) 2px;
+}
+
+.compare-arrow {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.compare-up {
+  color: var(--up-color);
+}
+
+.compare-down {
+  color: var(--down-color);
+}
+
+.compare-down .compare-arrow {
+  transform: rotate(180deg);
+}
+
+.compare-equal,
+.compare-none {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.compare-equal .compare-arrow,
+.compare-none .compare-arrow {
+  display: none;
+}
+
+/* Пока курс загружается, прежнее значение и сравнение приглушены */
+.rate-box.loading .rate-value,
+.compare.loading {
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+}
+
+/* ===== Сумма ===== */
+.amount-field {
+  position: relative;
+}
+
 .amount-input {
   width: 100%;
-  padding: 3px var(--spacing-sm); /* Финальный компактный padding */
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  background: var(--input-bg);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  padding-right: 32px; /* место под знак валюты */
+  font-variant-numeric: tabular-nums;
 }
 
-.amount-input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--primary-light);
-}
-
-.amount-input.error {
-  border-color: var(--border-error);
-  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
-}
-
-/* Кнопка конвертации */
-.convert-btn {
-  width: 100%;
-  max-width: var(--app-width);
-  margin-left: auto;
-  margin-right: auto;
-  padding: 9px var(--spacing-sm); /* Уменьшен padding на 25% от исходного */
-  background: var(--primary-color);
-  color: white;
-  border: 1px solid var(--border-dark); /* Тонкая тёмная рамка */
-  border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
-  font-size: var(--font-size-base);
+.amount-suffix {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: var(--control-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
   font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  pointer-events: none;
+}
+
+/* ===== Кнопка конвертации ===== */
+.convert-btn {
+  height: var(--control-h-lg);
   margin-bottom: var(--spacing-sm);
-  display: block;
-  box-sizing: border-box; /* Учитывает padding в ширине */
+  font-size: var(--font-size-base);
 }
 
-.convert-btn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-.convert-btn:active {
-  background: var(--primary-active);
-  transform: translateY(0);
-}
-
-.convert-btn:disabled {
-  background: var(--bg-tertiary);
-  color: var(--text-disabled);
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Карточка результата */
+/* ===== Результат ===== */
 .result-card {
   background: var(--success-bg);
-  border-color: rgba(16, 124, 16, 0.35);
+  border-color: var(--success-border);
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.result-header .field-label {
+  margin-bottom: 0;
 }
 
 .result-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
 }
 
 .result-summary {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .result-amount {
@@ -366,6 +494,7 @@ body {
   line-height: 1.2;
   font-weight: var(--font-weight-bold);
   letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .result-meta {
@@ -375,75 +504,49 @@ body {
   overflow-wrap: anywhere;
 }
 
-.result-actions {
-  display: flex;
+.result-ref {
+  font-size: var(--font-size-xs);
+  align-items: flex-start;
+}
+
+.result-ref .compare-arrow {
+  margin-top: 3px;
 }
 
 .result-text {
-  font-size: var(--font-size-base); /* Размер как USD/EUR и цифры дат (14px) */
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  line-height: var(--line-height-normal);
   overflow-wrap: anywhere;
 }
 
-.copy-btn {
-  padding: 7px 9px; /* Уменьшен padding на 22% от исходного */
-  background: #ffffff;
-  color: var(--text-primary);
-  border: 1px solid var(--border-dark); /* Тонкая тёмная рамка для контраста на светло-зелёном фоне */
-  border-radius: var(--radius-md); /* Уменьшено закругление с xl до md */
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
-  width: 100%;
-}
-
-.copy-btn:hover {
-  background: var(--surface-2);
-  border-color: rgba(0, 120, 212, 0.35);
-  transform: translateY(-1px);
-}
-
-.copy-btn:active {
-  background: var(--bg-tertiary);
-  transform: translateY(0);
-}
-
-/* Строка состояния */
+/* ===== Строка состояния ===== */
 .status-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 24px; /* Уменьшена высота */
+  height: 24px;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  padding: 0 var(--spacing-sm); /* Уменьшен padding */
+  padding: 0 var(--spacing-sm);
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs); /* Уменьшен gap */
-  font-size: var(--font-size-xs); /* Уменьшен размер шрифта */
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
   z-index: 1000;
-  line-height: 1.2; /* Уменьшен line-height для компактности */
-}
-
-/* .status-bar стоит ниже .hidden и при равной специфичности перебивал его display */
-.status-bar.hidden {
-  display: none;
+  line-height: 1.2;
 }
 
 .status-icon {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
 }
 
 .status-message {
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-message.success {
@@ -460,19 +563,6 @@ body {
 
 .status-message.info {
   color: var(--primary-color);
-}
-
-/* Адаптивность */
-@media (max-width: 600px) {
-  .container {
-    padding: var(--spacing-lg);
-  }
-
-  .currency-group {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: var(--spacing-md);
-  }
 }
 
 /* ===== Модальное окно "О программе" ===== */
@@ -520,15 +610,15 @@ body {
   position: absolute;
   top: var(--spacing-sm);
   right: var(--spacing-sm);
-  width: 28px;
-  height: 28px;
+  width: var(--control-h);
+  height: var(--control-h);
   border: none;
   background: transparent;
   font-size: 24px;
   line-height: 1;
   color: var(--text-secondary);
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   transition: background-color 0.15s ease, color 0.15s ease;
   display: flex;
   align-items: center;
@@ -611,29 +701,9 @@ body {
 }
 
 .send-star-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--primary-color);
-  color: white;
-  border: 1px solid var(--border-dark);
-  border-radius: var(--radius-md);
+  height: var(--control-h-lg);
+  padding: 0 var(--spacing-lg);
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.send-star-btn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-.send-star-btn:active {
-  background: var(--primary-active);
-  transform: translateY(0);
 }
 
 .star-icon {

@@ -409,3 +409,81 @@ async function copyToClipboard(text) {
     }
 }
 
+
+/**
+ * Сравнивает курс с референсным. Курсы ЦБ для USD и EUR публикуются ровно
+ * с 4 знаками, поэтому сравнение идёт в целых единицах 0,0001 ₽: разность
+ * точная, без погрешности float (80,5381 - 79,9012 = 0,6369, а не 0,636899...)
+ * @param {number} rate - Курс на выбранную дату
+ * @param {number} refRate - Курс на референсную дату
+ * @returns {{direction: 'up'|'down'|'equal', diff: number, percent: number}|null}
+ *          diff и percent - модули; null, если сравнивать нечего
+ */
+function compareRates(rate, refRate) {
+    if (!isFinite(rate) || !isFinite(refRate) || rate <= 0 || refRate <= 0) {
+        return null;
+    }
+    const units = Math.round(rate * 1e4);
+    const refUnits = Math.round(refRate * 1e4);
+    const diffUnits = units - refUnits;
+    let direction = 'equal';
+    if (diffUnits > 0) direction = 'up';
+    if (diffUnits < 0) direction = 'down';
+    return {
+        direction,
+        diff: Math.abs(diffUnits) / 1e4,
+        percent: Math.abs(diffUnits) / refUnits * 100
+    };
+}
+
+/**
+ * Форматирует процент изменения: 2 знака, а совсем малое - «менее 0,01%»,
+ * чтобы ненулевая разница не выглядела как 0,00%
+ * @param {number} percent - Неотрицательный процент
+ * @returns {string}
+ */
+function formatPercent(percent) {
+    if (percent > 0 && percent < 0.005) {
+        return 'менее 0,01%';
+    }
+    return `${formatNumber(percent, 2)}%`;
+}
+
+/**
+ * Текст и стиль строки сравнения курса с референсом
+ * @param {ReturnType<typeof compareRates>} cmp - Результат compareRates
+ * @returns {{className: string, text: string}}
+ */
+function describeRateComparison(cmp) {
+    if (!cmp) {
+        return { className: 'compare-none', text: 'Сравнение недоступно' };
+    }
+    if (cmp.direction === 'equal') {
+        return { className: 'compare-equal', text: 'Совпадает с референсом' };
+    }
+    const where = cmp.direction === 'up' ? 'Выше' : 'Ниже';
+    return {
+        className: `compare-${cmp.direction}`,
+        text: `${where} референса на ${formatNumber(cmp.diff, 4)} ₽ (${formatPercent(cmp.percent)})`
+    };
+}
+
+/**
+ * Текст и стиль строки результата: сумма по курсу на дату против суммы
+ * по курсу на референсную дату. Разность приходит из Go (точная до копейки).
+ * Текст в одну строку ширины окна; дата и курс референса - в подсказке
+ * @param {number} diffRUB - Сумма по курсу минус сумма по референсу, ₽
+ * @param {number} refAmountRUB - Сумма по референсному курсу, ₽
+ * @returns {{className: string, text: string}}
+ */
+function describeAmountComparison(diffRUB, refAmountRUB) {
+    const refAmount = `${formatNumber(refAmountRUB, 2)} ₽`;
+    if (diffRUB === 0) {
+        return { className: 'compare-equal', text: `Совпадает с суммой по референсу (${refAmount})` };
+    }
+    const more = diffRUB > 0;
+    return {
+        className: more ? 'compare-up' : 'compare-down',
+        text: `На ${formatNumber(Math.abs(diffRUB), 2)} ₽ ${more ? 'больше' : 'меньше'} референса (${refAmount})`
+    };
+}

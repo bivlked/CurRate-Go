@@ -133,3 +133,67 @@ test('copyToClipboard: fallback сообщает о неудаче и убира
         assert.equal(env.removed.length, 1, 'textarea должна быть удалена');
     }
 });
+
+test('compareRates: точная разность в единицах 0,0001', () => {
+    // float: 80.5381 - 79.9012 = 0.6368999999999971
+    const up = u.compareRates(80.5381, 79.9012);
+    assert.equal(up.direction, 'up');
+    assert.equal(up.diff, 0.6369);
+    assert.ok(Math.abs(up.percent - 0.6369 / 79.9012 * 100) < 1e-9);
+
+    const down = u.compareRates(79.9012, 80.5381);
+    assert.equal(down.direction, 'down');
+    assert.equal(down.diff, 0.6369);
+
+    const eq = u.compareRates(80.5381, 80.5381);
+    assert.equal(eq.direction, 'equal');
+    assert.equal(eq.diff, 0);
+    assert.equal(eq.percent, 0);
+});
+
+test('compareRates: нечего сравнивать - null', () => {
+    for (const [a, b] of [[NaN, 80], [80, NaN], [0, 80], [80, 0], [-1, 80], [Infinity, 80]]) {
+        assert.equal(u.compareRates(a, b), null, `${a} vs ${b}`);
+    }
+});
+
+test('formatPercent: 2 знака, малое - «менее 0,01%»', () => {
+    assert.equal(u.formatPercent(0.797), '0,80%');
+    assert.equal(u.formatPercent(12.345), '12,35%');
+    assert.equal(u.formatPercent(0), '0,00%');
+    assert.equal(u.formatPercent(0.0012), 'менее 0,01%');
+});
+
+// Объекты из vm-контекста имеют чужой прототип: сравниваем содержимое
+const plain = (o) => JSON.parse(JSON.stringify(o));
+
+test('describeRateComparison: текст и цвет строки сравнения', () => {
+    assert.deepEqual(plain(u.describeRateComparison(null)), { className: 'compare-none', text: 'Сравнение недоступно' });
+    assert.deepEqual(plain(u.describeRateComparison(u.compareRates(80, 80))), { className: 'compare-equal', text: 'Совпадает с референсом' });
+
+    const up = u.describeRateComparison(u.compareRates(80.5381, 79.9012));
+    assert.equal(up.className, 'compare-up');
+    assert.equal(up.text, 'Выше референса на 0,6369 ₽ (0,80%)');
+
+    const down = u.describeRateComparison(u.compareRates(79.9012, 80.5381));
+    assert.equal(down.className, 'compare-down');
+    assert.equal(down.text, 'Ниже референса на 0,6369 ₽ (0,79%)');
+
+    // разница в одну десятитысячную не выглядит как 0,00%
+    assert.equal(u.describeRateComparison(u.compareRates(80.0001, 80)).text, 'Выше референса на 0,0001 ₽ (менее 0,01%)');
+});
+
+test('describeAmountComparison: строка результата', () => {
+    const nbsp = (s) => s.replace(/\s/g, ' ');
+    const more = u.describeAmountComparison(636.9, 79901.2);
+    assert.equal(more.className, 'compare-up');
+    assert.equal(nbsp(more.text), 'На 636,90 ₽ больше референса (79 901,20 ₽)');
+
+    const less = u.describeAmountComparison(-4.62, 810);
+    assert.equal(less.className, 'compare-down');
+    assert.equal(nbsp(less.text), 'На 4,62 ₽ меньше референса (810,00 ₽)');
+
+    const eq = u.describeAmountComparison(0, 810);
+    assert.equal(eq.className, 'compare-equal');
+    assert.equal(nbsp(eq.text), 'Совпадает с суммой по референсу (810,00 ₽)');
+});
