@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 )
+
+// uuidRegex - формат, который выдаёт generateUUID (UUID v4, нижний регистр)
+var uuidRegex = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 
 // UserData хранит данные пользователя
 type UserData struct {
@@ -47,10 +51,12 @@ func GetOrCreateUserID() (string, error) {
 		// Файла нет — продолжаем генерацию нового ID
 	} else {
 		var userData UserData
-		if err := json.Unmarshal(data, &userData); err == nil && userData.UserID != "" {
+		if err := json.Unmarshal(data, &userData); err == nil && uuidRegex.MatchString(userData.UserID) {
 			return userData.UserID, nil
 		}
-		// JSON повреждён или UserID пуст — регенерируем (controlled recovery)
+		// JSON повреждён или UserID не UUID - регенерируем (controlled recovery).
+		// ID уходит в Markdown-сообщение, поэтому произвольный текст из
+		// отредактированного файла принимать нельзя
 	}
 
 	// Генерируем новый UUID

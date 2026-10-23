@@ -20,7 +20,7 @@ const (
 	// MaxRetries - максимальное количество повторных попыток при ошибке
 	MaxRetries = 3
 
-	// BaseRetryDelay - базовая задержка для exponential backoff (1s, 2s, 4s)
+	// BaseRetryDelay - базовая задержка для exponential backoff (между 3 попытками: 1s, 2s)
 	BaseRetryDelay = 1 * time.Second
 
 	// UserAgent - User-Agent для HTTP запросов
@@ -84,7 +84,7 @@ func fetchXML(ctx context.Context, url string) (io.ReadCloser, error) {
 		}
 
 		// Если это не последняя попытка, ждем с exponential backoff
-		// Attempt 1: 1s, Attempt 2: 2s, Attempt 3: 4s (как в Python версии)
+		// После попытки 1: 1s, после попытки 2: 2s, после последней не ждём
 		if attempt < MaxRetries {
 			delay := BaseRetryDelay * time.Duration(1<<uint(attempt-1))
 			if err := sleepWithContext(ctx, delay); err != nil {
@@ -133,13 +133,15 @@ func doRequest(ctx context.Context, client *http.Client, url string) (*http.Resp
 func newHTTPClient() *http.Client {
 	return &http.Client{
 		Timeout: DefaultTimeout,
-		// Разрешаем автоматические редиректы с лимитом на 10 редиректов
-		// Это защищает от бесконечных циклов, но позволяет обрабатывать нормальные редиректы
+		// Редиректы: не больше 10 (как по умолчанию) и только по HTTPS,
+		// чтобы ответ с курсами нельзя было увести на незашифрованный канал
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 10 {
 				return errors.New("too many redirects")
 			}
-			// Возвращаем nil для продолжения автоматической обработки редиректа
+			if req.URL.Scheme != "https" {
+				return fmt.Errorf("refusing redirect to non-HTTPS URL %s", req.URL.Redacted())
+			}
 			return nil
 		},
 	}

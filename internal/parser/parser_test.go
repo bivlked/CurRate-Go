@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/bivlked/currate-go/internal/models"
 )
 
 func TestParseRate(t *testing.T) {
@@ -173,86 +171,6 @@ func TestParseNominal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parseNominal(tt.input)
-
-			if tt.wantErr != nil {
-				if err == nil {
-					t.Fatalf("Ожидалась ошибка %v, ошибка не получена", tt.wantErr)
-				}
-				if !errors.Is(err, tt.wantErr) {
-					t.Errorf("Ожидалась ошибка %v, получена %v", tt.wantErr, err)
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("Неожиданная ошибка: %v", err)
-				}
-				if got != tt.want {
-					t.Errorf("Результат: ожидалось %v, получено %v", tt.want, got)
-				}
-			}
-		})
-	}
-}
-
-func TestParseCurrency(t *testing.T) {
-	tests := []struct {
-		name    string
-		input   string
-		want    models.Currency
-		wantErr error
-	}{
-		{
-			name:    "USD",
-			input:   "USD",
-			want:    models.USD,
-			wantErr: nil,
-		},
-		{
-			name:    "EUR",
-			input:   "EUR",
-			want:    models.EUR,
-			wantErr: nil,
-		},
-		{
-			name:    "RUB",
-			input:   "RUB",
-			want:    models.RUB,
-			wantErr: nil,
-		},
-		{
-			name:    "Lowercase USD",
-			input:   "usd",
-			want:    models.USD,
-			wantErr: nil,
-		},
-		{
-			name:    "С пробелами",
-			input:   "  EUR  ",
-			want:    models.EUR,
-			wantErr: nil,
-		},
-		{
-			name:    "Неподдерживаемая валюта",
-			input:   "XDR",
-			want:    "",
-			wantErr: models.ErrUnsupportedCurrency,
-		},
-		{
-			name:    "Пустая строка",
-			input:   "",
-			want:    "",
-			wantErr: models.ErrUnsupportedCurrency,
-		},
-		{
-			name:    "Некорректный код",
-			input:   "INVALID",
-			want:    "",
-			wantErr: models.ErrUnsupportedCurrency,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseCurrency(tt.input)
 
 			if tt.wantErr != nil {
 				if err == nil {

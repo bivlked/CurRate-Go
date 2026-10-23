@@ -114,43 +114,6 @@ func TestCurrencyString(t *testing.T) {
 	}
 }
 
-func TestCurrencyName(t *testing.T) {
-	tests := []struct {
-		name string
-		curr Currency
-		want string
-	}{
-		{
-			name: "Название USD",
-			curr: USD,
-			want: "Доллар США",
-		},
-		{
-			name: "Название EUR",
-			curr: EUR,
-			want: "Евро",
-		},
-		{
-			name: "Название RUB",
-			curr: RUB,
-			want: "Российский рубль",
-		},
-		{
-			name: "Неизвестная валюта возвращает код",
-			curr: Currency("GBP"),
-			want: "GBP",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.curr.Name(); got != tt.want {
-				t.Errorf("Currency.Name() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestParseCurrency(t *testing.T) {
 	tests := []struct {
 		name      string

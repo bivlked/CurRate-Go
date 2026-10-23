@@ -10,6 +10,7 @@ import (
 
 	"github.com/bivlked/currate-go/internal/converter"
 	"github.com/bivlked/currate-go/internal/models"
+	"github.com/bivlked/currate-go/internal/parser"
 )
 
 // mockRateProvider - мок для RateProvider
@@ -60,13 +61,6 @@ func (m *mockCacheStorage) Set(currency models.Currency, requestedDate time.Time
 		rate:       rate,
 		actualDate: actualDate,
 	}
-}
-
-func (m *mockCacheStorage) Clear() {
-	m.data = make(map[string]struct {
-		rate       float64
-		actualDate time.Time
-	})
 }
 
 // createTestConverter создает Converter с моками для тестирования
@@ -180,9 +174,18 @@ func TestApp_Startup(t *testing.T) {
 	conv := createTestConverter(rateData, nil, 0, false)
 	app := NewApp(conv)
 
-	// Startup не должен паниковать
-	ctx := context.Background()
-	app.Startup(ctx)
+	type ctxKey struct{}
+	first := context.WithValue(context.Background(), ctxKey{}, "first")
+	app.Startup(first)
+	if app.ctx != first {
+		t.Fatal("Startup() не сохранил контекст")
+	}
+
+	// Повторный вызов (Startup забинден и доступен из JS) не затирает контекст
+	app.Startup(context.Background())
+	if app.ctx != first {
+		t.Error("повторный Startup() затёр рабочий контекст")
+	}
 }
 
 func TestApp_Convert_Success(t *testing.T) {
@@ -381,6 +384,39 @@ func TestApp_GetRate_RUB(t *testing.T) {
 	}
 }
 
+// RUB не должен обходить проверку даты: Convert отвергает будущую дату,
+// и превью курса обязано вести себя так же
+func TestApp_GetRate_RUBFutureDate(t *testing.T) {
+	conv := createTestConverter(nil, nil, 0, false)
+	app := NewApp(conv)
+	app.Startup(context.Background())
+
+	future := time.Now().AddDate(0, 0, 2).Format("02.01.2006")
+	result := app.GetRate("RUB", future)
+
+	if result.Success {
+		t.Fatalf("GetRate(RUB, %s) Success = true, want false", future)
+	}
+	if result.Error != "Дата не может быть в будущем" {
+		t.Errorf("GetRate() Error = %q", result.Error)
+	}
+}
+
+// В тестовой сборке токены не внедрены: SendStar сразу отвечает понятной
+// ошибкой и не ходит в сеть
+func TestApp_SendStar_NotConfigured(t *testing.T) {
+	app := NewApp(createTestConverter(nil, nil, 0, false))
+
+	result := app.SendStar()
+
+	if result.Success {
+		t.Fatal("SendStar() Success = true без токенов")
+	}
+	if result.Error != "Функция доступна только в release-версии приложения." {
+		t.Errorf("SendStar() Error = %q", result.Error)
+	}
+}
+
 func TestApp_GetRate_InvalidCurrency(t *testing.T) {
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	rateData := &models.RateData{
@@ -548,13 +584,42 @@ func TestTranslateError(t *testing.T) {
 			want: "Неподдерживаемая валюта. Поддерживаются только USD, EUR и RUB",
 		},
 		{
-			name: "Неизвестная ошибка - короткое сообщение",
-			err:  errors.New("network error"),
-			want: "network error",
+			name: "ErrAmountTooLarge",
+			err:  converter.ErrAmountTooLarge,
+			want: "Сумма слишком велика",
 		},
 		{
-			name: "Неизвестная ошибка - длинное сообщение (обрезается)",
-			err:  errors.New("very long error message that exceeds 100 characters limit and should be replaced with generic message"),
+			// EUR до 1999 года: ответ ЦБ есть, но курса валюты в нём нет
+			name: "ErrRateNotFound",
+			err:  fmt.Errorf("%w: EUR", converter.ErrRateNotFound),
+			want: "ЦБ РФ не публиковал курс этой валюты на выбранную дату",
+		},
+		{
+			// 01.01.1990: ЦБ отвечает пустым <ValCurs>, это не сетевая ошибка
+			name: "Пустой ответ ЦБ внутри ErrFetchRates",
+			err:  fmt.Errorf("%w: %w", converter.ErrFetchRates, fmt.Errorf("parse: %w", parser.ErrNoXMLRates)),
+			want: "ЦБ РФ не публиковал курсы на выбранную дату",
+		},
+		{
+			name: "Некорректный XML внутри ErrFetchRates",
+			err:  fmt.Errorf("%w: %w", converter.ErrFetchRates, parser.ErrInvalidXML),
+			want: "ЦБ РФ вернул некорректный ответ. Попробуйте позже.",
+		},
+		{
+			// ответ без валидной даты курсов - не проблема связи
+			name: "Невалидная дата XML внутри ErrFetchRates",
+			err:  fmt.Errorf("%w: %w", converter.ErrFetchRates, parser.ErrInvalidXMLDate),
+			want: "ЦБ РФ вернул некорректный ответ. Попробуйте позже.",
+		},
+		{
+			name: "Сетевая ошибка внутри ErrFetchRates",
+			err:  fmt.Errorf("%w: %w", converter.ErrFetchRates, parser.ErrMaxRetries),
+			want: "Не удалось получить курсы ЦБ РФ. Проверьте подключение к интернету.",
+		},
+		{
+			// технический текст на английском в интерфейс не попадает
+			name: "Неизвестная короткая ошибка",
+			err:  errors.New("network error"),
 			want: "Произошла ошибка при выполнении операции. Попробуйте еще раз.",
 		},
 		{

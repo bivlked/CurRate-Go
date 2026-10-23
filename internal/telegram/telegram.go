@@ -51,9 +51,18 @@ func sanitizeSendError(err error) error {
 		err = urlErr.Err
 	}
 	if botToken != "" && strings.Contains(err.Error(), botToken) {
-		return errors.New(strings.ReplaceAll(err.Error(), botToken, "***"))
+		return errors.New(redactToken(err.Error()))
 	}
 	return err
+}
+
+// redactToken маскирует botToken в произвольном тексте (например, в теле
+// ответа прокси, который процитировал URL запроса)
+func redactToken(s string) string {
+	if botToken == "" {
+		return s
+	}
+	return strings.ReplaceAll(s, botToken, "***")
 }
 
 // sendMessageRequest - структура запроса для отправки сообщения
@@ -104,12 +113,22 @@ func (c *Client) SendStar(userID string, appVersion string) error {
 	}
 	defer resp.Body.Close()
 
+	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 4096))
+
 	if resp.StatusCode != http.StatusOK {
-		body, readErr := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		if readErr != nil || len(body) == 0 {
 			return fmt.Errorf("Telegram API вернул статус %d", resp.StatusCode)
 		}
-		return fmt.Errorf("Telegram API вернул статус %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("Telegram API вернул статус %d: %s", resp.StatusCode, redactToken(string(body)))
+	}
+
+	// 200 ещё не подтверждение: страница прокси или авторизации тоже отвечает 200.
+	// Telegram подтверждает отправку полем ok=true
+	var apiResp struct {
+		OK bool `json:"ok"`
+	}
+	if readErr != nil || json.Unmarshal(body, &apiResp) != nil || !apiResp.OK {
+		return errors.New("Telegram API не подтвердил отправку")
 	}
 
 	return nil

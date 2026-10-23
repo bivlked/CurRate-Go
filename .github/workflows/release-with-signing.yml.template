@@ -16,12 +16,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.26'
+          check-latest: true
           cache-dependency-path: go.sum
 
       - name: Get Go bin path
@@ -32,7 +33,7 @@ jobs:
           echo "path=$goBinPath" >> $env:GITHUB_OUTPUT
 
       - name: Cache Wails CLI
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: cache-wails
         with:
           path: ${{ steps.go-bin-path.outputs.path }}
@@ -45,11 +46,20 @@ jobs:
 
       - name: Install Wails
         if: steps.cache-wails.outputs.cache-hit != 'true'
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        shell: pwsh
+        run: |
+          $v = go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2
+          go install "github.com/wailsapp/wails/v2/cmd/wails@$v"
 
       - name: Build
+        # Путь в -X обязан совпадать с module path из go.mod (lowercase),
+        # иначе линкер молча не внедрит токены
+        shell: pwsh
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          wails build -clean -ldflags "-s -w -X 'github.com/bivlked/CurRate-Go/internal/telegram.botToken=${{ secrets.TELEGRAM_BOT_TOKEN }}' -X 'github.com/bivlked/CurRate-Go/internal/telegram.chatID=${{ secrets.TELEGRAM_CHAT_ID }}'"
+          wails build -clean -ldflags "-s -w -X 'github.com/bivlked/currate-go/internal/telegram.botToken=$env:TELEGRAM_BOT_TOKEN' -X 'github.com/bivlked/currate-go/internal/telegram.chatID=$env:TELEGRAM_CHAT_ID'"
 
       # Примечание: UPX сжатие убрано, так как SignPath требует оригинальный PE файл
       # UPX-сжатые файлы могут вызывать проблемы с подписью
@@ -97,7 +107,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download signed artifact
         uses: actions/download-artifact@v4
@@ -119,7 +129,7 @@ jobs:
           fi
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: release/CurRate.exe
           body_path: release-notes.md

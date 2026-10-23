@@ -8,6 +8,7 @@ import (
 
 	"github.com/bivlked/currate-go/internal/converter"
 	"github.com/bivlked/currate-go/internal/models"
+	"github.com/bivlked/currate-go/internal/parser"
 	"github.com/bivlked/currate-go/internal/telegram"
 )
 
@@ -150,16 +151,8 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 		}
 	}
 
-	// Для RUB всегда возвращаем 1.0
-	if currency == models.RUB {
-		return RateResponse{
-			Success: true,
-			Rate:    1.0,
-		}
-	}
-
 	// Используем оптимизированный метод GetRate для получения курса без форматирования
-	// Это избегает лишних вычислений и аллокаций для live preview
+	// Для RUB он сам вернёт 1.0, но после той же проверки даты, что и Convert
 	rate, err := a.converter.GetRate(a.ctx, currency, date)
 	if err != nil {
 		return RateResponse{
@@ -200,18 +193,23 @@ func translateError(err error) string {
 		return "Ошибка конфигурации: источник курсов не настроен"
 	case errors.Is(err, converter.ErrInvalidAmount):
 		return "Сумма должна быть положительным числом"
+	case errors.Is(err, converter.ErrAmountTooLarge):
+		return "Сумма слишком велика"
 	case errors.Is(err, converter.ErrDateInFuture):
 		return "Дата не может быть в будущем"
 	case errors.Is(err, models.ErrUnsupportedCurrency):
 		return "Неподдерживаемая валюта. Поддерживаются только USD, EUR и RUB"
+	case errors.Is(err, converter.ErrRateNotFound):
+		return "ЦБ РФ не публиковал курс этой валюты на выбранную дату"
+	case errors.Is(err, parser.ErrNoXMLRates):
+		return "ЦБ РФ не публиковал курсы на выбранную дату"
+	case errors.Is(err, parser.ErrInvalidXML), errors.Is(err, parser.ErrInvalidXMLDate):
+		return "ЦБ РФ вернул некорректный ответ. Попробуйте позже."
+	case errors.Is(err, converter.ErrFetchRates):
+		return "Не удалось получить курсы ЦБ РФ. Проверьте подключение к интернету."
 	default:
-		// Для неизвестных ошибок возвращаем оригинальное сообщение
-		// или общее сообщение, если оно слишком техническое
-		errStr := err.Error()
-		if len(errStr) > 100 {
-			return "Произошла ошибка при выполнении операции. Попробуйте еще раз."
-		}
-		return errStr
+		// Технический текст (часто на английском) пользователю не показываем
+		return "Произошла ошибка при выполнении операции. Попробуйте еще раз."
 	}
 }
 

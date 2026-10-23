@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
@@ -38,14 +39,15 @@ type CacheStorage interface {
 	// requestedDate - запрошенная дата (используется как ключ кэша)
 	// actualDate - фактическая дата курса из XML (сохраняется в Entry)
 	Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time)
-
-	// Clear очищает весь кэш
-	Clear()
 }
 
 // Ошибки конвертера
 var (
 	ErrNilRateProvider = errors.New("источник курсов не задан")
+	// ErrFetchRates оборачивает любую ошибку получения курсов от provider
+	ErrFetchRates = errors.New("не удалось получить курсы")
+	// ErrRateNotFound - в ответе нет курса запрошенной валюты (например, EUR до 1999 года)
+	ErrRateNotFound = errors.New("курс валюты не найден")
 )
 
 // Converter - конвертер валют с кэшированием
@@ -55,14 +57,13 @@ type Converter struct {
 }
 
 // NewConverter создает новый конвертер валют
-// provider - источник курсов валют (обычно parser.CBRParser)
+// provider - источник курсов валют (обычно parser.FetchRates через FetchRatesFunc)
 // cache - хранилище кэша (обычно cache.LRUCache)
 //
 // Пример использования:
 //
 //	cacheInstance := cache.NewLRUCache(100, 24*time.Hour)
-//	provider := parser.NewCBRParser(httpClient)
-//	converter := converter.NewConverter(provider, cacheInstance)
+//	conv := converter.NewConverter(converter.FetchRatesFunc(parser.FetchRates), cacheInstance)
 func NewConverter(provider RateProvider, cache CacheStorage) *Converter {
 	if cache == nil {
 		cache = noopCache{}
@@ -121,8 +122,11 @@ func (c *Converter) Convert(ctx context.Context, amount float64, currency models
 		return nil, err
 	}
 
-	// Конвертация
-	resultRUB := amount * rate
+	// Конвертация: точное произведение, округлённое до копеек
+	resultRUB := multiplyKopecks(amount, rate)
+	if math.IsInf(resultRUB, 0) {
+		return nil, ErrAmountTooLarge
+	}
 
 	// Форматирование
 	formatted := FormatResult(amount, rate, currency, resultRUB)
@@ -159,7 +163,7 @@ func (c *Converter) getRateInternal(ctx context.Context, currency models.Currenc
 		// Курса нет в кэше - получаем через provider
 		rateData, err := c.provider.FetchRates(ctx, normalizedDate)
 		if err != nil {
-			return 0, time.Time{}, fmt.Errorf("failed to fetch rates: %w", err)
+			return 0, time.Time{}, fmt.Errorf("%w: %w", ErrFetchRates, err)
 		}
 		if rateData == nil {
 			return 0, time.Time{}, errors.New("rate provider returned nil data")
@@ -171,12 +175,14 @@ func (c *Converter) getRateInternal(ctx context.Context, currency models.Currenc
 		// Извлекаем курс для нужной валюты
 		exchangeRate, exists := rateData.Rates[currency]
 		if !exists {
-			return 0, time.Time{}, fmt.Errorf("currency %s not found in rates", currency)
+			return 0, time.Time{}, fmt.Errorf("%w: %s", ErrRateNotFound, currency)
 		}
 
 		rate = exchangeRate.Rate
 		if exchangeRate.Nominal > 1 {
-			rate = rate / float64(exchangeRate.Nominal)
+			// Десятично, а не во float64: 70.0025/10 во float64 даёт
+			// 7.000249999999999, и точное умножение потом теряет копейку
+			rate = divideNominal(rate, exchangeRate.Nominal)
 		}
 
 		// Сохраняем в кэш дважды для максимальной эффективности:
@@ -226,5 +232,3 @@ func (noopCache) Get(currency models.Currency, date time.Time) (float64, time.Ti
 
 func (noopCache) Set(currency models.Currency, requestedDate time.Time, rate float64, actualDate time.Time) {
 }
-
-func (noopCache) Clear() {}

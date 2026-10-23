@@ -24,6 +24,7 @@ var (
 	ErrNoXMLRates     = errors.New("no exchange rates found in XML")
 	ErrInvalidXMLRate = errors.New("invalid rate format in XML")
 	ErrXMLTooLarge    = errors.New("XML response exceeds size limit")
+	ErrInvalidXMLDate = errors.New("invalid rates date in XML")
 )
 
 // maxXMLSize ограничивает максимальный размер XML ответа от ЦБ РФ (4 MB)
@@ -97,12 +98,18 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 		return nil, ErrNoXMLRates
 	}
 
-	// Определяем дату курсов из XML (ЦБ может вернуть прошлый рабочий день)
-	parsedDate := date
-	if valCurs.Date != "" {
-		if parsed, err := time.ParseInLocation("02.01.2006", valCurs.Date, date.Location()); err == nil {
-			parsedDate = parsed
-		}
+	// Дата курсов из XML: на выходные и праздники ЦБ возвращает прошлый
+	// рабочий день, и именно её интерфейс показывает как фактическую.
+	// Без валидной даты подменять её запрошенной нельзя: пользователь увидел
+	// бы «курс за воскресенье», которого не существует
+	parsedDate, err := time.ParseInLocation("02.01.2006", valCurs.Date, date.Location())
+	if err != nil {
+		return nil, fmt.Errorf("%w: date %q", ErrInvalidXMLDate, valCurs.Date)
+	}
+	// Курс не может действовать с даты позже запрошенной (сравнение календарных дат)
+	ry, rm, rd := date.Date()
+	if parsedDate.After(time.Date(ry, rm, rd, 0, 0, 0, 0, date.Location())) {
+		return nil, fmt.Errorf("%w: %s is later than requested %s", ErrInvalidXMLDate, valCurs.Date, date.Format("02.01.2006"))
 	}
 
 	// Создаём RateData через NewRateData для единообразия
@@ -110,7 +117,7 @@ func ParseXML(r io.Reader, date time.Time) (*models.RateData, error) {
 
 	for _, valute := range valCurs.Valutes {
 		// Парсим код валюты
-		currency, err := parseCurrency(valute.CharCode)
+		currency, err := models.ParseCurrency(valute.CharCode)
 		if err != nil {
 			// Пропускаем неподдерживаемые валюты (например, SDR)
 			continue

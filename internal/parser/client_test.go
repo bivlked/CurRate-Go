@@ -307,7 +307,7 @@ func TestHTTPClientRedirects(t *testing.T) {
 
 	t.Run("Автоматическая обработка редиректов", func(t *testing.T) {
 		requestCount := 0
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestCount++
 			switch r.URL.Path {
 			case "/":
@@ -322,6 +322,7 @@ func TestHTTPClientRedirects(t *testing.T) {
 		defer server.Close()
 
 		client := newHTTPClient()
+		client.Transport = server.Client().Transport // доверие к тестовому сертификату
 		resp, err := doRequest(ctx, client, server.URL)
 		if err != nil {
 			t.Fatalf("Не ожидалась ошибка для редиректа: %v", err)
@@ -363,16 +364,39 @@ func TestHTTPClientRedirects(t *testing.T) {
 		client := newHTTPClient()
 
 		// Создаем запрос с менее чем 10 редиректами
-		req, _ := http.NewRequest("GET", "http://example.com", nil)
+		req, _ := http.NewRequest("GET", "https://example.com", nil)
 		via := make([]*http.Request, 5)
 		for i := 0; i < 5; i++ {
-			via[i], _ = http.NewRequest("GET", "http://example.com", nil)
+			via[i], _ = http.NewRequest("GET", "https://example.com", nil)
 		}
 
 		err := client.CheckRedirect(req, via)
 		// Теперь возвращаем nil для автоматической обработки редиректа
 		if err != nil {
 			t.Errorf("Ожидался nil для <10 редиректов (автоматическая обработка), получена ошибка: %v", err)
+		}
+	})
+
+	t.Run("Редирект с HTTPS на HTTP запрещён", func(t *testing.T) {
+		plain := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			t.Error("запрос не должен дойти до HTTP-сервера")
+		}))
+		defer plain.Close()
+
+		tlsServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, plain.URL, http.StatusFound)
+		}))
+		defer tlsServer.Close()
+
+		client := newHTTPClient()
+		client.Transport = tlsServer.Client().Transport
+		resp, err := doRequest(ctx, client, tlsServer.URL)
+		if err == nil {
+			resp.Body.Close()
+			t.Fatal("Ожидалась ошибка для редиректа на HTTP")
+		}
+		if !strings.Contains(err.Error(), "non-HTTPS") {
+			t.Errorf("Ожидалась ошибка про non-HTTPS, получена: %v", err)
 		}
 	})
 }
@@ -397,4 +421,28 @@ func BenchmarkDoRequest(b *testing.B) {
 		io.ReadAll(resp.Body)
 		resp.Body.Close()
 	}
+}
+
+// Настоящий sleeper (не подмена): отменённый контекст прерывает ожидание
+// backoff сразу, без ожидания полной задержки
+func TestDefaultSleepWithContext(t *testing.T) {
+	t.Run("Отмена контекста", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		start := time.Now()
+		err := defaultSleepWithContext(ctx, time.Hour)
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("defaultSleepWithContext() error = %v, want context.Canceled", err)
+		}
+		if elapsed := time.Since(start); elapsed > time.Second {
+			t.Errorf("ожидание не прервано: %v", elapsed)
+		}
+	})
+
+	t.Run("Задержка истекла", func(t *testing.T) {
+		if err := defaultSleepWithContext(context.Background(), time.Millisecond); err != nil {
+			t.Fatalf("defaultSleepWithContext() error = %v, want nil", err)
+		}
+	})
 }

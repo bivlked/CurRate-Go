@@ -105,13 +105,20 @@ function autoFormatDate(value) {
  * Валидирует ввод цифры на определенной позиции в дате
  * @param {string} currentValue - Текущее значение поля
  * @param {string} newChar - Новая вводимая цифра
- * @param {number} cursorPos - Позиция курсора
+ * @param {number} cursorPos - Позиция курсора (начало выделения)
+ * @param {number} [selectionEnd] - Конец выделения; выделенный текст заменяется вводом
  * @returns {boolean} true если ввод допустим
  */
-function isValidDateChar(currentValue, newChar, cursorPos) {
+function isValidDateChar(currentValue, newChar, cursorPos, selectionEnd = cursorPos) {
     // Разрешаем только цифры
     if (!/^\d$/.test(newChar)) {
         return false;
+    }
+
+    // Выделенный фрагмент будет заменён: проверяем значение без него.
+    // Иначе дату, выделенную при фокусе, нельзя перепечатать поверх
+    if (selectionEnd > cursorPos) {
+        currentValue = currentValue.slice(0, cursorPos) + currentValue.slice(selectionEnd);
     }
     
     // Убираем все нецифровые символы для анализа
@@ -217,7 +224,7 @@ function parseAmount(str) {
         const commaPos = cleaned.lastIndexOf(',');
         
         if (dotPos > commaPos) {
-            // Американский формат: 1,000.50 или 123,456,78.9
+            // Американский формат: 1,000.50 или 123,456,789.9
             // Точка после последней запятой - это дробная часть
             // Убираем все запятые (разделители тысяч), оставляем точку
             normalized = cleaned.replace(/,/g, '');
@@ -227,22 +234,32 @@ function parseAmount(str) {
             // Убираем точки (разделители тысяч), заменяем запятую на точку
             normalized = cleaned.replace(/\./g, '').replace(',', '.');
         }
+        // Группировка тысяч в целой части должна быть корректной:
+        // "1,000.50" допустимо, "12,34.5" и "1..000,5" - нет
+        const thousandsSep = dotPos > commaPos ? ',' : '.';
+        const intPart = cleaned.slice(0, Math.max(dotPos, commaPos));
+        if (!isValidGrouping(intPart, thousandsSep)) {
+            return null;
+        }
     } else if (hasComma) {
         // Только запятая
         const commaCount = (cleaned.match(/,/g) || []).length;
         if (commaCount === 1) {
             const parts = cleaned.split(',');
             // Тысячный разделитель: ровно 3 цифры после запятой И целая часть
-            // без ведущего нуля (1,000 → 1000). Ведущий ноль означает
-            // десятичную дробь: 0,500 → 0.5, а не 500
-            if (parts[1].length === 3 && parts[0].length >= 1 && !parts[0].startsWith('0')) {
+            // из 1-3 цифр без ведущего нуля (1,000 → 1000). Ведущий ноль означает
+            // десятичную дробь: 0,500 → 0.5, а не 500; 1234,567 - тоже дробь
+            if (parts[1].length === 3 && /^[1-9]\d{0,2}$/.test(parts[0])) {
                 normalized = cleaned.replace(',', '');
             } else {
                 // Иначе — десятичный разделитель (1,5 → 1.5)
                 normalized = cleaned.replace(',', '.');
             }
         } else {
-            // Несколько запятых — разделители тысяч
+            // Несколько запятых - разделители тысяч, но только в виде 1,234,567
+            if (!isValidGrouping(cleaned, ',')) {
+                return null;
+            }
             normalized = cleaned.replace(/,/g, '');
         }
     } else if (hasDot) {
@@ -251,16 +268,19 @@ function parseAmount(str) {
         if (dotCount === 1) {
             const parts = cleaned.split('.');
             // Тысячный разделитель: ровно 3 цифры после точки И целая часть
-            // без ведущего нуля (1.000 → 1000). Ведущий ноль означает
-            // десятичную дробь: 0.500 → 0.5, а не 500
-            if (parts[1].length === 3 && parts[0].length >= 1 && !parts[0].startsWith('0')) {
+            // из 1-3 цифр без ведущего нуля (1.000 → 1000). Ведущий ноль означает
+            // десятичную дробь: 0.500 → 0.5, а не 500; 1234.567 - тоже дробь
+            if (parts[1].length === 3 && /^[1-9]\d{0,2}$/.test(parts[0])) {
                 normalized = cleaned.replace('.', '');
             } else {
                 // Иначе — десятичный разделитель (1.5 → 1.5)
                 normalized = cleaned;
             }
         } else {
-            // Несколько точек — разделители тысяч
+            // Несколько точек - разделители тысяч, но только в виде 1.234.567
+            if (!isValidGrouping(cleaned, '.')) {
+                return null;
+            }
             normalized = cleaned.replace(/\./g, '');
         }
     } else {
@@ -283,6 +303,23 @@ function parseAmount(str) {
     }
 
     return num;
+}
+
+/**
+ * Проверяет группировку тысяч: 1-3 цифры, затем группы ровно по 3 цифры
+ * ("1,234,567"). Строка без разделителя тоже допустима ("1234").
+ * Отсекает опечатки вида "1..2" или "12,34,56", которые иначе молча
+ * превратились бы в 12 и 123456
+ * @param {string} intPart - Целая часть числа
+ * @param {string} sep - Разделитель тысяч ('.' или ',')
+ * @returns {boolean} true если группировка корректна
+ */
+function isValidGrouping(intPart, sep) {
+    if (!intPart.includes(sep)) {
+        return /^-?\d+$/.test(intPart);
+    }
+    const grouped = sep === '.' ? /^-?\d{1,3}(?:\.\d{3})+$/ : /^-?\d{1,3}(?:,\d{3})+$/;
+    return grouped.test(intPart);
 }
 
 /**
@@ -362,12 +399,12 @@ async function copyToClipboard(text) {
         document.body.appendChild(textArea);
         textArea.select();
         try {
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            return true;
+            // execCommand сообщает о неудаче возвратом false, а не исключением
+            return document.execCommand('copy');
         } catch (err) {
-            document.body.removeChild(textArea);
             return false;
+        } finally {
+            document.body.removeChild(textArea);
         }
     }
 }

@@ -38,13 +38,24 @@ if (-not [string]::IsNullOrEmpty($BotToken) -and -not [string]::IsNullOrEmpty($C
     Write-Host "Telegram интеграция: ОТКЛЮЧЕНА" -ForegroundColor Yellow
 }
 
+# Wails печатает переданные ldflags в свой вывод, а значит и токен.
+# Пропускаем вывод через фильтр, который маскирует токен
+function Invoke-Wails {
+    & wails @args 2>&1 | ForEach-Object {
+        $line = "$_"
+        if ($BotToken) { $line = $line.Replace($BotToken, '***') }
+        Write-Host $line
+    }
+}
+
 # Сборка
 if ($Dev) {
     Write-Host "Запуск в режиме разработки..."
-    wails dev
+    # Без ldflags токены не внедряются, и SendStar в dev-режиме недоступен
+    Invoke-Wails dev -ldflags $ldflags
 } else {
     Write-Host "Сборка production версии..."
-    wails build -clean -ldflags $ldflags
+    Invoke-Wails build -clean -ldflags $ldflags
 
     if ($LASTEXITCODE -eq 0) {
         $exePath = "build\bin\CurRate.exe"
@@ -52,6 +63,9 @@ if ($Dev) {
         if ($UPX) {
             Write-Host "Применение UPX сжатия..."
             upx --best --lzma $exePath
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "UPX сжатие не удалось, используется несжатый файл"
+            }
         }
 
         $size = [math]::Round((Get-Item $exePath).Length / 1MB, 2)

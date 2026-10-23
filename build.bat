@@ -43,10 +43,10 @@ if "%MODE%"=="dev" (
     echo [INFO] No optimization flags applied
     echo.
     wails build
-    if %ERRORLEVEL% NEQ 0 (
+    if errorlevel 1 (
         echo.
-        echo [ERROR] Build failed!
-        exit /b 1
+        echo [ERROR] Build failed.
+        goto :fail
     )
     goto :check
 )
@@ -54,13 +54,13 @@ if "%MODE%"=="dev" (
 REM Production build
 if "%MODE%"=="prod" (
     echo [INFO] Building production version...
-    echo [INFO] Optimization flags: -s -w (strip symbols, no debug info)
+    echo [INFO] Optimization flags: -s -w ^(strip symbols, no debug info^)
     echo.
     wails build -clean -ldflags "-s -w"
-    if %ERRORLEVEL% NEQ 0 (
+    if errorlevel 1 (
         echo.
-        echo [ERROR] Build failed!
-        exit /b 1
+        echo [ERROR] Build failed.
+        goto :fail
     )
     goto :check
 )
@@ -68,24 +68,24 @@ if "%MODE%"=="prod" (
 REM Production build with UPX
 if "%MODE%"=="prod-upx" (
     echo [INFO] Building production version with UPX compression...
-    echo [INFO] Optimization flags: -s -w (strip symbols, no debug info)
+    echo [INFO] Optimization flags: -s -w ^(strip symbols, no debug info^)
     echo.
     wails build -clean -ldflags "-s -w"
-    if %ERRORLEVEL% NEQ 0 (
+    if errorlevel 1 (
         echo.
-        echo [ERROR] Build failed!
-        exit /b 1
+        echo [ERROR] Build failed.
+        goto :fail
     )
     
     echo.
     echo [INFO] Checking for UPX...
     where upx >nul 2>&1
-    if %ERRORLEVEL% EQU 0 (
+    if not errorlevel 1 (
         echo [INFO] UPX found. Compressing binary...
-        echo [INFO] UPX flags: --best --lzma (best compression)
+        echo [INFO] UPX flags: --best --lzma ^(best compression^)
         echo.
         upx --best --lzma build\bin\CurRate.exe
-        if %ERRORLEVEL% EQU 0 (
+        if not errorlevel 1 (
             echo.
             echo [SUCCESS] UPX compression complete!
         ) else (
@@ -118,7 +118,7 @@ set EXE_PATH=build\bin\CurRate.exe
 if exist "%EXE_PATH%" (
     echo.
     echo ========================================
-    echo [SUCCESS] Build completed successfully!
+    echo [SUCCESS] Build completed successfully.
     echo ========================================
     echo.
     echo File: %EXE_PATH%
@@ -131,7 +131,7 @@ if exist "%EXE_PATH%" (
         set /a SIZE_KB=!SIZE!/1024
     )
     
-    echo Size: !SIZE_MB! MB (!SIZE_KB! KB)
+    echo Size: !SIZE_MB! MB ^(!SIZE_KB! KB^)
     echo.
     
     REM Детальная информация о файле
@@ -152,6 +152,11 @@ if exist "%EXE_PATH%" (
     echo [INFO] Check the build output above for errors.
     exit /b 1
 )
+
+REM exit /b внутри блока ( ... ) не прерывает его остаток: следующий за ним
+REM goto :check увёл бы в ветку успеха с кодом 0. Из блока выходим через goto
+:fail
+exit /b 1
 
 endlocal
 
