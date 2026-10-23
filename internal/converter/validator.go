@@ -9,8 +9,9 @@ import (
 
 // Ошибки валидации
 var (
-	ErrInvalidAmount = errors.New("сумма должна быть положительным числом")
-	ErrDateInFuture  = errors.New("дата не может быть в будущем")
+	ErrInvalidAmount  = errors.New("сумма должна быть положительным числом")
+	ErrAmountTooLarge = errors.New("сумма слишком велика")
+	ErrDateInFuture   = errors.New("дата не может быть в будущем")
 )
 
 // ValidateAmount проверяет корректность суммы для конвертации
@@ -29,9 +30,11 @@ func ValidateAmount(amount float64) error {
 }
 
 // ValidateDate проверяет корректность даты для получения курса
-// Дата не может быть в будущем (больше текущего времени)
-// Сравнение выполняется по календарным датам (год, месяц, день) в локальной временной зоне
-// для корректной работы с разными временными зонами
+// Дата не может быть в будущем: календарная дата (год, месяц, день) в её
+// собственной временной зоне сравнивается с сегодняшней локальной датой.
+// Именно эта календарная дата уходит в запрос к ЦБ (buildURL), поэтому
+// перевод в другую зону здесь недопустим: 24.10 00:00 UTC+14 в Москве ещё
+// 23.10, но запрошен будет курс на 24.10
 //
 // Пример использования:
 //
@@ -39,22 +42,11 @@ func ValidateAmount(amount float64) error {
 //	    return err
 //	}
 func ValidateDate(date time.Time) error {
-	// Нормализуем входную дату (только дата, без времени) в её исходной временной зоне
-	normalized := normalizeDate(date)
-
-	// Конвертируем нормализованную дату в локальную временную зону и извлекаем календарную дату
-	normalizedInLocal := normalized.In(time.Local)
-	dateYear, dateMonth, dateDay := normalizedInLocal.Date()
-
-	// Получаем текущее время в локальной временной зоне и извлекаем календарную дату
-	nowLocal := time.Now()
-	nowYear, nowMonth, nowDay := nowLocal.Date()
-
-	// Сравниваем календарные даты (год, месяц, день) в локальной временной зоне
-	// Это гарантирует корректное сравнение независимо от временной зоны входной даты
-	if dateYear > nowYear ||
-		(dateYear == nowYear && dateMonth > nowMonth) ||
-		(dateYear == nowYear && dateMonth == nowMonth && dateDay > nowDay) {
+	y, m, d := date.Date()
+	ny, nm, nd := time.Now().Date()
+	requested := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	today := time.Date(ny, nm, nd, 0, 0, 0, 0, time.UTC)
+	if requested.After(today) {
 		return ErrDateInFuture
 	}
 	return nil

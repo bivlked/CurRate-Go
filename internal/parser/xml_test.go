@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bivlked/currate-go/internal/models"
 )
@@ -180,7 +181,10 @@ func TestParseXML_InvalidXML(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			date := testPastDateUTC()
 			dateStr := formatCBRDate(date)
-			xmlData := fmt.Sprintf(tt.xmlData, dateStr)
+			xmlData := tt.xmlData
+			if strings.Contains(xmlData, "%s") {
+				xmlData = fmt.Sprintf(xmlData, dateStr)
+			}
 			reader := strings.NewReader(xmlData)
 
 			_, err := ParseXML(reader, date)
@@ -420,10 +424,49 @@ func TestParseXML_InvalidNominal(t *testing.T) {
 	}
 }
 
-// TestParseXML_InvalidDateInXML проверяет fallback на переданную дату при некорректной дате в XML
+// TestParseXML_InvalidDateInXML проверяет, что ответ без валидной даты курсов
+// или с датой позже запрошенной отвергается, а не получает запрошенную дату
 func TestParseXML_InvalidDateInXML(t *testing.T) {
+	requested := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC)
+	const valute = `
+    <Valute ID="R01235">
+        <NumCode>840</NumCode>
+        <CharCode>USD</CharCode>
+        <Nominal>1</Nominal>
+        <Name>Доллар США</Name>
+        <Value>80,7220</Value>
+    </Valute>`
+
+	tests := []struct {
+		name   string
+		header string
+	}{
+		{"Некорректная дата", `<ValCurs Date="invalid-date" name="Foreign Currency Market">`},
+		{"Нет атрибута Date", `<ValCurs name="Foreign Currency Market">`},
+		{"Дата позже запрошенной", `<ValCurs Date="21.12.2025" name="Foreign Currency Market">`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			xmlData := `<?xml version="1.0" encoding="UTF-8"?>` + "\n" + tt.header + valute + "\n</ValCurs>"
+
+			result, err := ParseXML(strings.NewReader(xmlData), requested)
+			if !errors.Is(err, ErrInvalidXMLDate) {
+				t.Fatalf("ParseXML() error = %v, want ErrInvalidXMLDate", err)
+			}
+			if result != nil {
+				t.Errorf("ParseXML() result = %v, want nil", result)
+			}
+		})
+	}
+}
+
+// TestParseXML_EarlierDateInXML: запрос на выходной - ЦБ отвечает пятницей,
+// это штатный случай и дата из XML становится фактической
+func TestParseXML_EarlierDateInXML(t *testing.T) {
+	requested := time.Date(2025, 12, 21, 0, 0, 0, 0, time.UTC) // воскресенье
 	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<ValCurs Date="invalid-date" name="Foreign Currency Market">
+<ValCurs Date="20.12.2025" name="Foreign Currency Market">
     <Valute ID="R01235">
         <NumCode>840</NumCode>
         <CharCode>USD</CharCode>
@@ -433,17 +476,12 @@ func TestParseXML_InvalidDateInXML(t *testing.T) {
     </Valute>
 </ValCurs>`
 
-	reader := strings.NewReader(xmlData)
-	fallbackDate := testPastDateUTC()
-
-	result, err := ParseXML(reader, fallbackDate)
+	result, err := ParseXML(strings.NewReader(xmlData), requested)
 	if err != nil {
-		t.Fatalf("ParseXML() error = %v, want nil", err)
+		t.Fatalf("ParseXML() error = %v", err)
 	}
-
-	// Должна использоваться fallback дата, так как дата в XML некорректна
-	if !result.Date.Equal(fallbackDate) {
-		t.Errorf("result.Date = %v, want %v (fallback date)", result.Date, fallbackDate)
+	if want := time.Date(2025, 12, 20, 0, 0, 0, 0, time.UTC); !result.Date.Equal(want) {
+		t.Errorf("result.Date = %v, want %v", result.Date, want)
 	}
 }
 

@@ -251,3 +251,55 @@ type mockTransport struct {
 func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m.handler(req)
 }
+
+// HTTP 200 без подтверждения ok=true (страница прокси) - не успех
+func TestSendStar_OKWithoutConfirmation(t *testing.T) {
+	origToken, origChat := botToken, chatID
+	defer func() { botToken, chatID = origToken, origChat }()
+	botToken, chatID = "test-token", "12345"
+
+	for name, body := range map[string]string{
+		"HTML-страница": "<html>proxy login</html>",
+		"Пустое тело":   "",
+		"ok=false":      `{"ok":false}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			client := &Client{httpClient: &http.Client{Transport: &mockTransport{
+				handler: func(req *http.Request) (*http.Response, error) {
+					recorder := httptest.NewRecorder()
+					recorder.WriteHeader(http.StatusOK)
+					recorder.WriteString(body)
+					return recorder.Result(), nil
+				},
+			}}}
+
+			if err := client.SendStar("user-123", "1.0.0"); err == nil {
+				t.Fatal("expected error when Telegram did not confirm sending")
+			}
+		})
+	}
+}
+
+// Тело ответа с ошибкой (например, от прокси) может цитировать URL с токеном
+func TestSendStar_HTTPErrorBodyDoesNotLeakToken(t *testing.T) {
+	origToken, origChat := botToken, chatID
+	defer func() { botToken, chatID = origToken, origChat }()
+	botToken, chatID = "SECRET-BOT-TOKEN-12345", "12345"
+
+	client := &Client{httpClient: &http.Client{Transport: &mockTransport{
+		handler: func(req *http.Request) (*http.Response, error) {
+			recorder := httptest.NewRecorder()
+			recorder.WriteHeader(http.StatusBadGateway)
+			recorder.WriteString("upstream error for " + req.URL.String())
+			return recorder.Result(), nil
+		},
+	}}}
+
+	err := client.SendStar("user-123", "1.0.0")
+	if err == nil {
+		t.Fatal("expected error on HTTP 502")
+	}
+	if strings.Contains(err.Error(), botToken) {
+		t.Errorf("error must not contain botToken, got: %v", err)
+	}
+}

@@ -39,9 +39,3 @@ func NewRateData(date time.Time) *RateData {
 func (rd *RateData) AddRate(rate ExchangeRate) {
 	rd.Rates[rate.Currency] = rate
 }
-
-// GetRate возвращает курс валюты, если он есть
-func (rd *RateData) GetRate(currency Currency) (ExchangeRate, bool) {
-	rate, ok := rd.Rates[currency]
-	return rate, ok
-}

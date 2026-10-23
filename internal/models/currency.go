@@ -51,20 +51,6 @@ func (c Currency) String() string {
 	return string(c)
 }
 
-// Name возвращает полное название валюты на русском
-func (c Currency) Name() string {
-	switch c {
-	case USD:
-		return "Доллар США"
-	case EUR:
-		return "Евро"
-	case RUB:
-		return "Российский рубль"
-	default:
-		return string(c)
-	}
-}
-
 // ParseCurrency парсит строку в Currency и валидирует её
 // Нормализует ввод: убирает пробелы и приводит к верхнему регистру
 // Возвращает ошибку, если валюта не поддерживается

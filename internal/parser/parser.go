@@ -7,8 +7,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
-	"github.com/bivlked/currate-go/internal/models"
 )
 
 // Ошибки парсинга
@@ -61,17 +59,4 @@ func parseNominal(s string) (int, error) {
 	}
 
 	return nominal, nil
-}
-
-// parseCurrency конвертирует трехбуквенный код валюты в тип Currency
-// Возвращает ошибку для неподдерживаемых валют
-func parseCurrency(code string) (models.Currency, error) {
-	code = strings.ToUpper(strings.TrimSpace(code))
-
-	currency := models.Currency(code)
-	if err := currency.Validate(); err != nil {
-		return "", fmt.Errorf("%w: %s", models.ErrUnsupportedCurrency, code)
-	}
-
-	return currency, nil
 }

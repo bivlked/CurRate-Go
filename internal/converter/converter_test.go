@@ -65,13 +65,6 @@ func (m *MockCacheStorage) Set(currency models.Currency, requestedDate time.Time
 	}
 }
 
-func (m *MockCacheStorage) Clear() {
-	m.data = make(map[string]struct {
-		rate       float64
-		actualDate time.Time
-	})
-}
-
 // Тесты для проблемы 4: Rate date - использование фактической даты из XML
 
 // TestConverter_Convert_UsesActualDateFromXML проверяет, что Convert использует фактическую дату из XML
@@ -322,6 +315,24 @@ func TestValidateDate(t *testing.T) {
 	}
 }
 
+// Сценарий: в Москве ещё сегодня, а дата пришла как завтрашняя полночь в UTC+14.
+// В ЦБ уйдёт запрос на завтра (buildURL берёт календарную дату), поэтому
+// валидация обязана её отвергнуть, а не сравнивать момент времени в Москве
+func TestValidateDate_CivilDateInOtherZone(t *testing.T) {
+	originalLocal := time.Local
+	time.Local = time.FixedZone("MSK", 3*60*60)
+	t.Cleanup(func() {
+		time.Local = originalLocal
+	})
+
+	tomorrow := time.Now().In(time.Local).AddDate(0, 0, 1)
+	date := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, time.FixedZone("UTC+14", 14*60*60))
+
+	if err := ValidateDate(date); !errors.Is(err, ErrDateInFuture) {
+		t.Fatalf("ValidateDate(%v) = %v, want ErrDateInFuture", date, err)
+	}
+}
+
 func TestValidateDateUTCInputWithNonUTCLocal(t *testing.T) {
 	originalLocal := time.Local
 	time.Local = time.FixedZone("UTC+10", 10*60*60)
@@ -428,6 +439,22 @@ func TestFormatNumber(t *testing.T) {
 			number:   0.0,
 			expected: "0,00",
 		},
+		{
+			// двоичное 1.005 = 1.00499999..., округлять надо по введённому 1.005
+			name:     "Половина копейки вверх (1.005)",
+			number:   1.005,
+			expected: "1,01",
+		},
+		{
+			name:     "Половина копейки вверх (2.675)",
+			number:   2.675,
+			expected: "2,68",
+		},
+		{
+			name:     "Чуть меньше половины",
+			number:   2.6749,
+			expected: "2,67",
+		},
 	}
 
 	for _, tt := range tests {
@@ -493,6 +520,47 @@ func TestFormatResult(t *testing.T) {
 	}
 }
 
+func TestMultiplyKopecks(t *testing.T) {
+	tests := []struct {
+		name   string
+		amount float64
+		rate   float64
+		want   float64
+	}{
+		// float64: 10 * 80.7225 = 807.2249999..., раньше выходило 807,22
+		{"Половина копейки вверх", 10, 80.7225, 807.23},
+		{"Половина копейки вверх, курс X.XX50", 1, 80.125, 80.13},
+		{"Дробная сумма", 2.5, 80.7225, 201.81},
+		{"Без округления", 1000, 80.7220, 80722},
+		{"Меньше половины копейки", 1, 80.7249, 80.72},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := multiplyKopecks(tt.amount, tt.rate); got != tt.want {
+				t.Errorf("multiplyKopecks(%v, %v) = %v, want %v", tt.amount, tt.rate, got, tt.want)
+			}
+		})
+	}
+}
+
+// Сверка с целочисленным эталоном: сумма в копейках * курс в 1e-4 руб.
+// даёт произведение в 1e-6 руб., половина копейки округляется вверх
+func TestMultiplyKopecks_MatchesIntegerArithmetic(t *testing.T) {
+	rates := []int64{807225, 801250, 921235, 780005, 1000050, 954325}
+	for _, rateUnits := range rates {
+		rate := float64(rateUnits) / 1e4
+		for cents := int64(1); cents <= 20000; cents++ {
+			amount := float64(cents) / 100
+			wantKopecks := (cents*rateUnits + 5000) / 10000
+			want := float64(wantKopecks) / 100
+			if got := multiplyKopecks(amount, rate); got != want {
+				t.Fatalf("multiplyKopecks(%v, %v) = %v, want %v", amount, rate, got, want)
+			}
+		}
+	}
+}
+
 // Тесты для converter.go
 
 func TestNewConverter(t *testing.T) {
@@ -550,9 +618,6 @@ func TestNewConverter_NilCacheUsesNoop(t *testing.T) {
 	if found {
 		t.Error("noopCache.Get() после Set должен все равно возвращать false")
 	}
-
-	// Clear не должен вызывать ошибок
-	converter.cache.Clear()
 }
 
 func TestConverter_Convert_NilProvider(t *testing.T) {
@@ -755,6 +820,40 @@ func TestConverter_Convert_ValidationErrors(t *testing.T) {
 				t.Errorf("Ожидалась ошибка %v, получена %v", tt.wantErr, err)
 			}
 		})
+	}
+}
+
+// Конечная сумма, произведение которой на курс не помещается в float64,
+// раньше давала +Inf и панику в formatNumber
+func TestConverter_Convert_AmountTooLarge(t *testing.T) {
+	date := testPastDateUTC()
+	rateData := models.NewRateData(date)
+	rateData.AddRate(models.ExchangeRate{Currency: models.USD, Rate: 80, Nominal: 1, Date: date})
+	converter := NewConverter(&MockRateProvider{rateData: rateData}, NewMockCache())
+
+	_, err := converter.Convert(context.Background(), 1e307, models.USD, date)
+	if !errors.Is(err, ErrAmountTooLarge) {
+		t.Fatalf("Convert(1e307) error = %v, want ErrAmountTooLarge", err)
+	}
+}
+
+// Результат для экрана (TargetAmount) и строка для буфера обмена должны
+// совпадать до копейки: обе берутся из одного округлённого значения
+func TestConverter_Convert_RoundsToKopecks(t *testing.T) {
+	date := testPastDateUTC()
+	rateData := models.NewRateData(date)
+	rateData.AddRate(models.ExchangeRate{Currency: models.USD, Rate: 80.7225, Nominal: 1, Date: date})
+	converter := NewConverter(&MockRateProvider{rateData: rateData}, NewMockCache())
+
+	result, err := converter.Convert(context.Background(), 10, models.USD, date)
+	if err != nil {
+		t.Fatalf("Convert() error = %v", err)
+	}
+	if result.TargetAmount != 807.23 {
+		t.Errorf("TargetAmount = %v, want 807.23", result.TargetAmount)
+	}
+	if want := "807,23 руб. ($10,00 по курсу 80,7225)"; result.FormattedStr != want {
+		t.Errorf("FormattedStr = %q, want %q", result.FormattedStr, want)
 	}
 }
 
@@ -1019,5 +1118,25 @@ func TestGetRate_NilProvider_USD(t *testing.T) {
 	}
 	if !errors.Is(err, ErrNilRateProvider) {
 		t.Errorf("expected ErrNilRateProvider, got: %v", err)
+	}
+}
+
+// FetchRatesFunc - адаптер, через который main подключает parser.FetchRates
+func TestFetchRatesFunc(t *testing.T) {
+	date := testPastDateUTC()
+	want := models.NewRateData(date)
+	var gotDate time.Time
+
+	provider := FetchRatesFunc(func(_ context.Context, d time.Time) (*models.RateData, error) {
+		gotDate = d
+		return want, nil
+	})
+
+	got, err := provider.FetchRates(context.Background(), date)
+	if err != nil || got != want {
+		t.Fatalf("FetchRates() = %v, %v; want %v, nil", got, err, want)
+	}
+	if !gotDate.Equal(date) {
+		t.Errorf("функция получила дату %v, want %v", gotDate, date)
 	}
 }

@@ -174,3 +174,27 @@ func TestGenerateUUID(t *testing.T) {
 		t.Errorf("expected RFC 4122 variant (fourth group starts with 8/9/a/b), got %c", firstChar)
 	}
 }
+
+// ID из отредактированного файла, не похожий на UUID, заменяется новым:
+// он уходит в Markdown-сообщение, и разметка в нём ломала бы отправку
+func TestGetOrCreateUserID_NonUUIDRegenerated(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("APPDATA", tmpDir)
+
+	appDir := filepath.Join(tmpDir, "CurRate")
+	if err := os.MkdirAll(appDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := json.Marshal(UserData{UserID: "`*evil*_markdown"})
+	if err := os.WriteFile(filepath.Join(appDir, "user.json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	userID, err := GetOrCreateUserID()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !uuidRegex.MatchString(userID) {
+		t.Fatalf("userID = %q, want regenerated UUID", userID)
+	}
+}

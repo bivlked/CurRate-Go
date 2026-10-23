@@ -2,13 +2,15 @@ package converter
 
 import (
 	"fmt"
+	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/bivlked/currate-go/internal/models"
 )
 
 // FormatResult форматирует результат конвертации в читаемую строку
-// Формат: "80 722,00 руб. ($1000.00 по курсу 80,7220)"
+// Формат: "80 722,00 руб. ($1 000,00 по курсу 80,7220)"
 //
 // Пример использования:
 //
@@ -20,8 +22,7 @@ func FormatResult(amount, rate float64, currency models.Currency, resultRUB floa
 	amountStr := formatNumber(amount)
 
 	// Форматируем курс: 4 знака после запятой
-	rateStr := fmt.Sprintf("%.4f", rate)
-	rateStr = strings.ReplaceAll(rateStr, ".", ",")
+	rateStr := strings.ReplaceAll(decimalRat(rate).FloatString(4), ".", ",")
 
 	symbol := currency.Symbol()
 
@@ -29,22 +30,42 @@ func FormatResult(amount, rate float64, currency models.Currency, resultRUB floa
 		resultStr, symbol, amountStr, rateStr)
 }
 
+// decimalRat возвращает точное десятичное значение x по его кратчайшему
+// представлению: 80.7225 -> 807225/10000, а не двоичное 80.72249999999999659...
+// Так округление идёт по тому числу, которое ввёл пользователь или прислал ЦБ.
+// x должен быть конечным (NaN и Inf отсекаются валидацией раньше)
+func decimalRat(x float64) *big.Rat {
+	r, ok := new(big.Rat).SetString(strconv.FormatFloat(x, 'f', -1, 64))
+	if !ok {
+		panic(fmt.Sprintf("converter: non-finite value %v", x))
+	}
+	return r
+}
+
+// multiplyKopecks перемножает сумму и курс точно и округляет до копеек
+// (половина копейки - вверх): 10 * 80.7225 = 807.225 -> 807.23.
+// Умножение float64 дало бы 807.2249999... и потерю копейки
+func multiplyKopecks(amount, rate float64) float64 {
+	product := new(big.Rat).Mul(decimalRat(amount), decimalRat(rate))
+	// FloatString(2) округляет половину от нуля; Float64 даёт ближайший
+	// float64 (для слишком большого произведения - ±Inf)
+	rounded, _ := new(big.Rat).SetString(product.FloatString(2))
+	result, _ := rounded.Float64()
+	return result
+}
+
 // formatNumber форматирует число с разделителями тысяч (пробел) и запятой
+// Округление до 2 знаков - половина вверх по десятичному значению
 // Примеры:
 //   - 1000.5 → "1 000,50"
 //   - 80722.0 → "80 722,00"
 //   - 123456789.12 → "123 456 789,12"
 func formatNumber(num float64) string {
-	// Форматируем с 2 знаками после запятой
-	str := fmt.Sprintf("%.2f", num)
-
-	// Заменяем точку на запятую
-	str = strings.ReplaceAll(str, ".", ",")
+	// big.Rat.FloatString округляет половину от нуля: 1.005 -> "1.01"
+	str := decimalRat(num).FloatString(2)
 
 	// Разделение на целую и дробную части
-	parts := strings.Split(str, ",")
-	intPart := parts[0]
-	decPart := parts[1]
+	intPart, decPart, _ := strings.Cut(str, ".")
 
 	// Добавление разделителей тысяч
 	intPart = addThousandsSeparator(intPart)
