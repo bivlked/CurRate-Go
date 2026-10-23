@@ -16,13 +16,13 @@
 |--------|----------|-------|--------|
 | `internal/models` | 100.0% | ✅ | Полное покрытие |
 | `internal/converter` | 98.8% | ✅ | Почти полное покрытие |
+| `internal/parser` | 98.3% | ✅ | Почти полное покрытие |
 | `internal/cache` | 97.8% | ✅ | Почти полное покрытие |
-| `internal/parser` | 97.5% | ✅ | Почти полное покрытие |
-| `internal/app` | 82.1% | ✅ | Хорошее покрытие |
-| `internal/telegram` | 78.2% | ✅ | Хорошее покрытие |
-| **Общее** | **>90%** | ✅ | Отличное покрытие |
+| `internal/app` | 86.2% | ✅ | Хорошее покрытие |
+| `internal/telegram` | 82.1% | ✅ | Хорошее покрытие |
+| **Общее** | **93.8%** | ✅ | Отличное покрытие |
 
-*Актуально на 2026-02-14. Проверить: `go test -cover ./internal/...`*
+*Актуально на 2026-10-23. Проверить: `go test -cover ./internal/...`*
 
 ---
 
@@ -53,6 +53,16 @@ go tool cover -html=coverage.out
 # Просмотреть покрытие в консоли
 go tool cover -func=coverage.out
 ```
+
+### Тесты frontend
+
+Чистые функции `frontend/scripts/utils.js` (разбор суммы, группировка тысяч, ввод даты, форматирование, копирование) проверяются встроенным `node:test`, без npm-зависимостей. Тесты лежат в `tests/frontend/`, а не в `frontend/`: всё содержимое `frontend/` встраивается в exe через `go:embed`.
+
+```bash
+node --test tests/frontend/utils.test.js
+```
+
+В CI они запускаются в job `test (ubuntu-latest, -race)`.
 
 ### Интеграционные тесты
 

@@ -276,6 +276,9 @@ go test -v ./...
 # Тесты с покрытием
 go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
+
+# Тесты frontend (Node.js 18+)
+node --test tests/frontend/utils.test.js
 ```
 
 ### Требования к тестам
