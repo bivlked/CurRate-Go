@@ -42,7 +42,7 @@ jobs:
 
       - name: Run frontend tests
         if: matrix.os == 'ubuntu-latest'
-        run: node --test tests/frontend/utils.test.js
+        run: node --test tests/frontend/utils.test.js tests/frontend/main.test.js
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7

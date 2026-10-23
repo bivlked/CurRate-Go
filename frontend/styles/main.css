@@ -434,7 +434,8 @@ input.control.error {
   position: relative;
 }
 
-.amount-input {
+/* input.control задаёт padding с большей специфичностью - повторяем класс */
+input.control.amount-input {
   width: 100%;
   padding-right: 32px; /* место под знак валюты */
   font-variant-numeric: tabular-nums;

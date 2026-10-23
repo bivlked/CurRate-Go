@@ -6,7 +6,7 @@
 let appInstance = null;
 
 /**
- * Последние полученные курсы для строки сравнения: { rate, actualDate } или null.
+ * Последние полученные курсы для строки сравнения: { rate, actualDate, currency } или null.
  * Обновляются только ответами на актуальные запросы (см. createRatePreview)
  */
 const rateState = {
@@ -575,12 +575,13 @@ function createRatePreview(cfg) {
             return;
         }
 
+        const currency = currencyInput.value;
         try {
-            const response = await appInstance.GetRate(currencyInput.value, dateStr);
+            const response = await appInstance.GetRate(currency, dateStr);
             if (id !== requestId) return; // пока ждали, ввод изменился
 
             if (response.success) {
-                rateState[cfg.stateKey] = { rate: response.rate, actualDate: response.actualDate };
+                rateState[cfg.stateKey] = { rate: response.rate, actualDate: response.actualDate, currency };
                 const title = response.actualDate && response.actualDate !== dateStr
                     ? `${cfg.what} за ${response.actualDate}: на ${dateStr} курс не устанавливался`
                     : `${cfg.what} на ${dateStr}`;
@@ -620,8 +621,9 @@ function createRatePreview(cfg) {
 
 /**
  * Обновляет строку сравнения курса с референсом. Пока любой из курсов
- * загружается, прежнее сравнение приглушено, чтобы не сопоставлять курс
- * новой даты со старым
+ * загружается, сравнение не пересчитывается: прежний текст (верный для
+ * прежней пары курсов) приглушён. Иначе после смены валюты пришедший
+ * первым курс EUR сравнился бы со старым курсом USD
  */
 function renderComparison() {
     const el = document.getElementById('ref-compare');
@@ -629,11 +631,16 @@ function renderComparison() {
     if (!el || !textEl) return;
 
     const loading = (mainPreview && mainPreview.isPending()) || (refPreview && refPreview.isPending());
+    el.classList.toggle('loading', loading);
+    el.setAttribute('aria-busy', loading ? 'true' : 'false');
+    if (loading) return;
+
     const main = rateState.main;
     const ref = rateState.ref;
-    const view = describeRateComparison(main && ref ? compareRates(main.rate, ref.rate) : null);
+    const comparable = main && ref && main.currency === ref.currency;
+    const view = describeRateComparison(comparable ? compareRates(main.rate, ref.rate) : null);
 
-    el.className = `compare ${view.className}${loading ? ' loading' : ''}`;
+    el.className = `compare ${view.className}`;
     textEl.textContent = view.text;
 }
 
