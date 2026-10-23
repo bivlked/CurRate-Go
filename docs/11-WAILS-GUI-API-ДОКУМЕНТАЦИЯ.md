@@ -97,6 +97,7 @@ type ConvertRequest struct {
 	Amount   float64 `json:"amount"`   // Сумма для конвертации (> 0)
 	Currency string  `json:"currency"` // Код валюты: "USD", "EUR" или "RUB" (для API)
 	Date     string  `json:"date"`     // Дата в формате "DD.MM.YYYY"
+	RefDate  string  `json:"refDate"`  // Референсная дата "DD.MM.YYYY" (необязательно)
 }
 
 **Примечание о валютах:**
@@ -111,6 +112,7 @@ type ConvertRequest struct {
 | `amount` | `float64` | ✅ | Сумма для конвертации | `1000.50` |
 | `currency` | `string` | ✅ | Код валюты (USD, EUR для UI; USD, EUR, RUB для API) | `"USD"` |
 | `date` | `string` | ✅ | Дата в российском формате | `"22.12.2025"` |
+| `refDate` | `string` | ❌ | Референсная дата: ту же сумму пересчитать по курсу на неё и вернуть разность | `"01.12.2025"` |
 
 #### Возвращаемое значение
 
@@ -121,6 +123,25 @@ type ConvertResponse struct {
 	Success bool   `json:"success"` // true если успех, false если ошибка
 	Result  string `json:"result"`  // Форматированная строка результата (если success=true)
 	Error   string `json:"error"`   // Сообщение об ошибке (если success=false)
+
+	// Поля для интерфейса
+	SourceAmount    float64 `json:"sourceAmount"`
+	TargetAmountRUB float64 `json:"targetAmountRUB"` // округлено до копеек (половина вверх)
+	Rate            float64 `json:"rate"`
+	Currency        string  `json:"currency"`
+	CurrencySymbol  string  `json:"currencySymbol"`
+	RequestedDate   string  `json:"requestedDate"`
+	ActualDate      string  `json:"actualDate"` // на выходные ЦБ отдаёт курс прошлого рабочего дня
+
+	// Референс (если refDate задан). Ошибка референса не отменяет основной
+	// результат: success=true, hasReference=false, текст в refError
+	HasReference     bool    `json:"hasReference"`
+	RefRate          float64 `json:"refRate"`
+	RefAmountRUB     float64 `json:"refAmountRUB"`
+	RefDiffRUB       float64 `json:"refDiffRUB"` // targetAmountRUB - refAmountRUB, точно до копейки
+	RefRequestedDate string  `json:"refRequestedDate"`
+	RefActualDate    string  `json:"refActualDate"`
+	RefError         string  `json:"refError"`
 }
 ```
 
@@ -308,9 +329,10 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse
 
 ```go
 type RateResponse struct {
-	Success bool    `json:"success"` // Успешность операции
-	Rate    float64 `json:"rate"`   // Курс валюты (если success=true)
-	Error   string  `json:"error"`  // Сообщение об ошибке (если success=false)
+	Success    bool    `json:"success"`    // Успешность операции
+	Rate       float64 `json:"rate"`       // Курс валюты (если success=true)
+	ActualDate string  `json:"actualDate"` // Фактическая дата курса "DD.MM.YYYY"
+	Error      string  `json:"error"`      // Сообщение об ошибке (если success=false)
 }
 ```
 
