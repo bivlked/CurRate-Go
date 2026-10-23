@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.2.1] - 2026-10-23
+
 ### Изменено (Changed)
 - Wails 2.12.0 -> 2.17.0 (защита dev-сервера от cross-origin, upstream mimetype; транзитивно echo 4.15.3 с закрытым GHSA-vfp3-v2gw-7wfq), `golang.org/x/text` 0.39.0 -> 0.43.0 (GO-2026-6629); govulncheck - уязвимостей нет
 - CI: `actions/checkout` v7, `actions/setup-go` v7 с `check-latest` (свежий патч Go вместо отстающего кэша раннера), `actions/cache` v6; Wails CLI ставится той же версии, что библиотека в go.mod; тесты frontend на `node:test`
