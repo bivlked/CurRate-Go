@@ -154,8 +154,9 @@
   border-color: #b71c1c;
 }
 
-/* Референсная дата: точка цвета референса под числом */
-.calendar-day.reference::after {
+/* Референсная дата: точка цвета референса под числом. На выбранном дне
+   точки нет: совпадение и так видно по строке «Совпадает с референсом» */
+.calendar-day.reference:not(.selected)::after {
   content: "";
   position: absolute;
   bottom: 2px;
@@ -165,8 +166,4 @@
   margin-left: -2px;
   border-radius: 50%;
   background: var(--ref-color);
-}
-
-.calendar-day.reference.selected::after {
-  background: #ffffff;
 }
