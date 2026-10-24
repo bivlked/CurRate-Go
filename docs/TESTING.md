@@ -56,10 +56,10 @@ go tool cover -func=coverage.out
 
 ### Тесты frontend
 
-Чистые функции `frontend/scripts/utils.js` (разбор суммы, группировка тысяч, ввод даты, форматирование, копирование) проверяются встроенным `node:test`, без npm-зависимостей. Тесты лежат в `tests/frontend/`, а не в `frontend/`: всё содержимое `frontend/` встраивается в exe через `go:embed`.
+Чистые функции `frontend/scripts/utils.js` (разбор суммы, группировка тысяч, ввод даты, форматирование, копирование, сравнение курса с референсом) проверяются встроенным `node:test`, без npm-зависимостей. `main.test.js` гоняет превью курсов и строку сравнения на фейковом DOM с управляемыми ответами `GetRate`: устаревшие ответы, смена валюты, недописанная дата. Тесты лежат в `tests/frontend/`, а не в `frontend/`: всё содержимое `frontend/` встраивается в exe через `go:embed`.
 
 ```bash
-node --test tests/frontend/utils.test.js
+node --test tests/frontend/utils.test.js tests/frontend/main.test.js
 ```
 
 В CI они запускаются в job `test (ubuntu-latest, -race)`.

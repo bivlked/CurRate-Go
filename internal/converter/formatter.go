@@ -54,6 +54,16 @@ func multiplyKopecks(amount, rate float64) float64 {
 	return result
 }
 
+// SubtractKopecks возвращает разность двух сумм в рублях (a - b), посчитанную
+// десятично и округлённую до копеек: 80538.10 - 79901.20 = 636.90 ровно,
+// а float64 дал бы 636.8999999999942
+func SubtractKopecks(a, b float64) float64 {
+	diff := new(big.Rat).Sub(decimalRat(a), decimalRat(b))
+	rounded, _ := new(big.Rat).SetString(diff.FloatString(2))
+	result, _ := rounded.Float64()
+	return result
+}
+
 // divideNominal делит курс за nominal единиц на nominal десятично и
 // возвращает ближайший float64: его кратчайшая запись совпадает с точным
 // частным (7.00025), поэтому decimalRat дальше восстановит его без потерь

@@ -6,6 +6,18 @@
 let appInstance = null;
 
 /**
+ * Последние полученные курсы для строки сравнения: { rate, actualDate, currency } или null.
+ * Обновляются только ответами на актуальные запросы (см. createRatePreview)
+ */
+const rateState = {
+    main: null,
+    ref: null
+};
+
+let mainPreview = null;
+let refPreview = null;
+
+/**
  * Инициализация приложения
  */
 function initApp() {
@@ -14,32 +26,48 @@ function initApp() {
     function checkWailsBindings() {
         if (typeof window.go !== 'undefined' && window.go.app && window.go.app.App) {
             appInstance = window.go.app.App;
-            
+
+            mainPreview = createRatePreview({
+                inputId: 'date-input',
+                boxId: 'rate-preview',
+                valueId: 'rate-value',
+                stateKey: 'main',
+                dateLabel: ''
+            });
+            refPreview = createRatePreview({
+                inputId: 'ref-date-input',
+                boxId: 'ref-rate-preview',
+                valueId: 'ref-rate-value',
+                stateKey: 'ref',
+                dateLabel: 'референсную дату '
+            });
+
             // Инициализация компонентов
             initCalendar(); // Сначала календарь
-            initDateInput(); // Затем поле даты (вызывает updateRatePreview)
+            initDateInput(); // Затем поля дат (запрашивают курсы)
+            initReferenceInput();
             initCurrencySelection();
             initAmountInput();
             initConvertButton();
             initCopyButton();
             initAboutButton();
-            
+
             // Показываем начальное сообщение
             showInfo('Готов к работе', 2000);
             return true;
         }
         return false;
     }
-    
+
     // Проверяем сразу
     if (checkWailsBindings()) {
         return;
     }
-    
+
     // Если не готово, ждем с повторными попытками
     let attempts = 0;
     const maxAttempts = 50; // 5 секунд максимум
-    
+
     const checkInterval = setInterval(() => {
         attempts++;
         if (checkWailsBindings()) {
@@ -47,88 +75,72 @@ function initApp() {
         } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
             console.error('Wails bindings not found after', attempts * 100, 'ms');
-            showError('Ошибка инициализации: Wails bindings не найдены. Убедитесь, что приложение запущено через "wails dev"');
+            showError('Ошибка инициализации приложения. Перезапустите программу.');
         }
     }, 100);
 }
 
 /**
- * Инициализация поля ввода даты
+ * Подключает к полю маску и проверку даты ДД.ММ.ГГГГ: фильтр клавиш (с учётом
+ * выделения), форматирование вставки, автоточки, проверка будущего.
+ * Общий код для поля даты курса и поля референсной даты
+ * @param {HTMLInputElement} input - Поле даты
+ * @param {{onValid: function(string, Date): void, onInvalid: function(): void}} handlers
+ *        onValid - дата полная и допустимая; onInvalid - пусто, не дописано или ошибка
  */
-function initDateInput() {
-    const dateInput = document.getElementById('date-input');
-    if (!dateInput) return;
-    
-    // Устанавливаем сегодняшнюю дату по умолчанию
-    const today = new Date();
-    dateInput.value = formatDate(today);
-    
-    // Устанавливаем дату в календаре (если он уже инициализирован)
-    if (typeof setCalendarDate === 'function') {
-        setCalendarDate(today);
-    }
-    
-    // Показываем курс на сегодня при запуске
-    // Используем setTimeout для гарантии, что appInstance готов и календарь инициализирован
-    setTimeout(() => {
-        if (appInstance) {
-            requestRatePreview();
-        }
-    }, 200);
-    
+function bindDateInput(input, handlers) {
     // Обработчик keydown для валидации ввода
-    dateInput.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', (e) => {
         // Разрешаем специальные клавиши и любые сочетания с Ctrl/Cmd
         // (включая вставку Ctrl+V - её форматирует обработчик paste)
         if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' ||
             e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
-            e.key === 'Home' || e.key === 'End' || e.ctrlKey || e.metaKey) {
+            e.key === 'Home' || e.key === 'End' || e.key === 'Enter' || e.key === 'Escape' ||
+            e.ctrlKey || e.metaKey) {
             return;
         }
 
         // Для остальных символов проверяем валидность
         if (e.key.length === 1) {
-            const cursorPos = dateInput.selectionStart || 0;
-            const selectionEnd = dateInput.selectionEnd ?? cursorPos;
-            if (!isValidDateChar(dateInput.value, e.key, cursorPos, selectionEnd)) {
+            const cursorPos = input.selectionStart || 0;
+            const selectionEnd = input.selectionEnd ?? cursorPos;
+            if (!isValidDateChar(input.value, e.key, cursorPos, selectionEnd)) {
                 e.preventDefault();
-                return false;
             }
         }
     });
-    
+
     // Обработчик paste для форматирования вставленного текста
-    dateInput.addEventListener('paste', (e) => {
+    input.addEventListener('paste', (e) => {
         e.preventDefault();
         const pastedText = (e.clipboardData || window.clipboardData).getData('text');
         const digits = pastedText.replace(/\D/g, '').slice(0, 8); // Ограничиваем до 8 цифр
         if (digits.length > 0) {
             const formatted = autoFormatDate(digits);
-            dateInput.value = formatted;
+            input.value = formatted;
 
-            // Явно вызываем событие input для запуска валидации и превью курса
-            // Это необходимо, потому что программная установка value не генерирует событие автоматически
-            dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Программная установка value не генерирует input: вызываем явно
+            input.dispatchEvent(new Event('input', { bubbles: true }));
 
             setTimeout(() => {
-                dateInput.setSelectionRange(formatted.length, formatted.length);
+                input.setSelectionRange(formatted.length, formatted.length);
             }, 0);
         }
     });
-    
-    // Обработчик input: автоформатирование + валидация + preview курса
-    dateInput.addEventListener('input', (e) => {
-        const value = e.target.value;
-        const cursorPos = e.target.selectionStart || 0;
+
+    // Обработчик input: автоформатирование + валидация
+    input.addEventListener('input', () => {
+        const value = input.value;
+        const cursorPos = input.selectionStart || 0;
 
         // Автоформатирование даты
         if (!value.includes('.')) {
             const formatted = autoFormatDate(value);
             if (formatted !== value) {
-                e.target.value = formatted;
+                input.value = formatted;
                 const newCursorPos = Math.min(cursorPos + (formatted.length - value.length), formatted.length);
                 setTimeout(() => {
-                    e.target.setSelectionRange(newCursorPos, newCursorPos);
+                    input.setSelectionRange(newCursorPos, newCursorPos);
                 }, 0);
             }
         } else {
@@ -136,59 +148,116 @@ function initDateInput() {
             if (digits.length > 0 && digits.length <= 8) {
                 const formatted = autoFormatDate(digits);
                 if (formatted !== value) {
-                    e.target.value = formatted;
+                    input.value = formatted;
                     setTimeout(() => {
                         const newCursorPos = Math.min(cursorPos, formatted.length);
-                        e.target.setSelectionRange(newCursorPos, newCursorPos);
+                        input.setSelectionRange(newCursorPos, newCursorPos);
                     }, 0);
                 }
             }
         }
 
-        // Валидация и обновление preview курса
-        const dateStr = dateInput.value.trim();
-
-        if (!dateStr) {
-            hideRatePreview();
-            return;
-        }
+        const dateStr = input.value.trim();
 
         // Неполная или неверная дата гасит превью сразу: иначе ответ на
         // запрос для прежней даты показал бы курс рядом с недописанной
-        if (!isValidDateFormat(dateStr)) {
+        if (!dateStr || !isValidDateFormat(dateStr)) {
             if (dateStr.length === 10) {
-                showError('Неверный формат даты. Используйте формат ДД.ММ.ГГГГ');
+                showError('Неверная дата. Используйте формат ДД.ММ.ГГГГ');
             }
-            hideRatePreview();
+            handlers.onInvalid();
             return;
         }
 
         const date = parseDate(dateStr);
-        if (!date) {
-            if (dateStr.length === 10) {
-                showError('Неверная дата');
-            }
-            hideRatePreview();
-            return;
-        }
-
         if (isFutureDate(date)) {
             showError('Дата не может быть в будущем');
-            hideRatePreview();
+            handlers.onInvalid();
             return;
         }
 
-        if (typeof setCalendarDate === 'function') {
-            setCalendarDate(date);
-        }
-        requestRatePreview();
+        handlers.onValid(dateStr, date);
         clearStatus();
     });
-    
-    // Обработчик фокуса
-    dateInput.addEventListener('focus', () => {
-        dateInput.select();
+
+    // При фокусе выделяем дату целиком: её можно сразу перепечатать
+    input.addEventListener('focus', () => {
+        input.select();
     });
+}
+
+/**
+ * Возвращает допустимую дату из поля или null (пусто, не дописано, будущее)
+ * @param {string} inputId - id поля даты
+ * @returns {string|null} Дата ДД.ММ.ГГГГ
+ */
+function readValidDate(inputId) {
+    const input = document.getElementById(inputId);
+    const dateStr = input ? input.value.trim() : '';
+    if (!dateStr || !isValidDateFormat(dateStr)) {
+        return null;
+    }
+    const date = parseDate(dateStr);
+    if (!date || isFutureDate(date)) {
+        return null;
+    }
+    return dateStr;
+}
+
+/**
+ * Инициализация поля даты курса
+ */
+function initDateInput() {
+    const dateInput = document.getElementById('date-input');
+    if (!dateInput) return;
+
+    // Устанавливаем сегодняшнюю дату по умолчанию
+    const today = new Date();
+    dateInput.value = formatDate(today);
+    setCalendarDate(today);
+
+    bindDateInput(dateInput, {
+        onValid: (dateStr, date) => {
+            setCalendarDate(date);
+            mainPreview.request();
+        },
+        onInvalid: () => mainPreview.invalidate()
+    });
+
+    // Курс на сегодня при запуске
+    mainPreview.request();
+}
+
+/**
+ * Инициализация референсной даты: при запуске - сегодня,
+ * кнопка «Сегодня» возвращает её к текущей дате
+ */
+function initReferenceInput() {
+    const refInput = document.getElementById('ref-date-input');
+    const todayBtn = document.getElementById('ref-today-btn');
+    if (!refInput) return;
+
+    bindDateInput(refInput, {
+        onValid: (dateStr, date) => {
+            setCalendarReference(date);
+            refPreview.request();
+        },
+        onInvalid: () => {
+            setCalendarReference(null);
+            refPreview.invalidate();
+        }
+    });
+
+    const setToday = () => {
+        refInput.value = formatDate(new Date());
+        refInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    if (todayBtn) {
+        todayBtn.addEventListener('click', setToday);
+    }
+
+    setToday();
 }
 
 /**
@@ -196,12 +265,27 @@ function initDateInput() {
  */
 function initCurrencySelection() {
     const currencyInputs = document.querySelectorAll('input[name="currency"]');
-    
+
     currencyInputs.forEach(input => {
         input.addEventListener('change', () => {
-            requestRatePreview();
+            updateAmountSuffix();
+            mainPreview.request();
+            refPreview.request();
         });
     });
+
+    updateAmountSuffix();
+}
+
+/**
+ * Знак выбранной валюты в поле суммы
+ */
+function updateAmountSuffix() {
+    const suffix = document.getElementById('amount-suffix');
+    const currencyInput = document.querySelector('input[name="currency"]:checked');
+    if (suffix && currencyInput) {
+        suffix.textContent = currencyInput.value === 'EUR' ? '€' : '$';
+    }
 }
 
 /**
@@ -210,20 +294,20 @@ function initCurrencySelection() {
 function initAmountInput() {
     const amountInput = document.getElementById('amount-input');
     if (!amountInput) return;
-    
+
     // Обработчик ввода
     amountInput.addEventListener('input', () => {
         const value = amountInput.value.trim();
-        
+
         if (value && parseAmount(value) === null) {
             amountInput.classList.add('error');
         } else {
             amountInput.classList.remove('error');
         }
     });
-    
+
     // Обработчик Enter
-    amountInput.addEventListener('keypress', (e) => {
+    amountInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             performConvert();
         }
@@ -236,7 +320,7 @@ function initAmountInput() {
 function initConvertButton() {
     const convertBtn = document.getElementById('convert-btn');
     if (!convertBtn) return;
-    
+
     convertBtn.addEventListener('click', performConvert);
 }
 
@@ -293,13 +377,6 @@ function initAboutButton() {
         }
     });
 
-    // Закрытие по Escape (встроено в dialog, но добавим для надёжности)
-    aboutModal.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            aboutModal.close();
-        }
-    });
-
     // Кнопка "Отправить звезду"
     if (sendStarBtn) {
         sendStarBtn.addEventListener('click', async () => {
@@ -322,7 +399,6 @@ function initAboutButton() {
                     sendStarBtn.disabled = false;
                 }
             } else {
-                // Заглушка, пока функционал не реализован
                 showInfo('Функция будет доступна в следующей версии', 3000);
             }
         });
@@ -339,7 +415,7 @@ async function performConvert() {
     const convertBtn = document.getElementById('convert-btn');
     const resultCard = document.getElementById('result-card');
     const resultText = document.getElementById('result-text');
-    
+
     if (!amountInput || !dateInput || !currencyInput || !convertBtn || !resultCard || !resultText) {
         showError('Ошибка: не найдены необходимые элементы интерфейса');
         return;
@@ -350,7 +426,7 @@ async function performConvert() {
     if (convertBtn.disabled) {
         return;
     }
-    
+
     // Валидация суммы
     const amount = parseAmount(amountInput.value);
     if (amount === null || amount <= 0) {
@@ -358,7 +434,7 @@ async function performConvert() {
         amountInput.focus();
         return;
     }
-    
+
     // Валидация даты
     const dateStr = dateInput.value.trim();
     if (!dateStr || !isValidDateFormat(dateStr)) {
@@ -366,57 +442,36 @@ async function performConvert() {
         dateInput.focus();
         return;
     }
-    
+
     const date = parseDate(dateStr);
     if (!date || isFutureDate(date)) {
         showError('Дата не может быть в будущем');
         dateInput.focus();
         return;
     }
-    
+
+    // Референс необязателен: недопустимая референсная дата просто не участвует
+    const refDate = readValidDate('ref-date-input') || '';
+
     // Получаем валюту
     const currency = currencyInput.value;
-    
+
     // Блокируем кнопку
     convertBtn.disabled = true;
     convertBtn.textContent = 'Конвертация...';
     clearStatus();
-    
+
     try {
         // Вызываем метод Go через Wails bindings
         const response = await appInstance.Convert({
             amount: amount,
             currency: currency,
-            date: dateStr
+            date: dateStr,
+            refDate: refDate
         });
-        
+
         if (response.success) {
-            // Храним полную строку результата для копирования
-            resultText.textContent = response.result;
-
-            // Заполняем улучшенный UI результата (если элементы доступны)
-            const resultAmountEl = document.getElementById('result-amount');
-            const resultMetaEl = document.getElementById('result-meta');
-
-            if (resultAmountEl && resultMetaEl) {
-                const amountRub = typeof response.targetAmountRUB === 'number'
-                    ? response.targetAmountRUB
-                    : NaN;
-                const rate = typeof response.rate === 'number' ? response.rate : NaN;
-                const srcAmount = typeof response.sourceAmount === 'number' ? response.sourceAmount : NaN;
-                const symbol = response.currencySymbol || '';
-                const requestedDate = response.requestedDate || '';
-                const actualDate = response.actualDate || '';
-
-                resultAmountEl.textContent = `${formatNumber(amountRub, 2)} ₽`;
-
-                const dateLine = (actualDate && requestedDate && actualDate !== requestedDate)
-                    ? `Курс фактически за ${actualDate} (запрошено ${requestedDate})`
-                    : (actualDate ? `Курс за ${actualDate}` : '');
-
-                resultMetaEl.textContent = `${dateLine}${dateLine ? ' · ' : ''}${symbol}${formatNumber(srcAmount, 2)} по курсу ${formatNumber(rate, 4)} ₽`;
-            }
-
+            renderResult(response);
             resultCard.classList.remove('hidden');
             showSuccess('Конвертация выполнена успешно', 2000);
         } else {
@@ -435,91 +490,163 @@ async function performConvert() {
 }
 
 /**
- * Счётчик запросов для защиты от race condition в live preview.
- * Каждый новый вызов увеличивает счётчик; если к моменту ответа
- * счётчик изменился — ответ устарел и отбрасывается.
+ * Заполняет карточку результата
+ * @param {object} response - ConvertResponse из Go
  */
-let ratePreviewRequestId = 0;
+function renderResult(response) {
+    // Полная строка результата - для копирования (формат для документов не меняется)
+    document.getElementById('result-text').textContent = response.result;
 
-/**
- * Запрашивает обновление превью курса. Счётчик увеличивается сразу, а не
- * после debounce: ответ, который ещё летит для прежней даты или валюты,
- * становится устаревшим в момент изменения ввода
- */
-function requestRatePreview() {
-    ratePreviewRequestId++;
-    updateRatePreview();
+    const resultAmountEl = document.getElementById('result-amount');
+    const resultMetaEl = document.getElementById('result-meta');
+    if (resultAmountEl && resultMetaEl) {
+        const amountRub = typeof response.targetAmountRUB === 'number' ? response.targetAmountRUB : NaN;
+        const rate = typeof response.rate === 'number' ? response.rate : NaN;
+        const srcAmount = typeof response.sourceAmount === 'number' ? response.sourceAmount : NaN;
+        const symbol = response.currencySymbol || '';
+        const requestedDate = response.requestedDate || '';
+        const actualDate = response.actualDate || '';
+
+        resultAmountEl.textContent = `${formatNumber(amountRub, 2)} ₽`;
+
+        const dateLine = (actualDate && requestedDate && actualDate !== requestedDate)
+            ? `Курс фактически за ${actualDate} (запрошено ${requestedDate})`
+            : (actualDate ? `Курс за ${actualDate}` : '');
+
+        resultMetaEl.textContent = `${dateLine}${dateLine ? ' · ' : ''}${symbol}${formatNumber(srcAmount, 2)} по курсу ${formatNumber(rate, 4)} ₽`;
+    }
+
+    // Сравнение с суммой по референсному курсу. Не показываем, если референс
+    // недоступен или совпадает с датой курса (сравнивать нечего)
+    const refEl = document.getElementById('result-ref');
+    const refTextEl = document.getElementById('result-ref-text');
+    if (!refEl || !refTextEl) return;
+
+    if (!response.hasReference || response.refRequestedDate === response.requestedDate) {
+        refEl.classList.add('hidden');
+        if (response.refError) {
+            console.warn('Reference conversion error:', response.refError);
+        }
+        return;
+    }
+
+    const view = describeAmountComparison(response.refDiffRUB, response.refAmountRUB);
+    refEl.className = `compare result-ref ${view.className}`;
+    refTextEl.textContent = view.text;
+    refEl.title = `Референс ${response.refRequestedDate}: курс ${formatNumber(response.refRate, 4)} ₽ (курс ЦБ за ${response.refActualDate})`;
 }
 
 /**
- * Обновляет live preview курса
+ * Превью курса для поля даты: плашка с курсом, свой счётчик запросов и
+ * состояние загрузки. Курс попадает в rateState только из ответа на
+ * последний запрос; устаревшие ответы отбрасываются
+ * @param {{inputId: string, boxId: string, valueId: string, stateKey: 'main'|'ref', dateLabel: string}} cfg
+ * @returns {{request: function(): void, invalidate: function(): void}}
  */
-const updateRatePreview = debounce(async () => {
-    const dateInput = document.getElementById('date-input');
-    const currencyInput = document.querySelector('input[name="currency"]:checked');
-    const ratePreview = document.getElementById('rate-preview');
-    const rateValue = document.getElementById('rate-value');
+function createRatePreview(cfg) {
+    let requestId = 0;
+    let pending = false;
 
-    if (!dateInput || !currencyInput || !ratePreview || !rateValue) {
-        return;
+    const box = () => document.getElementById(cfg.boxId);
+    const value = () => document.getElementById(cfg.valueId);
+
+    function setPending(isPending) {
+        pending = isPending;
+        const el = box();
+        if (el) el.classList.toggle('loading', isPending);
+        renderComparison();
     }
 
-    const dateStr = dateInput.value.trim();
-    if (!dateStr || !isValidDateFormat(dateStr)) {
-        hideRatePreview();
-        return;
+    function show(text, title) {
+        const valueEl = value();
+        const boxEl = box();
+        if (valueEl) valueEl.textContent = text;
+        if (boxEl) boxEl.title = title || '';
     }
 
-    const date = parseDate(dateStr);
-    if (!date || isFutureDate(date)) {
-        hideRatePreview();
-        return;
-    }
-
-    const currency = currencyInput.value;
-    const currentRequestId = ++ratePreviewRequestId;
-
-    try {
-        const response = await appInstance.GetRate(currency, dateStr);
-
-        // Отбрасываем устаревший ответ, если за время ожидания был отправлен новый запрос
-        if (currentRequestId !== ratePreviewRequestId) {
+    const fetchRate = debounce(async (id) => {
+        const dateStr = readValidDate(cfg.inputId);
+        const currencyInput = document.querySelector('input[name="currency"]:checked');
+        if (id !== requestId) return;
+        if (!dateStr || !currencyInput || !appInstance) {
+            rateState[cfg.stateKey] = null;
+            show('…');
+            setPending(false);
             return;
         }
 
-        if (response.success) {
-            rateValue.textContent = `${formatNumber(response.rate, 4)} ₽`;
-            // ratePreview всегда видим (display: flex в CSS), не нужно менять display
-        } else {
-            hideRatePreview(); // Показывает '—' вместо скрытия
-            if (response.error) {
-                // Не показываем ошибку в status bar для live preview, только показываем прочерк
+        const currency = currencyInput.value;
+        try {
+            const response = await appInstance.GetRate(currency, dateStr);
+            if (id !== requestId) return; // пока ждали, ввод изменился
+
+            if (response.success) {
+                rateState[cfg.stateKey] = { rate: response.rate, actualDate: response.actualDate, currency };
+                const title = response.actualDate && response.actualDate !== dateStr
+                    ? `Курс ЦБ за ${response.actualDate}: на ${cfg.dateLabel}${dateStr} курс не устанавливался`
+                    : `Курс ЦБ на ${cfg.dateLabel}${dateStr}`;
+                show(`${formatNumber(response.rate, 4)} ₽`, title);
+            } else {
+                rateState[cfg.stateKey] = null;
+                show('н/д', response.error || '');
                 console.warn('Rate preview error:', response.error);
             }
+        } catch (error) {
+            if (id !== requestId) return;
+            rateState[cfg.stateKey] = null;
+            show('н/д');
+            console.warn('Rate preview error:', error);
         }
-    } catch (error) {
-        if (currentRequestId !== ratePreviewRequestId) {
-            return;
-        }
-        hideRatePreview();
-        console.warn('Rate preview error:', error);
-    }
-}, 300);
+        setPending(false);
+    }, 300);
+
+    return {
+        // Номер запроса растёт сразу, а не после debounce: ответ, который ещё
+        // летит для прежней даты или валюты, становится устаревшим немедленно
+        request() {
+            requestId++;
+            setPending(true);
+            fetchRate(requestId);
+        },
+        // Дата пуста, не дописана или в будущем: гасим курс и ответы в пути
+        invalidate() {
+            requestId++;
+            rateState[cfg.stateKey] = null;
+            show('…');
+            setPending(false);
+        },
+        isPending: () => pending
+    };
+}
 
 /**
- * Скрывает live preview курса (показывает прочерк)
+ * Обновляет строку сравнения курса с референсом. Пока любой из курсов
+ * загружается, сравнение не пересчитывается: прежний текст (верный для
+ * прежней пары курсов) приглушён. Иначе после смены валюты пришедший
+ * первым курс EUR сравнился бы со старым курсом USD
  */
-function hideRatePreview() {
-    const ratePreview = document.getElementById('rate-preview');
-    const rateValue = document.getElementById('rate-value');
-    
-    // Ответ на уже отправленный запрос не должен вернуть курс после прочерка
-    ratePreviewRequestId++;
+function renderComparison() {
+    const el = document.getElementById('ref-compare');
+    const textEl = document.getElementById('ref-compare-text');
+    if (!el || !textEl) return;
 
-    if (ratePreview && rateValue) {
-        // Не скрываем элемент, показываем прочерк
-        rateValue.textContent = '—';
-        // Элемент остается видимым (display: flex из CSS)
+    const loading = (mainPreview && mainPreview.isPending()) || (refPreview && refPreview.isPending());
+    el.classList.toggle('loading', loading);
+    el.setAttribute('aria-busy', loading ? 'true' : 'false');
+    if (loading) return;
+
+    const main = rateState.main;
+    const ref = rateState.ref;
+    const comparable = main && ref && main.currency === ref.currency;
+    const view = describeRateComparison(comparable ? compareRates(main.rate, ref.rate) : null);
+
+    el.className = `compare ${view.className}`;
+    textEl.textContent = view.text;
+    const pctWrap = document.getElementById('ref-compare-pct-wrap');
+    const pctEl = document.getElementById('ref-compare-pct');
+    if (pctWrap && pctEl) {
+        pctEl.textContent = view.percent;
+        pctWrap.classList.toggle('hidden', !view.percent);
     }
 }
 
@@ -529,6 +656,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Обработчик события изменения даты из календаря
-document.addEventListener('datechanged', (e) => {
-    requestRatePreview();
+document.addEventListener('datechanged', () => {
+    if (mainPreview) mainPreview.request();
 });

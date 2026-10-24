@@ -47,6 +47,7 @@ type ConvertRequest struct {
 	Amount   float64 `json:"amount"`   // Сумма для конвертации
 	Currency string  `json:"currency"` // "USD", "EUR" или "RUB"
 	Date     string  `json:"date"`     // "DD.MM.YYYY"
+	RefDate  string  `json:"refDate"`  // Референсная дата "DD.MM.YYYY" (необязательно)
 }
 
 // ConvertResponse - ответ на конвертацию для JavaScript
@@ -63,13 +64,24 @@ type ConvertResponse struct {
 	CurrencySymbol  string  `json:"currencySymbol"`
 	RequestedDate   string  `json:"requestedDate"`
 	ActualDate      string  `json:"actualDate"`
+
+	// Сравнение с референсной датой (заполняется, если RefDate задан и курс на неё получен).
+	// Ошибка референса не отменяет основную конвертацию: она уходит в RefError
+	HasReference     bool    `json:"hasReference"`
+	RefRate          float64 `json:"refRate"`
+	RefAmountRUB     float64 `json:"refAmountRUB"`
+	RefDiffRUB       float64 `json:"refDiffRUB"` // TargetAmountRUB - RefAmountRUB, точно до копейки
+	RefRequestedDate string  `json:"refRequestedDate"`
+	RefActualDate    string  `json:"refActualDate"`
+	RefError         string  `json:"refError"`
 }
 
 // RateResponse - ответ для получения курса (live preview)
 type RateResponse struct {
-	Success bool    `json:"success"` // Успешность операции
-	Rate    float64 `json:"rate"`    // Курс валюты (если success=true)
-	Error   string  `json:"error"`   // Сообщение об ошибке (если success=false)
+	Success    bool    `json:"success"`    // Успешность операции
+	Rate       float64 `json:"rate"`       // Курс валюты (если success=true)
+	ActualDate string  `json:"actualDate"` // Фактическая дата курса "DD.MM.YYYY" (на выходные - прошлый рабочий день)
+	Error      string  `json:"error"`      // Сообщение об ошибке (если success=false)
 }
 
 // Convert конвертирует валюту
@@ -110,7 +122,7 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 		}
 	}
 
-	return ConvertResponse{
+	resp := ConvertResponse{
 		Success:         true,
 		Result:          result.FormattedStr,
 		SourceAmount:    result.SourceAmount,
@@ -121,6 +133,35 @@ func (a *App) Convert(req ConvertRequest) ConvertResponse {
 		RequestedDate:   req.Date,
 		ActualDate:      result.Date.Format("02.01.2006"),
 	}
+	if req.RefDate != "" {
+		a.fillReference(&resp, req, currency)
+	}
+	return resp
+}
+
+// fillReference считает ту же сумму по курсу на референсную дату.
+// Сбой референса (неверная дата, нет курса, сеть) не отменяет основной
+// результат, а уходит в RefError
+func (a *App) fillReference(resp *ConvertResponse, req ConvertRequest, currency models.Currency) {
+	resp.RefRequestedDate = req.RefDate
+
+	refDate, err := parseDate(req.RefDate)
+	if err != nil {
+		resp.RefError = fmt.Sprintf("Неверный формат референсной даты: %s", req.RefDate)
+		return
+	}
+
+	refResult, err := a.converter.Convert(a.ctx, req.Amount, currency, refDate)
+	if err != nil {
+		resp.RefError = translateError(err)
+		return
+	}
+
+	resp.HasReference = true
+	resp.RefRate = refResult.Rate
+	resp.RefAmountRUB = refResult.TargetAmount
+	resp.RefDiffRUB = converter.SubtractKopecks(resp.TargetAmountRUB, refResult.TargetAmount)
+	resp.RefActualDate = refResult.Date.Format("02.01.2006")
 }
 
 // GetRate получает курс валюты на указанную дату (для live preview)
@@ -153,7 +194,7 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 
 	// Используем оптимизированный метод GetRate для получения курса без форматирования
 	// Для RUB он сам вернёт 1.0, но после той же проверки даты, что и Convert
-	rate, err := a.converter.GetRate(a.ctx, currency, date)
+	rate, actualDate, err := a.converter.GetRate(a.ctx, currency, date)
 	if err != nil {
 		return RateResponse{
 			Success: false,
@@ -162,8 +203,9 @@ func (a *App) GetRate(currencyStr string, dateStr string) RateResponse {
 	}
 
 	return RateResponse{
-		Success: true,
-		Rate:    rate,
+		Success:    true,
+		Rate:       rate,
+		ActualDate: actualDate.Format("02.01.2006"),
 	}
 }
 

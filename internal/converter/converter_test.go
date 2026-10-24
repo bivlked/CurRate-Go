@@ -1059,7 +1059,7 @@ func TestConverter_GetRate_NilProvider(t *testing.T) {
 	cache := NewMockCache()
 	converter := NewConverter(nil, cache)
 
-	_, err := converter.GetRate(context.Background(), models.USD, time.Now())
+	_, _, err := converter.GetRate(context.Background(), models.USD, time.Now())
 	if err == nil {
 		t.Fatal("Ожидалась ошибка при отсутствии источника курсов")
 	}
@@ -1091,7 +1091,7 @@ func TestGetRate_NilProvider_RUB(t *testing.T) {
 	converter := NewConverter(nil, cache)
 	date := testPastDateUTC()
 
-	rate, err := converter.GetRate(context.Background(), models.RUB, date)
+	rate, _, err := converter.GetRate(context.Background(), models.RUB, date)
 	if err != nil {
 		t.Fatalf("GetRate(RUB) with nil provider should succeed, got error: %v", err)
 	}
@@ -1138,7 +1138,7 @@ func TestGetRate_NilProvider_USD(t *testing.T) {
 	converter := NewConverter(nil, cache)
 	date := testPastDateUTC()
 
-	_, err := converter.GetRate(context.Background(), models.USD, date)
+	_, _, err := converter.GetRate(context.Background(), models.USD, date)
 	if err == nil {
 		t.Fatal("GetRate(USD) with nil provider should return error")
 	}
@@ -1164,5 +1164,21 @@ func TestFetchRatesFunc(t *testing.T) {
 	}
 	if !gotDate.Equal(date) {
 		t.Errorf("функция получила дату %v, want %v", gotDate, date)
+	}
+}
+
+func TestSubtractKopecks(t *testing.T) {
+	tests := []struct {
+		a, b, want float64
+	}{
+		{80538.1, 79901.2, 636.9}, // float64 даёт 636.8999999999942
+		{805.38, 810.0, -4.62},
+		{100, 100, 0},
+		{0.1, 0.2, -0.1},
+	}
+	for _, tt := range tests {
+		if got := SubtractKopecks(tt.a, tt.b); got != tt.want {
+			t.Errorf("SubtractKopecks(%v, %v) = %v, want %v", tt.a, tt.b, got, tt.want)
+		}
 	}
 }

@@ -1,93 +1,100 @@
 /* Стили календаря */
 
 .calendar {
-  margin-top: var(--spacing-xs);
-  padding: var(--spacing-xs); /* Увеличен padding для большего размера */
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  padding: 6px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   user-select: none;
   width: 100%;
-  max-width: 320px; /* Увеличена ширина для большего размера (7 * 24px * 1.5 + padding) */
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
 }
 
 .calendar-header {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 26px 1fr 26px;
   align-items: center;
-  margin-bottom: 2px;
-  padding-bottom: 2px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
   border-bottom: 1px solid var(--border-color);
-  position: relative;
 }
 
 .calendar-month-year {
-  font-size: var(--font-size-base); /* 14px - увеличен размер */
+  text-align: center;
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
 }
 
+/* Кнопки листания месяцев - вторичные кнопки в миниатюре */
 .calendar-nav-btn {
-  padding: 0;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: var(--font-size-lg); /* 16px - увеличен размер */
-  transition: all 0.2s ease;
-  min-width: 24px; /* Увеличен размер кнопок */
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
+  padding: 0;
+  color: var(--text-primary);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.calendar-nav-btn#calendar-prev {
-  left: 0;
-}
-
-.calendar-nav-btn#calendar-next {
-  right: 0;
+.calendar-nav-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .calendar-nav-btn:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--primary-color);
+  background: #f3f3f3;
+  border-color: #a19f9d;
 }
 
 .calendar-nav-btn:active {
-  background: var(--primary-light);
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-btn-active);
 }
 
-.calendar-weekdays {
+.calendar-nav-btn:focus {
+  outline: none;
+}
+
+.calendar-nav-btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.calendar-weekdays,
+.calendar-days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0;
-  margin-bottom: var(--spacing-xs); /* Добавлен отступ снизу */
-  padding-bottom: var(--spacing-xs); /* Добавлен padding снизу */
-  border-bottom: 1px solid var(--border-color); /* Тонкая черта разделителя */
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+  gap: 2px;
+}
+
+/* Тонкая линия отделяет дни недели от чисел. Высота заголовков уменьшена
+   на 2 px, чтобы линия с отступом не увеличила высоту календаря */
+.calendar-weekdays {
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--text-primary);
+  margin-bottom: 2px;
 }
 
 .calendar-weekday {
-  text-align: center;
-  font-size: var(--font-size-base); /* 14px - как USD/EUR */
-  font-weight: var(--font-weight-bold);
-  color: var(--text-secondary);
-  padding: 0;
-  aspect-ratio: 1;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 24px; /* Увеличена высота для большего размера */
-  max-height: 24px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
 }
 
 .calendar-weekday.weekend {
@@ -95,103 +102,74 @@
   background: var(--weekend-bg);
 }
 
-.calendar-days {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: minmax(24px, auto); /* Увеличена высота для большего размера */
-  grid-auto-flow: row;
-  gap: 0;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
 .calendar-day {
-  min-width: 0;
-  min-height: 24px; /* Увеличена высота для большего размера */
-  max-height: 24px;
-  aspect-ratio: 1;
+  position: relative;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: 5px;
+  font-size: var(--font-size-base);
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
-  font-size: var(--font-size-base); /* 14px - как USD/EUR */
-  transition: all 0.2s ease;
-  background: var(--bg-primary);
-  box-sizing: border-box;
-  padding: 0;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
-.calendar-day:hover:not(.disabled):not(.other-month) {
+.calendar-day:hover:not(.disabled):not(.other-month):not(.selected) {
   background: var(--primary-light);
+}
+
+.calendar-day:hover:not(.disabled):not(.other-month):not(.selected):not(.reference) {
   border-color: var(--primary-color);
 }
 
 .calendar-day.other-month {
-  color: var(--text-disabled);
   cursor: default;
 }
 
 .calendar-day.disabled {
   color: var(--text-disabled);
   cursor: not-allowed;
-  opacity: 0.5;
 }
 
-.calendar-day.weekend:not(.disabled):not(.other-month) {
+.calendar-day.weekend:not(.other-month) {
   color: var(--weekend-color);
   background: var(--weekend-bg);
 }
 
-/* Выходные дни для disabled (будущих дат) - тоже должны быть выделены */
-.calendar-day.weekend.disabled:not(.other-month) {
-  color: var(--weekend-color);
-  background: var(--weekend-bg);
-  opacity: 0.6; /* Немного прозрачнее, чем обычные выходные */
+.calendar-day.weekend.disabled {
+  opacity: 0.55;
 }
 
-.calendar-day.today:not(.disabled):not(.other-month) {
-  border: 1px solid var(--primary-color);
+.calendar-day.today:not(.selected) {
+  border-color: var(--primary-color);
   font-weight: var(--font-weight-semibold);
 }
 
-.calendar-day.selected:not(.disabled):not(.other-month) {
+/* :not(.other-month) уравнивает специфичность с правилом выходных выше:
+   без него у выбранного выходного текст оставался красным на красном */
+.calendar-day.selected:not(.other-month) {
+  color: #ffffff;
   background: var(--primary-color);
-  color: white;
+  border-color: var(--primary-border);
   font-weight: var(--font-weight-semibold);
 }
 
-.calendar-day.selected.weekend:not(.disabled):not(.other-month) {
+.calendar-day.selected.weekend:not(.other-month) {
   background: var(--weekend-color);
-  color: white;
+  border-color: #b71c1c;
 }
 
-/* Flexbox fallback для старых браузеров */
-@supports not (display: grid) {
-  .calendar-days {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    gap: var(--spacing-xs);
-  }
-  
-  .calendar-day {
-    flex: 0 0 calc((100% - 6 * var(--spacing-xs)) / 7);
-    max-width: calc((100% - 6 * var(--spacing-xs)) / 7);
-    aspect-ratio: 1;
-  }
-  
-  .calendar-weekdays {
-    display: flex;
-    width: 100%;
-    gap: var(--spacing-xs);
-  }
-  
-  .calendar-weekday {
-    flex: 0 0 calc((100% - 6 * var(--spacing-xs)) / 7);
-    max-width: calc((100% - 6 * var(--spacing-xs)) / 7);
-  }
+/* Референсная дата: зелёная рамка 2 px (граница плюс внутренняя тень,
+   размер ячейки не меняется). Рамка сильнее рамки сегодняшнего дня,
+   остаётся при наведении и на выбранном выходном. На выбранном дне
+   её отделяет от заливки белая полоска */
+.calendar-day.reference:not(.other-month):not(.disabled) {
+  border-color: var(--ref-color);
+  box-shadow: inset 0 0 0 1px var(--ref-color);
 }
 
+.calendar-day.reference.selected:not(.other-month):not(.disabled) {
+  box-shadow: inset 0 0 0 1px var(--ref-color), inset 0 0 0 2px #ffffff;
+}
