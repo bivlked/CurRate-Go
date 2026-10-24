@@ -51,8 +51,8 @@ function setup() {
     ctx.__getRate = (cur, date) => new Promise(resolve => calls.push({ cur, date, resolve }));
     vm.runInContext(`
         appInstance = { GetRate: (c, d) => __getRate(c, d) };
-        mainPreview = createRatePreview({ inputId: 'date-input', boxId: 'rate-preview', valueId: 'rate-value', stateKey: 'main', what: 'Курс' });
-        refPreview = createRatePreview({ inputId: 'ref-date-input', boxId: 'ref-rate-preview', valueId: 'ref-rate-value', stateKey: 'ref', what: 'Реф' });
+        mainPreview = createRatePreview({ inputId: 'date-input', boxId: 'rate-preview', valueId: 'rate-value', stateKey: 'main', dateLabel: '' });
+        refPreview = createRatePreview({ inputId: 'ref-date-input', boxId: 'ref-rate-preview', valueId: 'ref-rate-value', stateKey: 'ref', dateLabel: 'референсную дату ' });
     `, ctx);
 
     els['date-input'].value = '01.10.2026';
@@ -179,4 +179,25 @@ test('процент в скобках скрывается, когда курс
     await flush();
     assert.equal(compare(), 'Совпадает с референсом');
     assert.ok(els['ref-compare-pct-wrap'].classList.contains('hidden'));
+});
+
+test('подсказка у курса: дата и курс прошлого рабочего дня на выходной', async () => {
+    const { els, calls, run } = setup();
+
+    run('mainPreview.request(); refPreview.request();');
+    await afterDebounce();
+    answer(calls[0], 80);
+    calls[1].resolve({ success: true, rate: 80, actualDate: '01.10.2026' });
+    await flush();
+
+    assert.equal(els['rate-preview'].title, 'Курс ЦБ на 01.10.2026');
+    assert.equal(els['ref-rate-preview'].title,
+        'Курс ЦБ за 01.10.2026: на референсную дату 02.10.2026 курс не устанавливался');
+
+    els['ref-date-input'].value = '01.10.2026';
+    run('refPreview.request();');
+    await afterDebounce();
+    answer(calls[2], 80);
+    await flush();
+    assert.equal(els['ref-rate-preview'].title, 'Курс ЦБ на референсную дату 01.10.2026');
 });

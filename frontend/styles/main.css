@@ -456,7 +456,7 @@ input.control.amount-input {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   pointer-events: none;
 }
 

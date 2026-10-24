@@ -32,14 +32,14 @@ function initApp() {
                 boxId: 'rate-preview',
                 valueId: 'rate-value',
                 stateKey: 'main',
-                what: 'Курс ЦБ'
+                dateLabel: ''
             });
             refPreview = createRatePreview({
                 inputId: 'ref-date-input',
                 boxId: 'ref-rate-preview',
                 valueId: 'ref-rate-value',
                 stateKey: 'ref',
-                what: 'Курс ЦБ на референсную дату'
+                dateLabel: 'референсную дату '
             });
 
             // Инициализация компонентов
@@ -540,7 +540,7 @@ function renderResult(response) {
  * Превью курса для поля даты: плашка с курсом, свой счётчик запросов и
  * состояние загрузки. Курс попадает в rateState только из ответа на
  * последний запрос; устаревшие ответы отбрасываются
- * @param {{inputId: string, boxId: string, valueId: string, stateKey: 'main'|'ref', what: string}} cfg
+ * @param {{inputId: string, boxId: string, valueId: string, stateKey: 'main'|'ref', dateLabel: string}} cfg
  * @returns {{request: function(): void, invalidate: function(): void}}
  */
 function createRatePreview(cfg) {
@@ -583,8 +583,8 @@ function createRatePreview(cfg) {
             if (response.success) {
                 rateState[cfg.stateKey] = { rate: response.rate, actualDate: response.actualDate, currency };
                 const title = response.actualDate && response.actualDate !== dateStr
-                    ? `${cfg.what} за ${response.actualDate}: на ${dateStr} курс не устанавливался`
-                    : `${cfg.what} на ${dateStr}`;
+                    ? `Курс ЦБ за ${response.actualDate}: на ${cfg.dateLabel}${dateStr} курс не устанавливался`
+                    : `Курс ЦБ на ${cfg.dateLabel}${dateStr}`;
                 show(`${formatNumber(response.rate, 4)} ₽`, title);
             } else {
                 rateState[cfg.stateKey] = null;

@@ -78,12 +78,16 @@
   gap: 2px;
 }
 
+/* Тонкая линия отделяет дни недели от чисел. Высота заголовков уменьшена
+   на 2 px, чтобы линия с отступом не увеличила высоту календаря */
 .calendar-weekdays {
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--text-primary);
   margin-bottom: 2px;
 }
 
 .calendar-weekday {
-  height: 22px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
