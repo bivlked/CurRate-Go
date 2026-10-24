@@ -13,7 +13,7 @@ import (
 )
 
 // AppVersion - версия приложения
-const AppVersion = "1.2.1"
+const AppVersion = "2.0.0"
 
 // App - основной backend для GUI приложения
 // Предоставляет методы для взаимодействия с frontend через Wails bindings
