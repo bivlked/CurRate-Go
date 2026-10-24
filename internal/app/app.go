@@ -65,8 +65,9 @@ type ConvertResponse struct {
 	RequestedDate   string  `json:"requestedDate"`
 	ActualDate      string  `json:"actualDate"`
 
-	// Сравнение с референсной датой (заполняется, если RefDate задан и курс на неё получен).
-	// Ошибка референса не отменяет основную конвертацию: она уходит в RefError
+	// Сравнение с референсной датой. RefRequestedDate заполняется при непустом RefDate,
+	// остальные поля - если курс на неё получен (HasReference). Ошибка референса
+	// не отменяет основную конвертацию: она уходит в RefError
 	HasReference     bool    `json:"hasReference"`
 	RefRate          float64 `json:"refRate"`
 	RefAmountRUB     float64 `json:"refAmountRUB"`

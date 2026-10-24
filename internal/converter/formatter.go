@@ -56,7 +56,7 @@ func multiplyKopecks(amount, rate float64) float64 {
 
 // SubtractKopecks возвращает разность двух сумм в рублях (a - b), посчитанную
 // десятично и округлённую до копеек: 80538.10 - 79901.20 = 636.90 ровно,
-// а float64 дал бы 636.8999999999942
+// а float64 дал бы 636.9000000000087
 func SubtractKopecks(a, b float64) float64 {
 	diff := new(big.Rat).Sub(decimalRat(a), decimalRat(b))
 	rounded, _ := new(big.Rat).SetString(diff.FloatString(2))
