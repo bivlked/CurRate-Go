@@ -102,9 +102,9 @@
 
 ## Документация
 
-- **[README.md](README.md)** - обзор проекта и быстрый старт
-- **[Руководство пользователя](docs/09-WAILS-GUI-РУКОВОДСТВО-ПОЛЬЗОВАТЕЛЯ.md)** - раздел 8 «Референсная дата и сравнение курсов»
-- **[CHANGELOG.md](CHANGELOG.md)** - полная история изменений
+- **[README.md](https://github.com/bivlked/CurRate-Go/blob/main/README.md)** - обзор проекта и быстрый старт
+- **[Руководство пользователя](https://github.com/bivlked/CurRate-Go/blob/main/docs/09-WAILS-GUI-%D0%A0%D0%A3%D0%9A%D0%9E%D0%92%D0%9E%D0%94%D0%A1%D0%A2%D0%92%D0%9E-%D0%9F%D0%9E%D0%9B%D0%AC%D0%97%D0%9E%D0%92%D0%90%D0%A2%D0%95%D0%9B%D0%AF.md)** - раздел 8 «Референсная дата и сравнение курсов»
+- **[CHANGELOG.md](https://github.com/bivlked/CurRate-Go/blob/main/CHANGELOG.md)** - полная история изменений
 
 ---
 
