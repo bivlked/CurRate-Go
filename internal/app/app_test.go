@@ -721,7 +721,7 @@ func TestApp_Convert_WithReference(t *testing.T) {
 	if resp.TargetAmountRUB != 80538.1 || resp.RefAmountRUB != 79901.2 {
 		t.Errorf("суммы = %v / %v, want 80538.1 / 79901.2", resp.TargetAmountRUB, resp.RefAmountRUB)
 	}
-	// float64: 80538.1 - 79901.2 = 636.8999999999942
+	// float64: 80538.1 - 79901.2 = 636.9000000000087
 	if resp.RefDiffRUB != 636.9 {
 		t.Errorf("RefDiffRUB = %v, want 636.9", resp.RefDiffRUB)
 	}

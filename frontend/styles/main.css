@@ -404,7 +404,7 @@ input.control.error {
   fill: currentColor;
 }
 
-/* Цветом выделена только стрелка, текст остаётся основным */
+/* У «выше» и «ниже» цветом выделена только стрелка, текст остаётся основным */
 .compare-up .compare-arrow {
   color: var(--up-color);
 }

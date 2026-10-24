@@ -35,7 +35,9 @@ function fakeElement() {
 
 function setup() {
     const ids = ['date-input', 'ref-date-input', 'rate-preview', 'rate-value', 'ref-rate-preview',
-        'ref-rate-value', 'ref-compare', 'ref-compare-text', 'ref-compare-pct-wrap', 'ref-compare-pct'];
+        'ref-rate-value', 'ref-compare', 'ref-compare-text', 'ref-compare-pct-wrap', 'ref-compare-pct',
+        'amount-input', 'convert-btn', 'result-card', 'result-text', 'result-amount', 'result-meta',
+        'result-ref', 'result-ref-text'];
     const els = Object.fromEntries(ids.map(id => [id, fakeElement()]));
     const currency = { value: 'USD' };
     const calls = []; // ответы GetRate, которые тест разрешает вручную
@@ -200,4 +202,67 @@ test('подсказка у курса: дата и курс прошлого р
     answer(calls[2], 80);
     await flush();
     assert.equal(els['ref-rate-preview'].title, 'Курс ЦБ на референсную дату 01.10.2026');
+});
+
+// Ответ Convert с референсом: 1000 USD, курс 81,5381, референс 80,9012
+function convertResponse(extra) {
+    return Object.assign({
+        success: true, result: '81 538,10 руб. ($1 000,00 по курсу 81,5381)',
+        targetAmountRUB: 81538.1, rate: 81.5381, sourceAmount: 1000, currencySymbol: '$',
+        requestedDate: '05.10.2026', actualDate: '03.10.2026',
+        hasReference: true, refRate: 80.9012, refAmountRUB: 80901.2, refDiffRUB: 636.9,
+        refRequestedDate: '04.10.2026', refActualDate: '03.10.2026', refError: ''
+    }, extra);
+}
+
+test('renderResult: строка сравнения суммы, её подсказка и скрытие', () => {
+    const { els, run } = setup();
+    const render = (resp) => { run(`renderResult(${JSON.stringify(resp)})`); };
+    const ref = els['result-ref'];
+    const nbsp = (str) => str.replace(/\s/g, ' ');
+
+    render(convertResponse());
+    assert.ok(!ref.classList.contains('hidden'));
+    assert.ok(ref.classList.contains('compare-up'));
+    assert.equal(nbsp(els['result-ref-text'].textContent), 'На 636,90 ₽ больше референса (80 901,20 ₽)');
+    assert.equal(ref.title, 'Референс 04.10.2026: курс 80,9012 ₽ (курс ЦБ за 03.10.2026)');
+    assert.equal(els['result-text'].textContent, '81 538,10 руб. ($1 000,00 по курсу 81,5381)');
+
+    // референс совпадает с датой курса: сравнивать нечего
+    render(convertResponse({ refRequestedDate: '05.10.2026' }));
+    assert.ok(ref.classList.contains('hidden'));
+
+    // референс задан, но не посчитался: строка не пропадает молча
+    render(convertResponse());
+    render(convertResponse({ hasReference: false, refError: 'Не удалось получить курсы ЦБ РФ' }));
+    assert.ok(!ref.classList.contains('hidden'));
+    assert.ok(ref.classList.contains('compare-none'));
+    assert.equal(els['result-ref-text'].textContent, 'Сравнение с референсом недоступно');
+    assert.equal(ref.title, 'Не удалось получить курсы ЦБ РФ');
+
+    // референс не передавался вовсе
+    render(convertResponse({ hasReference: false, refRequestedDate: '' }));
+    assert.ok(ref.classList.contains('hidden'));
+});
+
+test('performConvert: недописанная референсная дата не уходит в Convert', async () => {
+    const { els, run } = setup();
+    // строка состояния (status-bar.js) здесь не нужна
+    run(`
+        showError = () => {}; showSuccess = () => {}; clearStatus = () => {};
+        sentReqs = [];
+        appInstance.Convert = (req) => { sentReqs.push(req); return Promise.resolve({ success: false, error: 'x' }); };
+    `);
+    els['amount-input'].value = '1000';
+    els['date-input'].value = '05.10.2026';
+
+    els['ref-date-input'].value = '04.10.20';
+    await run('performConvert()');
+    els['ref-date-input'].value = '04.10.2026';
+    await run('performConvert()');
+
+    const sent = run('sentReqs');
+    assert.equal(sent.length, 2);
+    assert.equal(sent[0].refDate, '');
+    assert.equal(sent[1].refDate, '04.10.2026');
 });

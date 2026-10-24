@@ -516,17 +516,23 @@ function renderResult(response) {
         resultMetaEl.textContent = `${dateLine}${dateLine ? ' · ' : ''}${symbol}${formatNumber(srcAmount, 2)} по курсу ${formatNumber(rate, 4)} ₽`;
     }
 
-    // Сравнение с суммой по референсному курсу. Не показываем, если референс
-    // недоступен или совпадает с датой курса (сравнивать нечего)
+    // Сравнение с суммой по референсному курсу. Не показываем, если референса
+    // нет или он совпадает с датой курса (сравнивать нечего). Если референс
+    // задан, но не посчитался, говорим об этом, а причина - в подсказке
     const refEl = document.getElementById('result-ref');
     const refTextEl = document.getElementById('result-ref-text');
     if (!refEl || !refTextEl) return;
 
-    if (!response.hasReference || response.refRequestedDate === response.requestedDate) {
+    if (!response.refRequestedDate || response.refRequestedDate === response.requestedDate) {
         refEl.classList.add('hidden');
-        if (response.refError) {
-            console.warn('Reference conversion error:', response.refError);
-        }
+        return;
+    }
+
+    if (!response.hasReference) {
+        refEl.className = 'compare result-ref compare-none';
+        refTextEl.textContent = 'Сравнение с референсом недоступно';
+        refEl.title = response.refError || '';
+        console.warn('Reference conversion error:', response.refError);
         return;
     }
 
@@ -541,7 +547,7 @@ function renderResult(response) {
  * состояние загрузки. Курс попадает в rateState только из ответа на
  * последний запрос; устаревшие ответы отбрасываются
  * @param {{inputId: string, boxId: string, valueId: string, stateKey: 'main'|'ref', dateLabel: string}} cfg
- * @returns {{request: function(): void, invalidate: function(): void}}
+ * @returns {{request: function(): void, invalidate: function(): void, isPending: function(): boolean}}
  */
 function createRatePreview(cfg) {
     let requestId = 0;
@@ -594,7 +600,7 @@ function createRatePreview(cfg) {
         } catch (error) {
             if (id !== requestId) return;
             rateState[cfg.stateKey] = null;
-            show('н/д');
+            show('н/д', 'Не удалось получить курс');
             console.warn('Rate preview error:', error);
         }
         setPending(false);
