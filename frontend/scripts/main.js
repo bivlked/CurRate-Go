@@ -642,6 +642,12 @@ function renderComparison() {
 
     el.className = `compare ${view.className}`;
     textEl.textContent = view.text;
+    const pctWrap = document.getElementById('ref-compare-pct-wrap');
+    const pctEl = document.getElementById('ref-compare-pct');
+    if (pctWrap && pctEl) {
+        pctEl.textContent = view.percent;
+        pctWrap.classList.toggle('hidden', !view.percent);
+    }
 }
 
 // Инициализация при загрузке страницы

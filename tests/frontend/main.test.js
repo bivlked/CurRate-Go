@@ -35,7 +35,7 @@ function fakeElement() {
 
 function setup() {
     const ids = ['date-input', 'ref-date-input', 'rate-preview', 'rate-value', 'ref-rate-preview',
-        'ref-rate-value', 'ref-compare', 'ref-compare-text'];
+        'ref-rate-value', 'ref-compare', 'ref-compare-text', 'ref-compare-pct-wrap', 'ref-compare-pct'];
     const els = Object.fromEntries(ids.map(id => [id, fakeElement()]));
     const currency = { value: 'USD' };
     const calls = []; // ответы GetRate, которые тест разрешает вручную
@@ -59,7 +59,10 @@ function setup() {
     els['ref-date-input'].value = '02.10.2026';
 
     const run = (code) => vm.runInContext(code, ctx);
-    return { els, currency, calls, run };
+    // строка сравнения целиком, как её видит пользователь: текст и процент в скобках
+    const compare = () => els['ref-compare-text'].textContent +
+        (els['ref-compare-pct-wrap'].classList.contains('hidden') ? '' : ` (${els['ref-compare-pct'].textContent})`);
+    return { els, currency, calls, run, compare };
 }
 
 // debounce превью - 300 мс; ждём срабатывания и разбора промисов
@@ -71,8 +74,7 @@ function answer(call, rate) {
 }
 
 test('смена валюты: курс, пришедший первым, не сравнивается со старым курсом другой валюты', async () => {
-    const { els, currency, calls, run } = setup();
-    const compare = () => els['ref-compare-text'].textContent;
+    const { els, currency, calls, run, compare } = setup();
 
     run('mainPreview.request(); refPreview.request();');
     await afterDebounce();
@@ -103,7 +105,7 @@ test('смена валюты: курс, пришедший первым, не �
 });
 
 test('ответ на устаревший запрос отбрасывается', async () => {
-    const { els, calls, run } = setup();
+    const { els, calls, run, compare } = setup();
 
     run('mainPreview.request(); refPreview.request();');
     await afterDebounce();
@@ -119,7 +121,8 @@ test('ответ на устаревший запрос отбрасываетс
     await flush();
 
     assert.equal(els['rate-value'].textContent, '82,0000 ₽');
-    assert.equal(els['ref-compare-text'].textContent, 'Выше референса на 2,0000 ₽ (2,50%)');
+    assert.equal(compare(), 'Выше референса на 2,0000 ₽ (2,50%)');
+    assert.equal(els['ref-compare-pct'].textContent, '2,50%');
 });
 
 test('недописанная дата гасит курс и сравнение, ответ в пути игнорируется', async () => {
@@ -141,6 +144,7 @@ test('недописанная дата гасит курс и сравнени�
 
     assert.equal(els['ref-rate-value'].textContent, '…');
     assert.equal(els['ref-compare-text'].textContent, 'Сравнение недоступно');
+    assert.ok(els['ref-compare-pct-wrap'].classList.contains('hidden'), 'без процента скобки скрыты');
 });
 
 test('ошибка GetRate: «н/д» и «Сравнение недоступно»', async () => {
@@ -155,4 +159,24 @@ test('ошибка GetRate: «н/д» и «Сравнение недоступн
     assert.equal(els['ref-rate-value'].textContent, 'н/д');
     assert.equal(els['ref-rate-preview'].title, 'ЦБ РФ не публиковал курсы на выбранную дату');
     assert.equal(els['ref-compare-text'].textContent, 'Сравнение недоступно');
+});
+
+test('процент в скобках скрывается, когда курсы снова совпали', async () => {
+    const { els, calls, run, compare } = setup();
+
+    run('mainPreview.request(); refPreview.request();');
+    await afterDebounce();
+    answer(calls[0], 81);
+    answer(calls[1], 80);
+    await flush();
+    assert.equal(compare(), 'Выше референса на 1,0000 ₽ (1,25%)');
+    assert.ok(!els['ref-compare-pct-wrap'].classList.contains('hidden'));
+
+    els['date-input'].value = '02.10.2026';
+    run('mainPreview.request();');
+    await afterDebounce();
+    answer(calls[2], 80);
+    await flush();
+    assert.equal(compare(), 'Совпадает с референсом');
+    assert.ok(els['ref-compare-pct-wrap'].classList.contains('hidden'));
 });

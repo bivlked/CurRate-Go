@@ -22,7 +22,10 @@
                 </label>
             </div>
 
-            <label class="field-label" for="date-input">Дата курса</label>
+            <div class="date-labels">
+                <label class="field-label" for="date-input">Дата курса</label>
+                <span class="field-label" id="rate-label">Курс</span>
+            </div>
             <div class="date-row">
                 <input
                     type="text"
@@ -33,14 +36,16 @@
                     autocomplete="off"
                 >
                 <!-- Курс на выбранную дату -->
-                <div id="rate-preview" class="control rate-box">
-                    <span class="rate-box-label">Курс:</span>
+                <div id="rate-preview" class="control rate-box" role="group" aria-labelledby="rate-label">
                     <span id="rate-value" class="rate-value">…</span>
                 </div>
                 <button type="button" id="about-btn" class="btn btn-primary btn-row" aria-label="О программе" title="О программе">Инфо</button>
             </div>
 
-            <label class="field-label" for="ref-date-input">Референсная дата</label>
+            <div class="date-labels">
+                <label class="field-label" for="ref-date-input" title="Референсная дата">Рефер. дата</label>
+                <span class="field-label" id="ref-rate-label">Реф. курс</span>
+            </div>
             <div class="date-row">
                 <input
                     type="text"
@@ -51,8 +56,7 @@
                     autocomplete="off"
                 >
                 <!-- Курс на референсную дату: с ним сравнивается курс выше -->
-                <div id="ref-rate-preview" class="control rate-box rate-box-ref">
-                    <span class="rate-box-label">Реф.:</span>
+                <div id="ref-rate-preview" class="control rate-box rate-box-ref" role="group" aria-labelledby="ref-rate-label">
                     <span id="ref-rate-value" class="rate-value">…</span>
                 </div>
                 <button type="button" id="ref-today-btn" class="btn btn-primary btn-row" title="Сделать референсом сегодняшнюю дату">Сегодня</button>
@@ -61,7 +65,7 @@
             <!-- Сравнение курса с референсом -->
             <div id="ref-compare" class="compare compare-none" aria-live="polite">
                 <svg class="compare-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.2 9.2 8.8H.8z"/></svg>
-                <span id="ref-compare-text" class="compare-text">Сравнение недоступно</span>
+                <span class="compare-text"><span id="ref-compare-text">Сравнение недоступно</span><span id="ref-compare-pct-wrap" class="hidden"> (<b id="ref-compare-pct" class="compare-pct"></b>)</span></span>
             </div>
 
             <!-- Календарь (всегда видимый) -->

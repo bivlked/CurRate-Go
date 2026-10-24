@@ -168,19 +168,21 @@ test('formatPercent: 2 знака, малое - «менее 0,01%»', () => {
 const plain = (o) => JSON.parse(JSON.stringify(o));
 
 test('describeRateComparison: текст и цвет строки сравнения', () => {
-    assert.deepEqual(plain(u.describeRateComparison(null)), { className: 'compare-none', text: 'Сравнение недоступно' });
-    assert.deepEqual(plain(u.describeRateComparison(u.compareRates(80, 80))), { className: 'compare-equal', text: 'Совпадает с референсом' });
+    assert.deepEqual(plain(u.describeRateComparison(null)), { className: 'compare-none', text: 'Сравнение недоступно', percent: '' });
+    assert.deepEqual(plain(u.describeRateComparison(u.compareRates(80, 80))), { className: 'compare-equal', text: 'Совпадает с референсом', percent: '' });
 
     const up = u.describeRateComparison(u.compareRates(80.5381, 79.9012));
     assert.equal(up.className, 'compare-up');
-    assert.equal(up.text, 'Выше референса на 0,6369 ₽ (0,80%)');
+    assert.equal(up.text, 'Выше референса на 0,6369 ₽');
+    assert.equal(up.percent, '0,80%'); // от курса на референсную дату: 0,6369 / 79,9012
 
     const down = u.describeRateComparison(u.compareRates(79.9012, 80.5381));
     assert.equal(down.className, 'compare-down');
-    assert.equal(down.text, 'Ниже референса на 0,6369 ₽ (0,79%)');
+    assert.equal(down.text, 'Ниже референса на 0,6369 ₽');
+    assert.equal(down.percent, '0,79%'); // 0,6369 / 80,5381
 
     // разница в одну десятитысячную не выглядит как 0,00%
-    assert.equal(u.describeRateComparison(u.compareRates(80.0001, 80)).text, 'Выше референса на 0,0001 ₽ (менее 0,01%)');
+    assert.equal(u.describeRateComparison(u.compareRates(80.0001, 80)).percent, 'менее 0,01%');
 });
 
 test('describeAmountComparison: строка результата', () => {

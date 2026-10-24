@@ -12,9 +12,8 @@
   --primary-light: #e3f2fd;
   --primary-ring: rgba(0, 120, 212, 0.28);
 
-  /* Референс: курс на референсную дату и её маркер в календаре */
-  --ref-color: #6b4fbb;
-  --ref-bg: #f1edfb;
+  /* Референс: курс на референсную дату и рамка её дня в календаре */
+  --ref-color: #107c10;
 
   /* Сравнение с референсом */
   --up-color: #c62828;   /* курс выше референса */
@@ -326,6 +325,21 @@ input.control.error {
 }
 
 /* ===== Строки дат: поле | плашка курса | кнопка ===== */
+/* Подписи над строкой дат стоят на той же сетке, что и сама строка */
+.date-labels {
+  display: grid;
+  grid-template-columns: var(--date-col) minmax(0, 1fr) var(--btn-col);
+  gap: 6px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.date-labels .field-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .date-row {
   display: grid;
   grid-template-columns: var(--date-col) minmax(0, 1fr) var(--btn-col);
@@ -352,20 +366,10 @@ input.control.error {
   cursor: default;
 }
 
-.rate-box-label {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
-
 .rate-value {
   color: var(--primary-color);
   font-weight: var(--font-weight-semibold);
   font-variant-numeric: tabular-nums;
-}
-
-.rate-box-ref {
-  background: var(--ref-bg);
 }
 
 .rate-box-ref .rate-value {
@@ -383,8 +387,9 @@ input.control.error {
   align-items: center;
   gap: 6px;
   min-height: 20px;
+  color: var(--text-primary);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
   line-height: 1.3;
 }
 
@@ -399,22 +404,22 @@ input.control.error {
   fill: currentColor;
 }
 
-.compare-up {
+/* Цветом выделена только стрелка, текст остаётся основным */
+.compare-up .compare-arrow {
   color: var(--up-color);
 }
 
-.compare-down {
-  color: var(--down-color);
-}
-
 .compare-down .compare-arrow {
+  color: var(--down-color);
   transform: rotate(180deg);
 }
 
-.compare-equal,
+.compare-pct {
+  font-weight: var(--font-weight-bold);
+}
+
 .compare-none {
   color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
 }
 
 .compare-equal .compare-arrow,

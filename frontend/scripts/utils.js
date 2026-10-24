@@ -450,21 +450,23 @@ function formatPercent(percent) {
 }
 
 /**
- * Текст и стиль строки сравнения курса с референсом
+ * Текст и стиль строки сравнения курса с референсом. Процент (от курса
+ * на референсную дату) отдельно: в строке он выделен и стоит в скобках
  * @param {ReturnType<typeof compareRates>} cmp - Результат compareRates
- * @returns {{className: string, text: string}}
+ * @returns {{className: string, text: string, percent: string}}
  */
 function describeRateComparison(cmp) {
     if (!cmp) {
-        return { className: 'compare-none', text: 'Сравнение недоступно' };
+        return { className: 'compare-none', text: 'Сравнение недоступно', percent: '' };
     }
     if (cmp.direction === 'equal') {
-        return { className: 'compare-equal', text: 'Совпадает с референсом' };
+        return { className: 'compare-equal', text: 'Совпадает с референсом', percent: '' };
     }
     const where = cmp.direction === 'up' ? 'Выше' : 'Ниже';
     return {
         className: `compare-${cmp.direction}`,
-        text: `${where} референса на ${formatNumber(cmp.diff, 4)} ₽ (${formatPercent(cmp.percent)})`
+        text: `${where} референса на ${formatNumber(cmp.diff, 4)} ₽`,
+        percent: formatPercent(cmp.percent)
     };
 }
 

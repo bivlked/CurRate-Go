@@ -4,7 +4,7 @@
 
 let currentDate = new Date();
 let selectedDate = null;
-let referenceDate = null; // помечается точкой в календаре
+let referenceDate = null; // обводится рамкой в календаре
 
 /**
  * Инициализация календаря
