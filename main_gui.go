@@ -32,13 +32,17 @@ func main() {
 
 	// Запускаем Wails приложение
 	err := wails.Run(&options.App{
-		Title:         "Конвертер валют (c) BiV",
-		Width:         360,
-		Height:        758,
-		MinWidth:      360,
-		MaxWidth:      360,
-		MinHeight:     758,
-		MaxHeight:     758,
+		Title: "Конвертер валют (c) BiV",
+		// Размер окна в Wails - внешний, с рамкой и заголовком: рамка Windows 11
+		// забирает около 15 px по ширине и 38 px по высоте. Внутри остаётся
+		// около 361x784 - столько нужно странице в худшем случае (месяц в 6 недель,
+		// выходной, большая сумма и сравнение с референсом)
+		Width:         376,
+		Height:        822,
+		MinWidth:      376,
+		MaxWidth:      376,
+		MinHeight:     822,
+		MaxHeight:     822,
 		DisableResize: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
