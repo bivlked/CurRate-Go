@@ -24,7 +24,7 @@ var assets embed.FS
 
 // Размер окна в Wails - внешний, с рамкой и заголовком: рамка Windows 11
 // забирает около 15 px по ширине и 38 px по высоте. Внутри остаётся
-// около 361x784 - столько нужно странице в худшем случае (месяц в 6 недель,
+// около 361x784, а странице в худшем случае нужно 361x782 (месяц в 6 недель,
 // выходной, большая сумма и сравнение с референсом)
 const (
 	windowWidth  = 376
@@ -79,7 +79,7 @@ func main() {
 
 // fitWindowToScreen уменьшает окно по высоте, если оно не помещается
 // в рабочую область своего монитора (экран без панели задач). Так бывает
-// на низких экранах: 1280x720 или 1920x1080 при масштабе 150%. Размер окна
+// на низких экранах: 1280x720 или 1920x1080 при масштабе от 125%. Размер окна
 // менять нельзя, поэтому без подгонки низ с результатом оказался бы
 // за краем экрана, а так страница просто прокручивается.
 // Монитор берётся у самого окна, а не у курсора: Windows может открыть
@@ -88,13 +88,17 @@ func main() {
 func fitWindowToScreen(ctx context.Context) {
 	workPx, dpi, err := window.WorkArea(windowClassName)
 	if err != nil {
+		// В production Wails пишет только ошибки, так что пользователь этого
+		// не увидит, а в wails dev причина будет видна
+		runtime.LogWarningf(ctx, "подгонка окна под экран пропущена: %v", err)
 		return
 	}
 	height := window.FitHeight(windowHeight, workPx, dpi)
 	if height == windowHeight {
 		return
 	}
-	// Сначала максимум: Wails вслед за ним опускает и минимум
+	// Wails держит минимум не больше максимума, поэтому SetMaxSize опускает
+	// и минимум; SetMinSize оставлен для явности
 	runtime.WindowSetMaxSize(ctx, windowWidth, height)
 	runtime.WindowSetMinSize(ctx, windowWidth, height)
 	runtime.WindowSetSize(ctx, windowWidth, height)
